@@ -1,8 +1,11 @@
 add_executable(shelltoy
     fonts.c
     main.c
+    pty.c
+    terminal.c
     )
 target_link_libraries(shelltoy
     ${FREETYPE_LIBRARIES}
+    ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     )

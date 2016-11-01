@@ -10,9 +10,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(Freetype REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
+find_package(libtsm REQUIRED)
 
 include_directories(SYSTEM
     ${GLEW_INCLUDE_DIR}
+    ${LIBTSM_INCLUDE_DIR}
     ${SDL2_INCLUDE_DIR}
     )
 

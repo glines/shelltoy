@@ -100,3 +100,11 @@ void st_printGlyphDebug(const FT_Bitmap *bitmap) {
     fprintf(stderr, "\n");
   }
 }
+
+/* TODO: Generate signed-distance-field textures */
+/* TODO: Arrange glyphs into an atlas */
+/* TODO: Define a data structure for keeping glyph information */
+/* TODO: Write a shader that can transform glyph geometry and draw the glyphs
+ * using instanced rendering */
+/* TODO: Support multiple font faces */
+/* TODO: Support multiple sizes */
