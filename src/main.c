@@ -42,8 +42,10 @@ int main(int argc, char** argv) {
   st_initFreetype();
   init_sdl();
 
+  /*
   st_loadFontFace();
   st_loadGlyph('~');
+  */
 
   st_Terminal_init(&terminal);
   SDL_Delay(5000);

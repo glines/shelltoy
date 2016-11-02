@@ -16,4 +16,6 @@ typedef struct {
 void st_Terminal_init(st_Terminal *self);
 void st_Terminal_destroy(st_Terminal *self);
 
+void st_Terminal_updateDisplay(st_Terminal *self);
+
 #endif
