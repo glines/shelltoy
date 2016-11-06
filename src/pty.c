@@ -1,11 +1,13 @@
 #define _XOPEN_SOURCE 600
 
+#include <SDL.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -16,12 +18,108 @@
 void st_PTY_startChildProcess(st_PTY *self);
 void st_PTY_joinChildProcess(st_PTY *self);
 
+int st_PTY_eventType() {
+  static int eventType = -1;
+
+  /* Register the event type with SDL, if we have not done so already */
+  if (eventType == -1) {
+    /* FIXME: This call to SDL_RegisterEvents() might not be thread safe */
+    eventType = SDL_RegisterEvents(1);
+    if (eventType == -1) {
+      fprintf(stderr, "Failed to register PTY event with SDL\n");
+      /* TODO: Fail gracefully */
+      assert(0);
+    }
+  }
+
+  return eventType;
+}
+
+void st_PTY_pushEvent(st_PTY *self) {
+  SDL_Event event;
+  memset(&event, 0, sizeof(event));
+  event.type = st_PTY_eventType();
+  event.user.data1 = self;
+  if (SDL_PushEvent(&event) < 0) {
+    fprintf(stderr, "Failed to push PTY event to SDL\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  fprintf(stderr, "Pushed PTY event to SDL\n");  /* XXX */
+}
+
+/* TODO: Have st_PTY_watchPTY() opperate in a singleton capacity, since epoll
+ * is very good at servicing multiple file descriptors */
+void *st_PTY_watchPTY(st_PTY *self) {
+  struct epoll_event ev;
+  /* Thread routine for watching for input from the pseudo terminal master */
+  fprintf(stderr, "Output from st_PTY_watchPTY()\n");
+
+  while (1) {
+    /* TODO: Check for signal to join main thread */
+    /* NOTE: Might want to use epoll_pwait() in conjunction with a signal so
+     * that this thread can be more responsive when joining the main thread
+     * */
+
+    /* Wait for any changes to the pseudo terminal master */
+    epoll_wait(
+        self->epoll_fd,  /* epfd */
+        &ev,  /* events */
+        1,  /* maxevents */
+        -1  /* timeout */
+        );
+
+    fprintf(stderr, "Got an epoll event in st_PTY_watchPTY()\n");
+
+    /* Notify the main thread with an SDL event */
+    st_PTY_pushEvent(self);
+  }
+
+  return NULL;
+}
+
 void st_PTY_openPTY(st_PTY *self) {
+  struct epoll_event ev;
+  int result;
   /* Open a pseudo terminal */
   self->master_fd = posix_openpt(O_RDWR | O_NOCTTY);
   if (self->master_fd == -1) {
     perror("posix_openpt");
     fprintf(stderr, "Failed to open pseudo terminal\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  /* Set up poll to watch for changes to the pseudo terminal master */
+  self->epoll_fd = epoll_create1(0);
+  if (self->epoll_fd < 0) {
+    perror("epoll_create1");
+    fprintf(stderr, "Failed to create epoll file handle\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  memset(&ev, 0, sizeof(ev));
+  ev.events =
+    EPOLLIN  /* listen for input */
+    | EPOLLOUT  /* listen for output */
+    | EPOLLET  /* event triggered */
+    ;
+  ev.data.ptr = self;
+  epoll_ctl(
+      self->epoll_fd,  /* epfd */
+      EPOLL_CTL_ADD,  /* op */
+      self->master_fd,  /* fd */
+      &ev  /* event */
+      );
+  /* Open a thread to watch for input from the pseudo terminal master */
+  result = pthread_create(
+      &self->poll_thread,  /* thread */
+      NULL,  /* attr */
+      (void *(*)(void*))st_PTY_watchPTY,  /* start_routine */
+      self  /* arg */
+      );
+  if (result != 0) {
+    perror("pthread_create");
+    fprintf(stderr, "Failed to create pty watch thread\n");
     /* TODO: Fail gracefully */
     assert(0);
   }
@@ -96,10 +194,14 @@ void st_PTY_startChild(
     const char *path,
     char *const argv[],
     st_PTY_readCallback_t callback,
+    void *callback_data,
     int width,
     int height)
 {
   pid_t result;
+  /* Register the read callback */
+  self->callback = callback;
+  self->callback_data = callback_data;
   /* Fork our child process */
   result = fork();
   if (result < 0) {
@@ -111,11 +213,29 @@ void st_PTY_startChild(
     execv(path, argv);
     perror("execv");
     fprintf(stderr, "Failed to execute shell: %s\n",
-        SHELL);
+        path);
     /* TODO: Fail gracefully? */
     exit(EXIT_FAILURE);
   }
   self->child = result;
+}
+
+void st_PTY_read(st_PTY *self) {
+  size_t len;
+#define PTY_BUFF_SIZE 4096
+  char buff[PTY_BUFF_SIZE];
+  /* FIXME: Not to sure how to do this properly */
+  /* FIXME: This needs an arbitrary limit (as with wlterm) */
+  do {
+    /* Read from the pseudo terminal master file descriptor and send
+     * everything to the libtsm state machine through our callback */
+    len = read(self->master_fd, buff, sizeof(buff));
+    if (len > 0) {
+      self->callback(self->callback_data, buff, len);
+      buff[len] = '\0';  /* XXX */
+      fprintf(stderr, "%s", buff);  /* XXX: hack */
+    }
+  } while (len > 0);
 }
 
 void st_PTY_resize(st_PTY *self, int width, int height) {

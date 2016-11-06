@@ -5,10 +5,13 @@
 #include <libtsm.h>
 
 #include "pty.h"
+#include "render.h"
 
 typedef struct {
   SDL_Window *window;
+  SDL_GLContext glContext;
   st_PTY pty;
+  st_RenderContext renderContext;
   struct tsm_screen *screen;
   struct tsm_vte *vte;
 } st_Terminal;

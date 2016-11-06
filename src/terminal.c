@@ -17,6 +17,17 @@ void st_Terminal_tsmWriteCallback(
     const char *u8,
     size_t len,
     st_Terminal *self);
+void st_Terminal_drawCallback(
+  struct tsm_screen *con,
+  uint32_t id,
+  const uint32_t *ch,
+  size_t len,
+  unsigned int width,
+  unsigned int posx,
+  unsigned int posy,
+  const struct tsm_screen_attr *attr,
+  tsm_age_t age,
+  st_Terminal *self);
 void st_Terminal_initWindow(st_Terminal *self);
 void st_Terminal_initTSM(st_Terminal *self);
 
@@ -43,6 +54,26 @@ void st_Terminal_tsmWriteCallback(
   /* TODO: something */
 }
 
+void st_Terminal_drawCallback(
+  struct tsm_screen *con,
+  uint32_t id,
+  const uint32_t *ch,
+  size_t len,
+  unsigned int width,
+  unsigned int posx,
+  unsigned int posy,
+  const struct tsm_screen_attr *attr,
+  tsm_age_t age,
+  st_Terminal *self)
+{
+  /* TODO: Update the OpenGL buffers backing the instance rendered text */
+  fprintf(stderr, "Printing character: '%c' at location (%d, %d)\n",
+      (char)(*ch),
+      posx,
+      posy);
+}
+
+/* FIXME: I don't think this is needed; read events are sent through SDL */
 void st_Terminal_ptyReadCallback(
     st_Terminal *self,
     const char *u8,
@@ -59,6 +90,7 @@ void st_Terminal_ptyReadCallback(
 }
 
 void st_Terminal_initWindow(st_Terminal *self) {
+  /* Create the SDL window */
   self->window = SDL_CreateWindow(
       "Shelltoy",  /* title */
       SDL_WINDOWPOS_UNDEFINED,  /* x */
@@ -73,6 +105,31 @@ void st_Terminal_initWindow(st_Terminal *self) {
     /* TODO: Fail gracefully */
     assert(0);
   }
+  /* Create an OpenGL context for our window */
+  self->glContext = SDL_GL_CreateContext(self->window);
+  if (self->glContext == NULL) {
+    fprintf(stderr, "Failed to initialize OpenGL context: %s\n",
+        SDL_GetError());
+    exit(EXIT_FAILURE);
+  }
+  /* Initialize GL entry points */
+  glewExperimental = 1;
+  GLenum error = glewInit();
+  if (error != GLEW_OK) {
+    fprintf(stderr, "Failed to initialize GLEW: %s\n",
+        glewGetErrorString(error));
+    exit(EXIT_FAILURE);
+  }
+
+  /* Configure the GL */
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+  glClearDepth(1.0);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
+  glDisable(GL_CULL_FACE);
+  glFrontFace(GL_CCW);
+  /* TODO: Calculate the window width and height */
+  /* glViewport(0, 0, width, height); */
 }
 
 void st_Terminal_initTSM(st_Terminal *self) {
@@ -100,6 +157,8 @@ void st_Terminal_init(st_Terminal *self) {
   size_t len;
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
+  /* Initialize the render context */
+  st_RenderContext_init(&self->renderContext);
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
@@ -118,6 +177,7 @@ void st_Terminal_init(st_Terminal *self) {
       "/usr/bin/env",  /* path */
       argv,  /* argv */
       (st_PTY_readCallback_t)st_Terminal_ptyReadCallback,  /* callback */
+      self,  /* callback_data */
       80,  /* width */
       24  /* height */
       );
@@ -136,8 +196,10 @@ void st_Terminal_destroy(st_Terminal *self) {
 }
 
 void st_Terminal_updateDisplay(st_Terminal *self) {
+  /* TODO: The update should probably be queued as an event... maybe? */
   /* TODO: Read the character grid from the libtsm screen */
   /* TODO: Make sure we have loaded all of the glyphs that we need */
   /* TODO: Make sure the changes get rendered immediately (might be useful to
    * render even sooner than the toy can render) */
+  st_RenderContext_updateTerminalText(&self->renderContext, self->screen);
 }
