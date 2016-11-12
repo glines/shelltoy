@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 
 #include "fonts.h"
@@ -39,6 +40,23 @@ void st_Fonts_initFreetype() {
   }
 }
 
+void st_Fonts_calculateFacePixelBBox(
+    const FT_Face face,
+    int *width, int *height)
+{
+  double x_pixels_per_unit, y_pixels_per_unit, units_per_em;
+  /* Compute a scaling factor to convert from font units to pixels, as
+   * described in
+   * <https://www.freetype.org/freetype2/docs/tutorial/step2.html> */
+  units_per_em = (double)face->units_per_EM;
+  x_pixels_per_unit = face->size->metrics.x_ppem / units_per_em;
+  y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
+  *width = (int)ceil(
+      (double)(face->bbox.xMax - face->bbox.xMin) * x_pixels_per_unit);
+  *height = (int)ceil(
+      (double)(face->bbox.yMax - face->bbox.yMin) * y_pixels_per_unit);
+}
+
 /* TODO: Support loading different faces from files that happen to have more
  * than one face */
 st_MonospaceFontFace *st_Fonts_loadMonospace(
@@ -47,6 +65,9 @@ st_MonospaceFontFace *st_Fonts_loadMonospace(
 {
   FT_Face face;
   FT_Error error;
+  st_MonospaceFontFace *monospaceFont;
+//  st_GlyphAtlas atlas;
+  int bbox_width, bbox_height;
 
   st_Fonts *self = st_Fonts_instance();
 
@@ -82,6 +103,14 @@ st_MonospaceFontFace *st_Fonts_loadMonospace(
       300  /* vert_resolution */
       );
 
+  /* Each font defines a "bounding box" that encloses all glyphs. The atlas
+   * does not use this information, since glyphs are packed as tightly as
+   * possible, but we do need to store it for the terminal. */
+  st_Fonts_calculateFacePixelBBox(face, &bbox_width, &bbox_height);
+  fprintf(stderr,
+      "Font bbox dimensions: %dx%d pixels\n",
+      bbox_width, bbox_height);
+
   if (error != FT_Err_Ok) {
     fprintf(stderr,
         "Freetype failed to set dimensions %dx%d for font: %s\n",
@@ -97,26 +126,46 @@ st_MonospaceFontFace *st_Fonts_loadMonospace(
    * here: <http://gamedev.stackexchange.com/a/2839>
    */
 
-  /* TODO: Iterate over the printable ASCII characters */
-  for (unsigned char c = 32; c <= 127; ++c) {
-    /* TODO: Estimate the dimensions of the glyph corresponding to this
-     * character in this font */
-    st_Fonts_loadGlyph(face, c);
+  /* Create a glyph atlas in which to place the glyphs */
+//  st_GlyphAtlas_init(&atlas);
+
+  /* Make sure we have space in memory for another monospace font */
+  if (self->numMonospaceFonts + 1 > self->sizeMonospaceFonts) {
+    /* FIXME: Consider removing old fonts from memory... */
+    assert(0);
   }
+
+  /* TODO: Initialize the monospace font with our atlas */
+  /*
+  monospaceFont = &self->monospaceFonts[self->numMonospaceFonts++];
+  st_MonospaceFontFace_init(monospaceFont);
+  */
 }
 
-void st_Fonts_loadGlyph(FT_Face face, char c) {
+#define ST_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS 256
+
+void st_MonospaceFontFace_init(st_MonospaceFontFace *self) {
+  self->sizeGlyphs = ST_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS;
+  self->glyphs = (st_MonospaceGlyph*)malloc(
+      sizeof(st_MonospaceGlyph) * self->sizeGlyphs);
+  self->numGlyphs = 0;
+}
+
+void st_MonospaceFontFace_loadGlyph(
+    st_MonospaceFontFace *self,
+    FT_Face face,
+    uint32_t ch)
+{
   FT_Error error;
   int glyph_index;
-  st_Fonts *self = st_Fonts_instance();
 
-  /* TODO: Use the charmap in our face to get the actual glyph for this ASCII
+  /* Use the charmap in our face to get the actual glyph for this ASCII
    * character code */
-  glyph_index = FT_Get_Char_Index(face, c);
+  glyph_index = FT_Get_Char_Index(face, ch);
   if (glyph_index == 0) {
     fprintf(stderr,
         "Warning: Freetype could not find a glyph for the character '%c'\n",
-        c);
+        (char)ch);
   }
   error = FT_Load_Glyph(
       face,  /* face */
@@ -126,7 +175,7 @@ void st_Fonts_loadGlyph(FT_Face face, char c) {
   if (error != FT_Err_Ok) {
     fprintf(stderr,
         "Freetype encountered an error loading the glyph for '%c'\n",
-        c);
+        (char)ch);
   }
   error = FT_Render_Glyph(
       face->glyph,  /* slot */
@@ -135,7 +184,7 @@ void st_Fonts_loadGlyph(FT_Face face, char c) {
   if (error != FT_Err_Ok) {
     fprintf(stderr,
         "Freetype encountered an error rendering the glyph for '%c'\n",
-        c);
+        (char)ch);
   }
   /* Print out the glyph bitmap */
   st_printGlyphDebug(&face->glyph->bitmap);
@@ -158,6 +207,29 @@ st_MonospaceGlyph *st_MonospaceFontFace_getGlyph(
     st_MonospaceFontFace *self,
     uint32_t ch)
 {
+  size_t i, a, b;
+
+  /* Binary search for the glyph */
+  a = 0; b = self->numGlyphs;
+  i = self->numGlyphs / 2;
+  while (a != b) {
+    if (ch < self->glyphs[i].ch) {
+      b = i;
+      i = a + (b - a) / 2;
+    } else if (ch > self->glyphs[i].ch) {
+      a = i;
+      i = a + (b - a) / 2;
+    } else {
+      break;
+    }
+  }
+  if ((i >= self->numGlyphs) || (ch != self->glyphs[i].ch)) {
+    /* Couldn't find this glyph */
+    /* TODO: We need to try to render this glyph from our fonts */
+    return NULL;
+  }
+
+  return &self->glyphs[i];
 }
 
 /* TODO: Generate signed-distance-field textures */

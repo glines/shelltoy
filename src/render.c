@@ -16,6 +16,13 @@ void st_RenderContext_init(st_RenderContext *self) {
   self->cols = 0;
   st_RenderContext_initShaders(self);
   st_RenderContext_initVAO(self);
+  /* TODO: Somehow pass the font path here */
+const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu-fonts-2.37/share/fonts/truetype/DejaVuSansMono.ttf";
+  self->font = st_Fonts_loadMonospace(
+      8,  /* width */
+      15,  /* height */
+      FONT_FACE_PATH  /* fontPath */
+      );
 }
 
 void st_RenderContext_initShaders(st_RenderContext *self) {
@@ -32,6 +39,9 @@ void st_RenderContext_initVAO(st_RenderContext *self) {
   glyphLocation = glGetAttribLocation(self->glyphShader, "glyph");
 }
 
+/** This routine "draws" the each glyph by adding an instance of the glyph to
+ * our buffer of glyph instances. The glyphs are not actually drawn
+ * immediately, but the GL glyph instances are updated. */
 void st_RenderContext_glyphDrawCallback(
   struct tsm_screen *con,
   uint32_t id,
@@ -46,6 +56,10 @@ void st_RenderContext_glyphDrawCallback(
 {
   st_MonospaceGlyph *glyph;
   st_Render_GlyphInstance glyphInstance;
+
+  /* Skip whitespace */
+  if (!(*ch))
+    return;
 
   /* Retrieve the glyph from our font */
   glyph = st_MonospaceFontFace_getGlyph(self->font, *ch);

@@ -1,5 +1,6 @@
 add_executable(shelltoy
     fonts.c
+    glyphAtlas.c
     main.c
     pty.c
     render.c
