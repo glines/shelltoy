@@ -35,11 +35,9 @@
 
 #define ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE 256
 #define ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE 4096
+#define ST_GLYPH_ATLAS_INIT_SIZE_GLYPHS 256
 
-typedef struct st_GlyphAtlasEntry_ {
-  st_BoundingBox bbox;
-  uint32_t ch;
-} st_GlyphAtlasEntry;
+struct st_GlyphAtlas_Internal;
 
 /**
  * Class for managing glyphs that have been rendered to a GL texture (or
@@ -61,10 +59,7 @@ typedef struct st_GlyphAtlasEntry_ {
  * latency; if so, we may need to implement asynchronous glyph loading.
  */
 typedef struct st_GlyphAtlas_ {
-  /* Public */
-  st_GlyphAtlasEntry *glyphs;
-  size_t numGlyphs;
-
+  struct st_GlyphAtlas_Internal *internal;
   /* Private */
   GLuint textureBuffer;
   size_t m_sizeGlyphs;
@@ -79,6 +74,9 @@ typedef struct st_GlyphAtlas_ * st_GlyphAtlas_ptr;
  * must be called after the GL has been initialized.
  */
 void st_GlyphAtlas_init(
+    st_GlyphAtlas_ptr self);
+
+void st_GlyphAtlas_destroy(
     st_GlyphAtlas_ptr self);
 
 /**
@@ -99,5 +97,12 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
 
 void st_GlyphAtlas_addGlyph(
     /* TODO */);
+
+int st_GlyphAtlas_getGlyph(
+    const st_GlyphAtlas *self,
+    uint32_t character,
+    st_BoundingBox *bbox,
+    GLuint *textureBuffer);
+
 
 #endif

@@ -7,6 +7,7 @@ add_executable(shelltoy
     naiveCollisionDetection.c
     pty.c
     render.c
+    screenRenderer.c
     terminal.c
     )
 target_link_libraries(shelltoy

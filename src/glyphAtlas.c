@@ -30,6 +30,18 @@
 
 #define max(a, b) (a) < (b) ? (b) : (a);
 
+/* Private data structures */
+typedef struct st_GlyphAtlasEntry_ {
+  st_BoundingBox bbox;
+  uint32_t ch;
+} st_GlyphAtlasEntry;
+
+struct st_GlyphAtlas_Internal {
+  st_GlyphAtlasEntry *glyphs;
+  size_t numGlyphs, sizeGlyphs;
+  GLuint textureBuffer;
+};
+
 /* Private method declarations */
 void st_GlyphAtlas_blitGlyph(
     const st_GlyphAtlasEntry *glyph,
@@ -41,8 +53,24 @@ void st_GlyphAtlas_blitGlyph(
 void st_GlyphAtlas_init(
     st_GlyphAtlas_ptr self)
 {
-  glGenBuffers(1, &self->textureBuffer);
+  /* Allocate memory for internal data structures */
+  self->internal = (struct st_GlyphAtlas_Internal *)malloc(
+      sizeof(struct st_GlyphAtlas_Internal));
+  self->internal->sizeGlyphs = ST_GLYPH_ATLAS_INIT_SIZE_GLYPHS;
+  self->internal->glyphs = (st_GlyphAtlasEntry *)malloc(
+      sizeof(st_GlyphAtlasEntry) * self->internal->sizeGlyphs);
+  self->internal->numGlyphs = 0;
+  /* Initialize our texture buffer */
+  glGenBuffers(1, &self->internal->textureBuffer);
   /* TODO: Check for GL errors */
+}
+
+void st_GlyphAtlas_destroy(
+    st_GlyphAtlas_ptr self)
+{
+  /* Free internal data structures */
+  free(self->internal->glyphs);
+  free(self->internal);
 }
 
 int st_compareGlyphSizes(
@@ -282,6 +310,15 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   /* TODO: Check for GL errors */
   free(atlasTexture);
   free(pendingGlyphs);
+}
+
+int st_GlyphAtlas_getGlyph(
+    const st_GlyphAtlas *self,
+    uint32_t character,
+    st_BoundingBox *bbox,
+    GLuint *textureBuffer)
+{
+  /* TODO: Binary search for the glyph corresponding to the given character */
 }
 
 void st_GlyphAtlas_blitGlyph(

@@ -85,8 +85,8 @@ void st_Terminal_ptyReadCallback(
       u8,  /* u8 */
       len  /* len */
       );
-  /* TODO: Update the terminal display */
-  st_Terminal_updateDisplay(self);
+  /* TODO: Update the terminal screen */
+  st_Terminal_updateScreen(self);
 }
 
 void st_Terminal_initWindow(st_Terminal *self) {
@@ -157,8 +157,8 @@ void st_Terminal_init(st_Terminal *self) {
   size_t len;
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
-  /* Initialize the render context */
-  st_RenderContext_init(&self->renderContext);
+  /* Initialize the screen renderer */
+  st_ScreenRenderer_init(&self->screenRenderer);
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
@@ -172,7 +172,9 @@ void st_Terminal_init(st_Terminal *self) {
   COPY_STRING(argv[0], ENV_PATH);
   COPY_STRING(argv[1], SHELL);
   argv[2] = NULL;
-  /* TODO: calculate terminal width and height */
+  /* TODO: Construct a st_MonospaceFont object that combines multiple font
+   * faces into one font that supports normal, bold, and wide glyphs */
+  /* TODO: Calculate terminal width and height */
   st_PTY_startChild(&self->pty,
       "/usr/bin/env",  /* path */
       argv,  /* argv */
@@ -195,11 +197,11 @@ void st_Terminal_destroy(st_Terminal *self) {
   st_PTY_destroy(&self->pty);
 }
 
-void st_Terminal_updateDisplay(st_Terminal *self) {
+void st_Terminal_updateScreen(st_Terminal *self) {
   /* TODO: The update should probably be queued as an event... maybe? */
   /* TODO: Read the character grid from the libtsm screen */
   /* TODO: Make sure we have loaded all of the glyphs that we need */
   /* TODO: Make sure the changes get rendered immediately (might be useful to
    * render even sooner than the toy can render) */
-  st_RenderContext_updateTerminalText(&self->renderContext, self->screen);
+  st_ScreenRenderer_updateScreen(&self->screenRenderer, self->screen);
 }
