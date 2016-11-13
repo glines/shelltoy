@@ -84,8 +84,9 @@ int main(int argc, char** argv) {
 
   while (1) {
     st_dispatchEvents();
-    /* TODO: Draw stuff */
+    st_Terminal_draw(&terminal);
     SDL_Delay(50);
+    /* TODO: Write a more intelligent loop that waits for vsync, etc. */
   }
   st_Terminal_destroy(&terminal);
 

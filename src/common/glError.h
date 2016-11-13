@@ -21,33 +21,46 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_SCREEN_RENDERER_H_
-#define ST_SCREEN_RENDERER_H_
+#ifndef ST_COMMON_GL_ERROR_H_
+#define ST_COMMON_GL_ERROR_H_
 
-#include <libtsm.h>
+#include <assert.h>
 
-#include "glyphAtlas.h"
+#include <GL/glew.h>
 
-#define ST_SCREEN_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
+/* Checking for errors significantly affects performance with WebGL, so we
+ * disable checking when compiling with Emscripten. */
+#ifdef __EMSCRIPTEN__
+#define DISABLE_CHECK_GL_ERROR 1
+#else
+#define DISABLE_CHECK_GL_ERROR 0
+#endif
 
-struct st_ScreenRenderer_Internal;
+#define FORCE_CHECK_GL_ERROR() \
+  (st_checkGLError(__FILE__, __LINE__))
 
-typedef struct st_ScreenRenderer_ {
-  st_GlyphAtlas atlas;
+#define FORCE_ASSERT_GL_ERROR() \
+  if (st_checkGLError(__FILE__, __LINE__)) \
+    assert(0);
 
-  struct st_ScreenRenderer_Internal *internal;
-} st_ScreenRenderer;
+#if DISABLE_CHECK_GL_ERROR
 
-void st_ScreenRenderer_init(
-    st_ScreenRenderer *self);
+#define CHECK_GL_ERROR() (0)
 
-void st_ScreenRenderer_destroy(
-    st_ScreenRenderer *self);
+#define ASSERT_GL_ERROR() ;
 
-void st_ScreenRenderer_updateScreen(
-    st_ScreenRenderer *self,
-    struct tsm_screen *screen);
-void st_ScreenRenderer_draw(
-    const st_ScreenRenderer *self);
+#else  // DISABLE_CHECK_GL_ERROR
+
+#define CHECK_GL_ERROR() \
+  (st_checkGLError(__FILE__, __LINE__))
+
+#define ASSERT_GL_ERROR() \
+  if (st_checkGLError(__FILE__, __LINE__)) \
+    assert(0);
+
+#endif  // DISABLE_CHECK_GL_ERROR
+
+int st_checkGLError(const char *file, int line);
+const char *st_glErrorToString(GLenum error);
 
 #endif

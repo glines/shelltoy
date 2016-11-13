@@ -1,10 +1,8 @@
 #version 430
 
-flat in int aaAtlasIndex;
-flat in ivec2 aaAtlasPos;
-flat in ivec2 aaAtlasDim;
-flat in ivec2 sdfAtlasPos;
-flat in ivec2 sdfAtlasDim;
+flat in int atlasIndex;
+flat in ivec2 atlasPos;
+flat in ivec2 atlasDim;
 
 in vec2 glyphOffset;
 

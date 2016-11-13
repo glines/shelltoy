@@ -22,6 +22,7 @@
  */
 
 #include "boundingBox.h"
+#include "common/glError.h"
 #include "common/shaders.h"
 
 #include "screenRenderer.h"
@@ -80,15 +81,14 @@ void st_ScreenRenderer_init(
 void st_ScreenRenderer_initShaders(
     st_ScreenRenderer *self)
 {
-  /* TODO: Check for GL errors */
   self->internal->glyphShader = st_Shaders_glyphShader();
 }
 
 void st_ScreenRenderer_initBuffers(
     st_ScreenRenderer *self)
 {
-  /* TODO: Check for GL errors */
   glGenBuffers(1, &self->internal->glyphInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
 }
 
 void st_ScreenRenderer_initVAO(
@@ -96,13 +96,18 @@ void st_ScreenRenderer_initVAO(
 {
   GLuint glyphLocation;
 
-  /* TODO: Check OpenGL error output */
   glGenVertexArrays(1, &self->internal->glyphInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
   glBindVertexArray(self->internal->glyphInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
 
+  fprintf(stderr, "glyphShader: %d\n", self->internal->glyphShader);
   glyphLocation = glGetAttribLocation(self->internal->glyphShader, "glyph");
+  FORCE_ASSERT_GL_ERROR();
   glEnableVertexAttribArray(glyphLocation);
+  FORCE_ASSERT_GL_ERROR();
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
 }
 
 void st_ScreenRenderer_destroy(
@@ -129,12 +134,14 @@ void st_ScreenRenderer_updateScreen(
   /* Send the recently updated glyph instance buffer to the GL */
   /* TODO: Check for GL errors */
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
+  ASSERT_GL_ERROR();
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numGlyphs
       * sizeof(st_ScreenRenderer_GlyphInstance),  /* size */
       self->internal->glyphs,  /* data */
       GL_DYNAMIC_DRAW);
+  ASSERT_GL_ERROR();
 }
 
 /** This routine "draws" the each glyph by adding an instance of the glyph to
@@ -205,4 +212,14 @@ void st_ScreenRenderer_screenDrawCallback(
       (char)(*ch),
       posx,
       posy);  /* XXX */
+}
+
+void st_ScreenRenderer_draw(
+    const st_ScreenRenderer *self)
+{
+  /* Use the glyph shader program */
+  glUseProgram(self->internal->glyphShader);
+  ASSERT_GL_ERROR();
+
+  /* TODO: Set up the VAO for instanced rendering */
 }

@@ -21,4 +21,6 @@ void st_Terminal_destroy(st_Terminal *self);
 
 void st_Terminal_updateScreen(st_Terminal *self);
 
+void st_Terminal_draw(st_Terminal *self);
+
 #endif

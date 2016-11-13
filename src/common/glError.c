@@ -21,33 +21,56 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_SCREEN_RENDERER_H_
-#define ST_SCREEN_RENDERER_H_
+#include <stdio.h>
 
-#include <libtsm.h>
+#include "glError.h"
 
-#include "glyphAtlas.h"
+int st_checkGLError(const char *file, int line) {
+  int result = 0;
+  GLenum error;
+  while ((error = glGetError()) != GL_NO_ERROR) {
+    fprintf(stderr, "GL error: '%s'\n",
+        st_glErrorToString(error));
+    result = 1;
+  }
+  return result;
+}
 
-#define ST_SCREEN_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
+const char *st_glErrorToString(GLenum error) {
+#define ST_GL_E2S(error) \
+  case GL_ ## error: \
+                     return "GL_" #error;
 
-struct st_ScreenRenderer_Internal;
-
-typedef struct st_ScreenRenderer_ {
-  st_GlyphAtlas atlas;
-
-  struct st_ScreenRenderer_Internal *internal;
-} st_ScreenRenderer;
-
-void st_ScreenRenderer_init(
-    st_ScreenRenderer *self);
-
-void st_ScreenRenderer_destroy(
-    st_ScreenRenderer *self);
-
-void st_ScreenRenderer_updateScreen(
-    st_ScreenRenderer *self,
-    struct tsm_screen *screen);
-void st_ScreenRenderer_draw(
-    const st_ScreenRenderer *self);
-
+  switch (error) {
+    // From: <https://www.opengl.org/wiki/OpenGL_Error#Meaning_of_errors>
+#ifdef GL_INVALID_ENUM
+      ST_GL_E2S(INVALID_ENUM)
 #endif
+#ifdef GL_INVALID_VALUE
+      ST_GL_E2S(INVALID_VALUE)
+#endif
+#ifdef GL_INVALID_OPERATION
+      ST_GL_E2S(INVALID_OPERATION)
+#endif
+#ifdef GL_STACK_OVERFLOW
+      ST_GL_E2S(STACK_OVERFLOW)
+#endif
+#ifdef GL_STACK_UNDERFLOW
+      ST_GL_E2S(STACK_UNDERFLOW)
+#endif
+#ifdef GL_OUT_OF_MEMORY
+      ST_GL_E2S(OUT_OF_MEMORY)
+#endif
+#ifdef GL_INVALID_FRAMEBUFFER_OPERATION
+      ST_GL_E2S(INVALID_FRAMEBUFFER_OPERATION)
+#endif
+#ifdef GL_CONTEXT_LOST
+      ST_GL_E2S(CONTEXT_LOST)
+#endif
+#ifdef GL_TABLE_TOO_LARGE
+      ST_GL_E2S(TABLE_TOO_LARGE)
+#endif
+    default:
+      return "UNKNOWN";
+  }
+}

@@ -1,9 +1,11 @@
 #version 430
 
-in vec2 glyphOffset;
-in ivec2 cellPos;
-
 in vec2 vertPos;
+
+in vec2 offset;
+in ivec2 cell;
+
+flat out atlasIndex;
 
 uniform vec2 cellSize;
 uniform ivec2 gridSize;

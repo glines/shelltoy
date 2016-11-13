@@ -21,4 +21,7 @@ GLuint st_Shader_compileShader(
     int code_len,
     GLenum type);
 
+void st_Shader_linkProgram(
+    st_Shader *self);
+
 #endif
