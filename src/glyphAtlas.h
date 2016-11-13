@@ -94,6 +94,7 @@ void st_GlyphAtlas_init(
  * the GL, this method must be called after the GL has been initialized.
  */
 void st_GlyphAtlas_addASCIIGlyphsFromFace(
+    st_GlyphAtlas *self,
     FT_Face face);
 
 void st_GlyphAtlas_addGlyph(

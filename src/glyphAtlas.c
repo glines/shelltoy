@@ -41,7 +41,8 @@ void st_GlyphAtlas_blitGlyph(
 void st_GlyphAtlas_init(
     st_GlyphAtlas_ptr self)
 {
-  /* TODO: */
+  glGenBuffers(1, &self->textureBuffer);
+  /* TODO: Check for GL errors */
 }
 
 int st_compareGlyphSizes(
@@ -75,6 +76,7 @@ int st_compareSortAndSweepGlyph(
 }
 
 void st_GlyphAtlas_addASCIIGlyphsFromFace(
+    st_GlyphAtlas *self,
     FT_Face face)
 {
 #define PRINT_ASCII_FIRST 33
@@ -270,6 +272,14 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   }
   /* TODO: Output the atlas texture to a PNG file for debugging */
   /* TODO: Send our atlas texture to the GL */
+  glBindBuffer(GL_TEXTURE_BUFFER, self->textureBuffer);
+  glBufferData(
+      GL_TEXTURE_BUFFER,  /* target */
+      textureSize * textureSize,  /* size */
+      atlasTexture,  /* data */
+      GL_STATIC_DRAW  /* usage */
+      );
+  /* TODO: Check for GL errors */
   free(atlasTexture);
   free(pendingGlyphs);
 }
@@ -297,6 +307,6 @@ void st_GlyphAtlas_blitGlyph(
         &bitmap->buffer[row * abs(bitmap->pitch)],
         bitmap->width);
   }
-  st_printAntiAliasedGlyphDebug(bitmap);
-  fprintf(stderr, "\n");
+  st_printAntiAliasedGlyphDebug(bitmap);  /* XXX */
+  fprintf(stderr, "\n");  /* XXX */
 }
