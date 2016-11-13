@@ -203,6 +203,18 @@ void st_printGlyphDebug(const FT_Bitmap *bitmap) {
   }
 }
 
+void st_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap) {
+  /* Print out the bitmap as ascii text */
+  for (int row = 0; row < bitmap->rows; ++row) {
+    for (int column = 0; column < bitmap->width; ++column) {
+      int buffer_index = row * abs(bitmap->pitch) + column;
+      fprintf(stderr, "%c",
+          bitmap->buffer[buffer_index] == 0 ? '#' : ' ');
+    }
+    fprintf(stderr, "\n");
+  }
+}
+
 st_MonospaceGlyph *st_MonospaceFontFace_getGlyph(
     st_MonospaceFontFace *self,
     uint32_t ch)

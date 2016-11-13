@@ -44,6 +44,7 @@ st_MonospaceFontFace *st_Fonts_loadMonospace(
     int width, int height,
     const char *fontPath);
 void st_printGlyphDebug(const FT_Bitmap *bitmap);
+void st_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap);
 
 /*
 void st_GlyphAtlas_addGlyph(

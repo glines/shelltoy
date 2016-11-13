@@ -24,6 +24,7 @@
 #include <assert.h>
 
 #include "collisionDetection.h"
+#include "fonts.h"
 #include "glyphAtlas.h"
 #include "naiveCollisionDetection.h"
 
@@ -33,6 +34,7 @@
 void st_GlyphAtlas_blitGlyph(
     const st_GlyphAtlasEntry *glyph,
     const FT_Bitmap *bitmap,
+    int padding,
     uint8_t *atlasTexture,
     int textureSize);
 
@@ -88,6 +90,7 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   uint8_t *atlasTexture;
   size_t textureSize;
   FT_Error error;
+  const int padding = 2;
 
   pendingGlyphs = (st_GlyphAtlasEntry*)malloc(
       sizeof(st_GlyphAtlasEntry) * NUM_PRINT_ASCII);
@@ -131,9 +134,9 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
 #define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
     ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
     currentGlyph->bbox.w =
-      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.width);
+      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.width) + padding * 2;
     currentGlyph->bbox.h =
-      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.height);
+      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.height) + padding * 2;
     fprintf(stderr,
         "currentGlyph->bbox.w: %d\n"
         "currentGlyph->bbox.h: %d\n",
@@ -193,10 +196,17 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
                 &currentGlyph->bbox);
           if (collidingGlyph == NULL) {
             /* We found a suitable position for this glyph */
+            /*
             fprintf(stderr, "Placed glyph '%c' at: (%d, %d)\n",
                 (char)currentGlyph->ch,
                 currentGlyph->bbox.x,
                 currentGlyph->bbox.y);
+                */
+            fprintf(stderr, "%d, %d, %d, %d\n",
+                currentGlyph->bbox.x,
+                currentGlyph->bbox.y,
+                currentGlyph->bbox.x + currentGlyph->bbox.w,
+                currentGlyph->bbox.y + currentGlyph->bbox.h);
             st_NaiveCollisionDetection_addEntity(
                 &collisionDetection,
                 &currentGlyph->bbox,
@@ -220,6 +230,7 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   assert(done);
   /* Allocate memory for our atlas texture */
   atlasTexture = (uint8_t*)malloc(textureSize * textureSize);
+  memset(atlasTexture, 0, textureSize * textureSize);
   for (int i = 0; i < numPendingGlyphs; ++i) {
     currentGlyph = &pendingGlyphs[i];
     /* Render each glyph */
@@ -239,10 +250,13 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
           "Freetype encountered an error rendering the glyph for '%c'\n",
           (char)currentGlyph->ch);
     }
+    assert(face->glyph->bitmap.width < currentGlyph->bbox.w);
+    assert(face->glyph->bitmap.rows < currentGlyph->bbox.h);
     /* Blit the rendered glyph onto our texture in memory */
     st_GlyphAtlas_blitGlyph(
         currentGlyph,  /* glyph */
         &face->glyph->bitmap,  /* bitmap */
+        padding,  /* padding */
         atlasTexture,  /* atlasTexture */
         textureSize  /* textureSize */
         );
@@ -263,15 +277,26 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
 void st_GlyphAtlas_blitGlyph(
     const st_GlyphAtlasEntry *glyph,
     const FT_Bitmap *bitmap,
+    int padding,
     uint8_t *atlasTexture,
     int textureSize)
 {
+  int destIndex;
   /* Iterate over the rows in the bitmap and copy each row to the
    * atlas texture */
   for (int row = 0; row < bitmap->rows; ++row) {
+    destIndex = (glyph->bbox.y + row + padding) * textureSize + glyph->bbox.x + padding;
+#ifndef NDEBUG
+    for (int i = 0; i < bitmap->width; ++i) {
+      /* Make sure we don't blit over any existing glyphs */
+      assert(atlasTexture[destIndex + i] == 0);
+    }
+#endif
     memcpy(
-        &atlasTexture[(glyph->bbox.y + row) * textureSize + glyph->bbox.x],
+        &atlasTexture[destIndex],
         &bitmap->buffer[row * abs(bitmap->pitch)],
         bitmap->width);
   }
+  st_printAntiAliasedGlyphDebug(bitmap);
+  fprintf(stderr, "\n");
 }

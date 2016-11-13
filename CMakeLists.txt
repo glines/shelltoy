@@ -20,3 +20,9 @@ include_directories(SYSTEM
     )
 
 add_subdirectory("./src")
+
+find_package(Check)
+if(CHECK_FOUND)
+  include_directories(SYSTEM ${CHECK_INCLUDE_DIRS})
+  add_subdirectory("./tests")
+endif()

@@ -29,7 +29,7 @@ int st_BoundingBox_checkIntersection(
 {
   if (self->x >= other->x + other->w)
     return 0;
-  if (self->y >= other->y + other->w)
+  if (self->y >= other->y + other->h)
     return 0;
   if (self->x + self->w <= other->x)
     return 0;
