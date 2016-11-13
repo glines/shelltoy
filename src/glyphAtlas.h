@@ -31,11 +31,13 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+#include "boundingBox.h"
+
 #define ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE 256
 #define ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE 4096
 
 typedef struct st_GlyphAtlasEntry_ {
-  int x, y, w, h;
+  st_BoundingBox bbox;
   uint32_t ch;
 } st_GlyphAtlasEntry;
 

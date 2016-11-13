@@ -23,7 +23,9 @@
 
 #include <assert.h>
 
+#include "collisionDetection.h"
 #include "glyphAtlas.h"
+#include "naiveCollisionDetection.h"
 
 #define max(a, b) (a) < (b) ? (b) : (a);
 
@@ -38,8 +40,8 @@ int st_compareGlyphSizes(
     const st_GlyphAtlasEntry *b)
 {
   int size_a, size_b;
-  size_a = a->w * a->h;
-  size_b = b->w * b->h;
+  size_a = a->bbox.w * a->bbox.h;
+  size_b = b->bbox.w * b->bbox.h;
   if (size_a < size_b)
     return -1;
   if (size_a > size_b)
@@ -70,16 +72,16 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
 #define PRINT_ASCII_LAST 126
 #define NUM_PRINT_ASCII (PRINT_ASCII_LAST - PRINT_ASCII_FIRST + 1)
   int glyph_index;
-  st_GlyphAtlasEntry pendingGlyphs[NUM_PRINT_ASCII];
-  /* FIXME: The indirection caused by using pointers to the glyphs might be
-   * killing performance. We should profile the performance of the broad-phase
-   * collision detection to see if this is a bottleneck. */
-  st_SortAndSweepGlyph xSortedGlyphs[NUM_PRINT_ASCII],
-                           ySortedGlyphs[NUM_PRINT_ASCII];
-  st_GlyphAtlasEntry *currentGlyph;
+  st_GlyphAtlasEntry *pendingGlyphs;
+  st_NaiveCollisionDetection collisionDetection;
+  st_GlyphAtlasEntry *currentGlyph, *collidingGlyph;
   size_t numPendingGlyphs, numPlacedGlyphs;
   int maxGlyphWidth, maxGlyphHeight;
+  int done;
   FT_Error error;
+
+  pendingGlyphs = (st_GlyphAtlasEntry*)malloc(
+      sizeof(st_GlyphAtlasEntry) * NUM_PRINT_ASCII);
 
   /* Iterate over the printable ASCII characters and gather glyphs (without
    * rendering them) from this face */
@@ -119,17 +121,19 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
      * an integer value in pixels, rounding up */
 #define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
     ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
-    currentGlyph->w = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.width);
-    currentGlyph->h = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.height);
+    currentGlyph->bbox.w =
+      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.width);
+    currentGlyph->bbox.h =
+      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.height);
     fprintf(stderr,
-        "currentGlyph->w: %d\n"
-        "currentGlyph->h: %d\n",
-        currentGlyph->w,
-        currentGlyph->h);
+        "currentGlyph->bbox.w: %d\n"
+        "currentGlyph->bbox.h: %d\n",
+        currentGlyph->bbox.w,
+        currentGlyph->bbox.h);
     /* Calculate maximum glyph width and height to aid in broad-phase collision
      * detection later */
-    maxGlyphWidth = max(maxGlyphWidth, currentGlyph->w);
-    maxGlyphHeight = max(maxGlyphHeight, currentGlyph->h);
+    maxGlyphWidth = max(maxGlyphWidth, currentGlyph->bbox.w);
+    maxGlyphHeight = max(maxGlyphHeight, currentGlyph->bbox.h);
   }
   /* Sort our list of glyphs by glyph area in pixels */
   qsort(
@@ -138,72 +142,76 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
     sizeof(st_GlyphAtlasEntry),  /* size */
     (int(*)(const void *, const void *))st_compareGlyphSizes  /* comp */
     );
-  /* TODO: Place glyphs in the atlas texture using the heuristic described
-   * here: <http://gamedev.stackexchange.com/a/2839> */
+  /* We place glyphs in the atlas texture using the heuristic described here:
+   * <http://gamedev.stackexchange.com/a/2839> */
   /* Loop over the possible texture sizes, such that if a small texture will
    * not hold all of the glyphs we can try again with a larger texture */
+  done = 0;
   for (size_t size = ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE; 
-      size <= ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE;
+      size <= ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE && !done;
       size *= 2)
   {
-    /* The positions of the glyphs need to be (re-)initialized to a value that
-     * will not affect the broad-phase collision detection algorithm used */
-    numPlacedGlyphs = 0;
-    for (size_t i = 0; i < numPendingGlyphs; ++i) {
-      pendingGlyphs[i].x = INT_MIN;
-      pendingGlyphs[i].y = INT_MIN;
-    }
+    fprintf(stderr, "Growing atlas texture to %ldx%ld\n", size, size);
+    st_NaiveCollisionDetection_init(&collisionDetection);
     /* Position glyphs in the texture, starting with the largest glyphs */
-    for (size_t i = numPendingGlyphs - 1; i >= 0; --i) {
+    for (int i = numPendingGlyphs - 1; i >= 0; --i) {
       currentGlyph = &pendingGlyphs[i];
+      done = 0;
       /* Start from the first scanline, which is located at the bottom of the
        * texture */
-      for (size_t scanline = 0; scanline < size; ++scanline) {
+      for (size_t scanline = 0; (scanline < size) && !done; ++scanline) {
+        currentGlyph->bbox.y = scanline;
+        if (currentGlyph->bbox.y + currentGlyph->bbox.h >= size) {
+          /* The glyph reaches beyond the atlas; break out of this loop to grow
+           * the atlas texture */
+          break;
+        }
         /* Try positioning the glyph at each column. Columns are skipped as we
          * encounter glyphs occupying that space. */
-        for (size_t column = 0; column < size; ++column) {
-          /* TODO: Use a "sort and sweep" broad-phase collision detection
-           * algorithm to look for existing glyphs that conflict with the glyph
-           * we are currently placing */
-          /* TODO: Binary search for the leftmost column (x) position that
-           * might cause a collision in our broad-phase collision detection
-           * table */
-          size_t a, b, j;
-          a = 0; b = numPlacedGlyphs - 1;
-          while (a != b) {
-            j = (b - a) / 2 + a;
-            if (xSortedGlyphs[j].pos < column - maxGlyphWidth) {
-              a = j;
-            } else if (xSortedGlyphs[j].pos > column - maxGlyphWidth) {
-              b = j;
-            } else {
-              /* Linear search to the first instance of this column */
-              while (xSortedGlyphs[j - 1].pos == column - maxGlyphWidth)
-                j -= 1;
-              break;
-            }
+        for (size_t column = 0; (column < size) && !done; ++column) {
+          currentGlyph->bbox.x = column;
+          if (currentGlyph->bbox.x + currentGlyph->bbox.w >= size) {
+            /* The glyph reaches beyond the atlas; break out of this loop to go
+             * to the next scanline */
+            break;
           }
-          /* TODO: Conduct the sweep, keeping track of active regions */
-          for (; j < numPlacedGlyphs; ++j) {
-            if (xSortedGlyphs[j].isEnd) {
-              if (xSortedGlyphs[j].pos >= column) {
-                /* TODO: Add this glyph to the shortlist of possibly colliding
-                 * glyphs */
-              }
-            } else {
-              if (xSortedGlyphs[j].pos >= column
-                  && xSortedGlyphs[j].pos < column + currentGlyph->w)
-              {
-              }
-            }
+          /* TODO: Replace all of these NaiveCollisionDetection calls with
+           * virtual calls */
+          collidingGlyph = (st_GlyphAtlasEntry*)
+            st_NaiveCollisionDetection_checkCollision(
+                &collisionDetection,
+                &currentGlyph->bbox);
+          if (collidingGlyph == NULL) {
+            /* We found a suitable position for this glyph */
+            fprintf(stderr, "Placed glyph '%c' at: (%d, %d)\n",
+                (char)currentGlyph->ch,
+                currentGlyph->bbox.x,
+                currentGlyph->bbox.y);
+            st_NaiveCollisionDetection_addEntity(
+                &collisionDetection,
+                &currentGlyph->bbox,
+                (void*)currentGlyph);
+            done = 1;
           }
         }
       }
+      if (!done) {
+        /* We were unable to place this glyph in the atlas; break out of this
+         * loop to grow the atlas texture */
+        fprintf(stderr, "Could not place glyph '%c'\n",
+            (char)currentGlyph->ch);
+        break;
+      }
     }
+    /* FIXME: Without providing a "clear" method for NaiveCollisionDetection,
+     * this is not very efficient */
+    st_NaiveCollisionDetection_destroy(&collisionDetection);
   }
+  assert(done);
   /* TODO: Grow the atlas texture (virtually) and repeat placement algorithm if
    * needed */
   /* TODO: Allocate memory for an atlas texture */
   /* TODO: Blit all glyphs onto our texture in memory */
   /* TODO: Send our atlas texture to the GL */
+  free(pendingGlyphs);
 }

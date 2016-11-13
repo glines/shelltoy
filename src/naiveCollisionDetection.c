@@ -86,6 +86,8 @@ void st_NaiveCollisionDetection_addEntity(
   }
   /* Add to our list of entities */
   newEntity = &self->internal->entities[self->internal->numEntities++];
+  /* FIXME: It might be better (more useful) to store a pointer to the bounding
+   * box rather than copying its contents */
   memcpy(&newEntity->bbox, bbox, sizeof(*bbox));
   newEntity->data = data;
 }
