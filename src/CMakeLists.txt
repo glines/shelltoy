@@ -1,7 +1,10 @@
 add_executable(shelltoy
+    boundingBox.c
+    collisionDetection.c
     fonts.c
     glyphAtlas.c
     main.c
+    naiveCollisionDetection.c
     pty.c
     render.c
     terminal.c
