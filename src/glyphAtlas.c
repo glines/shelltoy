@@ -29,6 +29,13 @@
 
 #define max(a, b) (a) < (b) ? (b) : (a);
 
+/* Private method declarations */
+void st_GlyphAtlas_blitGlyph(
+    const st_GlyphAtlasEntry *glyph,
+    const FT_Bitmap *bitmap,
+    uint8_t *atlasTexture,
+    int textureSize);
+
 void st_GlyphAtlas_init(
     st_GlyphAtlas_ptr self)
 {
@@ -78,6 +85,8 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   size_t numPendingGlyphs, numPlacedGlyphs;
   int maxGlyphWidth, maxGlyphHeight;
   int done;
+  uint8_t *atlasTexture;
+  size_t textureSize;
   FT_Error error;
 
   pendingGlyphs = (st_GlyphAtlasEntry*)malloc(
@@ -147,11 +156,12 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   /* Loop over the possible texture sizes, such that if a small texture will
    * not hold all of the glyphs we can try again with a larger texture */
   done = 0;
-  for (size_t size = ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE; 
-      size <= ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE && !done;
-      size *= 2)
+  for (textureSize = ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE; 
+      textureSize <= ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE && !done;
+      textureSize *= 2)
   {
-    fprintf(stderr, "Growing atlas texture to %ldx%ld\n", size, size);
+    fprintf(stderr, "Growing atlas texture to %ldx%ld\n",
+        textureSize, textureSize);
     st_NaiveCollisionDetection_init(&collisionDetection);
     /* Position glyphs in the texture, starting with the largest glyphs */
     for (int i = numPendingGlyphs - 1; i >= 0; --i) {
@@ -159,18 +169,18 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
       done = 0;
       /* Start from the first scanline, which is located at the bottom of the
        * texture */
-      for (size_t scanline = 0; (scanline < size) && !done; ++scanline) {
+      for (size_t scanline = 0; (scanline < textureSize) && !done; ++scanline) {
         currentGlyph->bbox.y = scanline;
-        if (currentGlyph->bbox.y + currentGlyph->bbox.h >= size) {
+        if (currentGlyph->bbox.y + currentGlyph->bbox.h >= textureSize) {
           /* The glyph reaches beyond the atlas; break out of this loop to grow
            * the atlas texture */
           break;
         }
         /* Try positioning the glyph at each column. Columns are skipped as we
          * encounter glyphs occupying that space. */
-        for (size_t column = 0; (column < size) && !done; ++column) {
+        for (size_t column = 0; (column < textureSize) && !done; ++column) {
           currentGlyph->bbox.x = column;
-          if (currentGlyph->bbox.x + currentGlyph->bbox.w >= size) {
+          if (currentGlyph->bbox.x + currentGlyph->bbox.w >= textureSize) {
             /* The glyph reaches beyond the atlas; break out of this loop to go
              * to the next scanline */
             break;
@@ -208,10 +218,60 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
     st_NaiveCollisionDetection_destroy(&collisionDetection);
   }
   assert(done);
-  /* TODO: Grow the atlas texture (virtually) and repeat placement algorithm if
-   * needed */
-  /* TODO: Allocate memory for an atlas texture */
-  /* TODO: Blit all glyphs onto our texture in memory */
+  /* Allocate memory for our atlas texture */
+  atlasTexture = (uint8_t*)malloc(textureSize * textureSize);
+  for (int i = 0; i < numPendingGlyphs; ++i) {
+    currentGlyph = &pendingGlyphs[i];
+    /* Render each glyph */
+    glyph_index = FT_Get_Char_Index(face, currentGlyph->ch);
+    assert(glyph_index != 0);
+    error = FT_Load_Glyph(
+        face,  /* face */
+        glyph_index,  /* glyph_index */
+        FT_LOAD_DEFAULT  /* load_flags */
+        );
+    assert(error == FT_Err_Ok);
+    error = FT_Render_Glyph(
+        face->glyph,
+        FT_RENDER_MODE_NORMAL);
+    if (error != FT_Err_Ok) {
+      fprintf(stderr,
+          "Freetype encountered an error rendering the glyph for '%c'\n",
+          (char)currentGlyph->ch);
+    }
+    /* Blit the rendered glyph onto our texture in memory */
+    st_GlyphAtlas_blitGlyph(
+        currentGlyph,  /* glyph */
+        &face->glyph->bitmap,  /* bitmap */
+        atlasTexture,  /* atlasTexture */
+        textureSize  /* textureSize */
+        );
+  }
+  for (int i = textureSize; i >= 0; --i) {
+    for (int j = 0; j < textureSize / 8; ++j) {
+      fprintf(stderr, "%c",
+          atlasTexture[i * textureSize + j] == 0 ? '#' : ' ');
+    }
+    fprintf(stderr, "\n");
+  }
+  /* TODO: Output the atlas texture to a PNG file for debugging */
   /* TODO: Send our atlas texture to the GL */
+  free(atlasTexture);
   free(pendingGlyphs);
+}
+
+void st_GlyphAtlas_blitGlyph(
+    const st_GlyphAtlasEntry *glyph,
+    const FT_Bitmap *bitmap,
+    uint8_t *atlasTexture,
+    int textureSize)
+{
+  /* Iterate over the rows in the bitmap and copy each row to the
+   * atlas texture */
+  for (int row = 0; row < bitmap->rows; ++row) {
+    memcpy(
+        &atlasTexture[(glyph->bbox.y + row) * textureSize + glyph->bbox.x],
+        &bitmap->buffer[row * abs(bitmap->pitch)],
+        bitmap->width);
+  }
 }
