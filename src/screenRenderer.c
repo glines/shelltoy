@@ -28,6 +28,10 @@
 #include "screenRenderer.h"
 
 /* Private internal structures */
+typedef struct st_ScreenRenderer_QuadVertex_ {
+  float pos[2];
+} st_ScreenRenderer_QuadVertex;
+
 typedef struct st_ScreenRenderer_GlyphInstance_ {
   st_BoundingBox atlasPos;
   GLuint atlasSampler;
@@ -38,6 +42,7 @@ typedef struct st_ScreenRenderer_GlyphInstance_ {
 struct st_ScreenRenderer_Internal {
   st_ScreenRenderer_GlyphInstance *glyphs;
   size_t numGlyphs, sizeGlyphs;
+  GLuint quadVertexBuffer, quadIndexBuffer;
   GLuint glyphInstanceBuffer, glyphInstanceVAO;
   GLuint glyphShader;
 };
@@ -87,26 +92,90 @@ void st_ScreenRenderer_initShaders(
 void st_ScreenRenderer_initBuffers(
     st_ScreenRenderer *self)
 {
+  static const st_ScreenRenderer_QuadVertex quadVertices[] = {
+    { .pos = { 0.0f, 0.0f } },
+    { .pos = { 1.0f, 0.0f } },
+    { .pos = { 0.0f, 1.0f } },
+    { .pos = { 1.0f, 1.0f } },
+  };
+  static const int quadIndices[] = {
+    0, 1, 2,
+    3, 2, 1,
+  };
+
+  /* Initialize the quad buffers */
+  glGenBuffers(1, &self->internal->quadVertexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  glGenBuffers(1, &self->internal->quadIndexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  /* Send quad buffer data to the GL */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->quadVertexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  glBufferData(
+      GL_ARRAY_BUFFER,  /* target */
+      sizeof(quadVertices),  /* size */
+      quadVertices,  /* data */
+      GL_STATIC_DRAW  /* usage */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->internal->quadIndexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  glBufferData(
+      GL_ELEMENT_ARRAY_BUFFER,  /* target */
+      sizeof(quadIndices),  /* size */
+      quadIndices,  /* data */
+      GL_STATIC_DRAW  /* usage */
+      );
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Initialize the glyph instance buffer */
   glGenBuffers(1, &self->internal->glyphInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  fprintf(stderr, "initialized self->internal->glyphInstanceBuffer: %d\n",
+      self->internal->glyphInstanceBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
   FORCE_ASSERT_GL_ERROR();
 }
 
 void st_ScreenRenderer_initVAO(
     st_ScreenRenderer *self)
 {
-  GLuint glyphLocation;
+  GLuint vertPosLocation;
 
   glGenVertexArrays(1, &self->internal->glyphInstanceVAO);
   FORCE_ASSERT_GL_ERROR();
   glBindVertexArray(self->internal->glyphInstanceVAO);
   FORCE_ASSERT_GL_ERROR();
 
-  fprintf(stderr, "glyphShader: %d\n", self->internal->glyphShader);
-  glyphLocation = glGetAttribLocation(self->internal->glyphShader, "glyph");
+  /* Configure the vertex attributes from the quad buffer */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->quadVertexBuffer);
   FORCE_ASSERT_GL_ERROR();
-  glEnableVertexAttribArray(glyphLocation);
+  /* Configure vertPos */
+  vertPosLocation = glGetAttribLocation(
+      self->internal->glyphShader,
+      "vertPos");
   FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(vertPosLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      vertPosLocation,  /* index */
+      4,  /* size */
+      GL_FLOAT,  /* type */
+      GL_FALSE,  /* normalized */
+      sizeof(st_ScreenRenderer_QuadVertex),  /* stride */
+      ((st_ScreenRenderer_QuadVertex*)0)->pos  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the vertex attributes from the glyph instance buffer */
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  vertPosLocation = glGetAttribLocation(
+      self->internal->glyphShader,
+      "vertPos");
+  FORCE_ASSERT_GL_ERROR();
+
+  glBindVertexArray(0);
   FORCE_ASSERT_GL_ERROR();
 }
 
@@ -133,6 +202,8 @@ void st_ScreenRenderer_updateScreen(
       );
   /* Send the recently updated glyph instance buffer to the GL */
   /* TODO: Check for GL errors */
+  fprintf(stderr, "self->internal->glyphInstanceBuffer: %d\n",
+      self->internal->glyphInstanceBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
   ASSERT_GL_ERROR();
   glBufferData(
@@ -208,10 +279,10 @@ void st_ScreenRenderer_screenDrawCallback(
   memcpy(&self->internal->glyphs[self->internal->numGlyphs++], &glyphInstance,
       sizeof(st_ScreenRenderer_GlyphInstance));
 
-  fprintf(stderr, "Instanced glyph for character: '%c' at location (%d, %d)\n",
-      (char)(*ch),
-      posx,
-      posy);  /* XXX */
+//  fprintf(stderr, "Instanced glyph for character: '%c' at location (%d, %d)\n",
+//      (char)(*ch),
+//      posx,
+//      posy);  /* XXX */
 }
 
 void st_ScreenRenderer_draw(
@@ -222,4 +293,8 @@ void st_ScreenRenderer_draw(
   ASSERT_GL_ERROR();
 
   /* TODO: Set up the VAO for instanced rendering */
+  glBindVertexArray(self->internal->glyphInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
+  glBindVertexArray(0);
+  FORCE_ASSERT_GL_ERROR();
 }

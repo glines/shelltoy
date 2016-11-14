@@ -24,6 +24,7 @@
 #include <assert.h>
 
 #include "collisionDetection.h"
+#include "common/glError.h"
 #include "fonts.h"
 #include "glyphAtlas.h"
 #include "naiveCollisionDetection.h"
@@ -291,23 +292,30 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
         textureSize  /* textureSize */
         );
   }
-  for (int i = textureSize; i >= 0; --i) {
-    for (int j = 0; j < textureSize / 8; ++j) {
-      fprintf(stderr, "%c",
-          atlasTexture[i * textureSize + j] == 0 ? '#' : ' ');
-    }
-    fprintf(stderr, "\n");
-  }
+  /* XXX */
+//  for (int i = textureSize; i >= 0; --i) {
+//    for (int j = 0; j < textureSize / 8; ++j) {
+//      fprintf(stderr, "%c",
+//          atlasTexture[i * textureSize + j] == 0 ? '#' : ' ');
+//    }
+//    fprintf(stderr, "\n");
+//  }
   /* TODO: Output the atlas texture to a PNG file for debugging */
-  /* TODO: Send our atlas texture to the GL */
+  /* Send our atlas texture to the GL */
   glBindBuffer(GL_TEXTURE_BUFFER, self->textureBuffer);
-  glBufferData(
-      GL_TEXTURE_BUFFER,  /* target */
-      textureSize * textureSize,  /* size */
-      atlasTexture,  /* data */
-      GL_STATIC_DRAW  /* usage */
+  FORCE_ASSERT_GL_ERROR();
+  glTexImage2D(
+      GL_TEXTURE_2D,  /* target */
+      0,  /* level */
+      GL_RED,  /* internalFormat */
+      textureSize,  /* width */
+      textureSize,  /* height */
+      0,  /* border */
+      GL_RED,  /* format */
+      GL_UNSIGNED_BYTE,  /* type */
+      atlasTexture  /* data */
       );
-  /* TODO: Check for GL errors */
+  FORCE_ASSERT_GL_ERROR();
   free(atlasTexture);
   free(pendingGlyphs);
 }
@@ -344,6 +352,6 @@ void st_GlyphAtlas_blitGlyph(
         &bitmap->buffer[row * abs(bitmap->pitch)],
         bitmap->width);
   }
-  st_printAntiAliasedGlyphDebug(bitmap);  /* XXX */
-  fprintf(stderr, "\n");  /* XXX */
+//  st_printAntiAliasedGlyphDebug(bitmap);  /* XXX */
+//  fprintf(stderr, "\n");  /* XXX */
 }
