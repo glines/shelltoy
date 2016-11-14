@@ -81,6 +81,8 @@ void st_ScreenRenderer_init(
   st_ScreenRenderer_initVAO(self);
   /* Initialize the glyph atlas */
   st_GlyphAtlas_init(&self->atlas);
+  /* FIXME: We need to provide the atlas with glyphs at this point */
+//  st_GlyphAtlas_addASCIIGlyphsFromFace(&atlas, face);
 }
 
 void st_ScreenRenderer_initShaders(
@@ -321,7 +323,7 @@ void st_ScreenRenderer_screenDrawCallback(
   if (error) {
     /* A glyph for the given character could not be found in the atlas */
     /* TODO: Try to add a glyph for this character */
-    fprintf(stderr, "Could not find glyph for '0x%08x'", *ch);
+    fprintf(stderr, "Could not find glyph for '0x%08x'\n", *ch);
     return;
   }
 

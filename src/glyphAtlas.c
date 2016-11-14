@@ -233,11 +233,13 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
                 currentGlyph->bbox.x,
                 currentGlyph->bbox.y);
                 */
+            /*
             fprintf(stderr, "%d, %d, %d, %d\n",
                 currentGlyph->bbox.x,
                 currentGlyph->bbox.y,
                 currentGlyph->bbox.x + currentGlyph->bbox.w,
                 currentGlyph->bbox.y + currentGlyph->bbox.h);
+            */
             st_NaiveCollisionDetection_addEntity(
                 &collisionDetection,
                 &currentGlyph->bbox,
@@ -316,6 +318,32 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
       atlasTexture  /* data */
       );
   FORCE_ASSERT_GL_ERROR();
+
+  if (self->internal->numGlyphs + numPendingGlyphs > self->internal->sizeGlyphs) {
+    st_GlyphAtlasEntry *newGlyphs;
+    /* Grow the array of glyphs to hold the new glyphs */
+    /* FIXME: This could probably be moved to an st_GlyphAtlas_growGlyphs()
+     * private method */
+    do {
+      self->internal->sizeGlyphs *= 2;
+    } while (
+        self->internal->numGlyphs + numPendingGlyphs > self->internal->sizeGlyphs);
+    newGlyphs = (st_GlyphAtlasEntry *)malloc(
+        sizeof(st_GlyphAtlasEntry) * self->internal->sizeGlyphs);
+    memcpy(newGlyphs, self->internal->glyphs,
+        sizeof(st_GlyphAtlasEntry) * self->internal->numGlyphs);
+    free(self->internal->glyphs);
+    self->internal->glyphs = newGlyphs;
+  }
+
+  /* Copy the pending glyphs to the array of glyphs stored in our internal data
+   * structure */
+  memcpy(
+      &self->internal->glyphs[self->internal->numGlyphs],
+      pendingGlyphs,
+      sizeof(st_GlyphAtlasEntry) * numPendingGlyphs);
+  self->internal->numGlyphs += numPendingGlyphs;
+
   free(atlasTexture);
   free(pendingGlyphs);
 }
@@ -326,7 +354,36 @@ int st_GlyphAtlas_getGlyph(
     st_BoundingBox *bbox,
     int *atlasTextureIndex)
 {
-  /* TODO: Binary search for the glyph corresponding to the given character */
+  size_t a, b, i;
+  st_GlyphAtlasEntry *currentGlyph;
+  fprintf(stderr,
+      "self->internal->numGlyphs: %ld\n",
+      self->internal->numGlyphs);
+  if (self->internal->numGlyphs == 0)
+    return 1;
+  /* Binary search for the glyph corresponding to the given character */
+  /* FIXME: Check the loop conditions and write some unit tests for this thing;
+   * this binary search is probably broken */
+  a = 0; b = self->internal->numGlyphs;
+  while (a != b) {
+    i = (b - a) / 2 + a;
+    currentGlyph = &self->internal->glyphs[i];
+    if (character < currentGlyph->ch) {
+      b = i;
+    } else if (character > currentGlyph->ch) {
+      a = i;
+    } else {
+      /* character == currentGlyph->ch */
+      break;
+    }
+  }
+  if (currentGlyph->ch != character)
+    return 1;
+  memcpy(bbox, &currentGlyph->bbox, sizeof(*bbox));
+  /* FIXME: Set the atlas texture index once we start using more than one atlas
+   * texture */
+  *atlasTextureIndex = 0;
+  return 0;
 }
 
 void st_GlyphAtlas_blitGlyph(
