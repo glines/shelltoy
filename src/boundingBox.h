@@ -25,7 +25,14 @@
 #define ST_BOUNDING_BOX_H_
 
 typedef struct st_BoundingBox_ {
-  int x, y, w, h;
+  union {
+    struct {
+      int pos[2], dim[2];
+    };
+    struct {
+      int x, y, w, h;
+    };
+  };
 } st_BoundingBox;
 
 int st_BoundingBox_checkIntersection(

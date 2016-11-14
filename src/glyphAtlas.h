@@ -102,7 +102,7 @@ int st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
     st_BoundingBox *bbox,
-    GLuint *textureBuffer);
+    int *atlasTextureIndex);
 
 
 #endif
