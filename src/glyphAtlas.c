@@ -104,80 +104,63 @@ int st_compareSortAndSweepGlyph(
   return 0;
 }
 
-void st_GlyphAtlas_addASCIIGlyphsFromFace(
+void st_GlyphAtlas_renderASCIIGlyphs(
     st_GlyphAtlas *self,
-    FT_Face face)
+    st_GlyphRenderer *glyphRenderer)
 {
 #define PRINT_ASCII_FIRST 33
 #define PRINT_ASCII_LAST 126
 #define NUM_PRINT_ASCII (PRINT_ASCII_LAST - PRINT_ASCII_FIRST + 1)
-  int glyph_index;
   st_GlyphAtlasEntry *pendingGlyphs;
+  /* TODO: The collision detection structure should be stored inside of the
+   * st_GlyphAtlas internal data structure, so that subsequent collision
+   * detection can be performed more cheaply. */
   st_NaiveCollisionDetection collisionDetection;
   st_GlyphAtlasEntry *currentGlyph, *collidingGlyph;
+  FT_Bitmap *bitmap;
   size_t numPendingGlyphs, numPlacedGlyphs;
-  int maxGlyphWidth, maxGlyphHeight;
   int done;
   uint8_t *atlasTexture;
   size_t textureSize;
-  FT_Error error;
   const int padding = 2;
+  int error;
 
   pendingGlyphs = (st_GlyphAtlasEntry*)malloc(
       sizeof(st_GlyphAtlasEntry) * NUM_PRINT_ASCII);
 
   /* Iterate over the printable ASCII characters and gather glyphs (without
    * rendering them) from this face */
-  maxGlyphWidth = 0;
-  maxGlyphHeight = 0;
   numPendingGlyphs = 0;
   for (uint32_t c = PRINT_ASCII_FIRST;
       c <= PRINT_ASCII_LAST;
       ++c)
   {
-    /* Check for a corresponding glyph provided by this face */
-    glyph_index = FT_Get_Char_Index(face, c);
-    if (!glyph_index)
-      continue;
-    /* Load the glyph */
-    error = FT_Load_Glyph(
-        face,  /* face */
-        glyph_index,  /* glyph_index */
-        FT_LOAD_DEFAULT  /* load_flags */
-        );
-    if (error != FT_Err_Ok) {
-      fprintf(stderr,
-          "Freetype error loading the glyph for ASCII character '%c'\n",
-          (char)c);
-    }
-    /* Add this glyph to our list of glyphs */
     assert(numPendingGlyphs < NUM_PRINT_ASCII);
-    currentGlyph = &pendingGlyphs[numPendingGlyphs++];
+    currentGlyph = &pendingGlyphs[numPendingGlyphs];
+    /* Check for the glyph and get its dimensions */
+    /* FIXME: I don't really like that the
+     * st_GlyphRenderer_getGlyphDimensions() method does two things, but it
+     * does avoid a few FreeType calls */
+    error = st_GlyphRenderer_getGlyphDimensions(glyphRenderer, c,
+        &currentGlyph->bbox.w, &currentGlyph->bbox.h);
+    if (error)
+      continue;  /* This glyph is not being provided */
+    /* Add this glyph to our list of glyphs */
+    numPendingGlyphs += 1;
     currentGlyph->ch = c;
+    /* Add padding to the glyph size */
+    currentGlyph->bbox.w += padding * 2;
+    currentGlyph->bbox.h += padding * 2;
     fprintf(stderr,
-        "face->glyph->metrics.width: %ld\n"
-        "face->glyph->metrics.height: %ld\n",
-        face->glyph->metrics.width,
-        face->glyph->metrics.height);
-    /* Calculate the pixel dimensions of the (soon to be rendered) glyph */
-    /* We convert the fixed-point 26.6 format (a.k.a. 1/64th pixel format) to
-     * an integer value in pixels, rounding up */
-#define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
-    ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
-    currentGlyph->bbox.w =
-      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.width) + padding * 2;
-    currentGlyph->bbox.h =
-      TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.height) + padding * 2;
-    fprintf(stderr,
-        "currentGlyph->bbox.w: %d\n"
-        "currentGlyph->bbox.h: %d\n",
+        "currentGlyph: '%c'\n"
+        "    currentGlyph->bbox.w: %d\n"
+        "    currentGlyph->bbox.h: %d\n",
+        (char)currentGlyph->ch,
         currentGlyph->bbox.w,
         currentGlyph->bbox.h);
-    /* Calculate maximum glyph width and height to aid in broad-phase collision
-     * detection later */
-    maxGlyphWidth = max(maxGlyphWidth, currentGlyph->bbox.w);
-    maxGlyphHeight = max(maxGlyphHeight, currentGlyph->bbox.h);
   }
+  /* FIXME: I think there's a bug here in case we ever load a font with no
+   * glyphs. The atlas seems to grow out of control. */
   /* Sort our list of glyphs by glyph area in pixels */
   qsort(
     pendingGlyphs,  /* ptr */
@@ -245,6 +228,9 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
                 &currentGlyph->bbox,
                 (void*)currentGlyph);
             done = 1;
+          } else {
+            /* TODO: Skip the columns that collidingGlyph occupies to improve
+             * performance here */
           }
         }
       }
@@ -267,41 +253,28 @@ void st_GlyphAtlas_addASCIIGlyphsFromFace(
   for (int i = 0; i < numPendingGlyphs; ++i) {
     currentGlyph = &pendingGlyphs[i];
     /* Render each glyph */
-    glyph_index = FT_Get_Char_Index(face, currentGlyph->ch);
-    assert(glyph_index != 0);
-    error = FT_Load_Glyph(
-        face,  /* face */
-        glyph_index,  /* glyph_index */
-        FT_LOAD_DEFAULT  /* load_flags */
-        );
-    assert(error == FT_Err_Ok);
-    error = FT_Render_Glyph(
-        face->glyph,
-        FT_RENDER_MODE_NORMAL);
-    if (error != FT_Err_Ok) {
-      fprintf(stderr,
-          "Freetype encountered an error rendering the glyph for '%c'\n",
-          (char)currentGlyph->ch);
-    }
-    assert(face->glyph->bitmap.width < currentGlyph->bbox.w);
-    assert(face->glyph->bitmap.rows < currentGlyph->bbox.h);
+    bitmap = st_GlyphRenderer_renderGlyph(
+        glyphRenderer,
+        currentGlyph->ch);
+    assert(bitmap->width < currentGlyph->bbox.w);
+    assert(bitmap->rows < currentGlyph->bbox.h);
     /* Blit the rendered glyph onto our texture in memory */
     st_GlyphAtlas_blitGlyph(
         currentGlyph,  /* glyph */
-        &face->glyph->bitmap,  /* bitmap */
+        bitmap,  /* bitmap */
         padding,  /* padding */
         atlasTexture,  /* atlasTexture */
         textureSize  /* textureSize */
         );
   }
   /* XXX */
-//  for (int i = textureSize; i >= 0; --i) {
-//    for (int j = 0; j < textureSize / 8; ++j) {
-//      fprintf(stderr, "%c",
-//          atlasTexture[i * textureSize + j] == 0 ? '#' : ' ');
-//    }
-//    fprintf(stderr, "\n");
-//  }
+  for (int i = textureSize; i >= 0; --i) {
+    for (int j = 0; j < textureSize / 8; ++j) {
+      fprintf(stderr, "%c",
+          atlasTexture[i * textureSize + j] == 0 ? '#' : ' ');
+    }
+    fprintf(stderr, "\n");
+  }
   /* TODO: Output the atlas texture to a PNG file for debugging */
   /* Send our atlas texture to the GL */
   glBindBuffer(GL_TEXTURE_BUFFER, self->textureBuffer);

@@ -79,10 +79,12 @@ void st_ScreenRenderer_init(
   st_ScreenRenderer_initShaders(self);
   st_ScreenRenderer_initBuffers(self);
   st_ScreenRenderer_initVAO(self);
+  /* Initialize the glyph renderer */
+  st_GlyphRenderer_init(&self->glyphRenderer);
   /* Initialize the glyph atlas */
   st_GlyphAtlas_init(&self->atlas);
-  /* FIXME: We need to provide the atlas with glyphs at this point */
-//  st_GlyphAtlas_addASCIIGlyphsFromFace(&atlas, face);
+  /* Render glyphs to the atlas representative of ASCII terminals */
+  st_GlyphAtlas_renderASCIIGlyphs(&self->atlas, &self->glyphRenderer);
 }
 
 void st_ScreenRenderer_initShaders(
@@ -257,11 +259,13 @@ void st_ScreenRenderer_initVAO(
 void st_ScreenRenderer_destroy(
     st_ScreenRenderer *self)
 {
+  /* Destroy the glyph atlas */
+  st_GlyphAtlas_destroy(&self->atlas);
+  /* Destroy the glyph renderer */
+  st_GlyphRenderer_destroy(&self->glyphRenderer);
   /* Free internal data structures */
   free(self->internal->glyphs);
   free(self->internal);
-  /* Destroy the glyph atlas */
-  st_GlyphAtlas_destroy(&self->atlas);
 }
 
 void st_ScreenRenderer_updateScreen(

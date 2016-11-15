@@ -4,7 +4,7 @@
 
 #include "fonts.h"
 
-typedef struct {
+typedef struct st_Fonts_ {
   st_MonospaceFontFace *monospaceFonts;
   size_t numMonospaceFonts, sizeMonospaceFonts;
   FT_Library ft;
@@ -38,6 +38,12 @@ void st_Fonts_initFreetype() {
     fprintf(stderr, "Error initializing FreeType 2 library\n");
     /* TODO: Print out an error string for this specific error */
   }
+}
+
+FT_Library st_Fonts_getFreeTypeInstance() {
+  st_Fonts *self = st_Fonts_instance();
+
+  return self->ft;
 }
 
 void st_Fonts_calculateFacePixelBBox(

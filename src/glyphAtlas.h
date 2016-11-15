@@ -32,6 +32,7 @@
 #include <stddef.h>
 
 #include "boundingBox.h"
+#include "glyphRenderer.h"
 
 #define ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE 256
 #define ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE 4096
@@ -91,9 +92,9 @@ void st_GlyphAtlas_destroy(
  * Since adding glyphs might cause the atlas to allocate new texture buffers in
  * the GL, this method must be called after the GL has been initialized.
  */
-void st_GlyphAtlas_addASCIIGlyphsFromFace(
+void st_GlyphAtlas_renderASCIIGlyphs(
     st_GlyphAtlas *self,
-    FT_Face face);
+    st_GlyphRenderer *glyphRenderer);
 
 void st_GlyphAtlas_addGlyph(
     /* TODO */);

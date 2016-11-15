@@ -21,36 +21,32 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_SCREEN_RENDERER_H_
-#define ST_SCREEN_RENDERER_H_
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
-#include <libtsm.h>
+#include <inttypes.h>
 
-#include "glyphAtlas.h"
+struct st_GlyphRenderer_Internal;
 
-#define ST_SCREEN_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
+/** A wrapper around the glyph rendering faciliies of FreeType. This class
+ * combines font faces from multiple sources, including boldface and asian
+ * fonts, and renders any given character with the appropriate font face.
+ */
+typedef struct st_GlyphRenderer_ {
+  struct st_GlyphRenderer_Internal *internal;
+} st_GlyphRenderer;
 
-struct st_ScreenRenderer_Internal;
+void st_GlyphRenderer_init(
+    st_GlyphRenderer *self);
 
-typedef struct st_ScreenRenderer_ {
-  /* FIXME: Probably move atlas and glyphRenderer to an internal data
-   * structure */
-  st_GlyphAtlas atlas;
-  st_GlyphRenderer glyphRenderer;
+void st_GlyphRenderer_destroy(
+    st_GlyphRenderer *self);
 
-  struct st_ScreenRenderer_Internal *internal;
-} st_ScreenRenderer;
+int st_GlyphRenderer_getGlyphDimensions(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int *width, int *height);
 
-void st_ScreenRenderer_init(
-    st_ScreenRenderer *self);
-
-void st_ScreenRenderer_destroy(
-    st_ScreenRenderer *self);
-
-void st_ScreenRenderer_updateScreen(
-    st_ScreenRenderer *self,
-    struct tsm_screen *screen);
-void st_ScreenRenderer_draw(
-    const st_ScreenRenderer *self);
-
-#endif
+FT_Bitmap *st_GlyphRenderer_renderGlyph(
+    st_GlyphRenderer *self,
+    uint32_t character);

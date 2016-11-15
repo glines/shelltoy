@@ -46,41 +46,18 @@ int main(int argc, char** argv) {
   FT_Face face;  /* XXX */;
   FT_Library ft;  /* XXX */
   FT_Error error;  /* XXX */
-
-  st_initSDL();
-
   st_Terminal terminal;
 
+  st_initSDL();
   st_Fonts_init();
-//  st_Render_init();
 
-  st_Fonts_loadMonospace(
-      8,  /* width */
-      15,  /* height */
-      FONT_FACE_PATH  /* fontPath */
-      );
+//  st_Fonts_loadMonospace(
+//      8,  /* width */
+//      15,  /* height */
+//      FONT_FACE_PATH  /* fontPath */
+//      );
 
   st_Terminal_init(&terminal);
-
-  /* XXX: Test the glyph atlas */
-  FT_Init_FreeType(&ft);
-  error = FT_New_Face(
-      ft,  /* library */
-      FONT_FACE_PATH,  /* filepathname */
-      0,  /* face_index */
-      &face  /* aface */
-      );
-  assert(error == FT_Err_Ok);
-  error = FT_Set_Char_Size(
-      face,  /* face */
-      0,  /* char_width */
-      16*64,  /* char_height */
-      300,  /* horz_resolution */
-      300  /* vert_resolution */
-      );
-  assert(error == FT_Err_Ok);
-  st_GlyphAtlas_init(&atlas);
-  st_GlyphAtlas_addASCIIGlyphsFromFace(&atlas, face);
 
   while (1) {
     st_dispatchEvents();
