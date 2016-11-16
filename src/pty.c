@@ -14,10 +14,6 @@
 
 #include "pty.h"
 
-/* Private methods */
-void st_PTY_startChildProcess(st_PTY *self);
-void st_PTY_joinChildProcess(st_PTY *self);
-
 int st_PTY_eventType() {
   static int eventType = -1;
 

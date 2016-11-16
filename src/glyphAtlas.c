@@ -88,18 +88,13 @@ int st_compareGlyphSizes(
   return 0;
 }
 
-typedef struct st_SortAndSweepGlyph_ {
-  st_GlyphAtlasEntry *glyph;
-  int pos, isEnd;
-} st_SortAndSweepGlyph;
-
-int st_compareSortAndSweepGlyph(
-    const st_SortAndSweepGlyph *a,
-    const st_SortAndSweepGlyph *b)
+int st_compareGlyphCharacters(
+    const st_GlyphAtlasEntry *a,
+    const st_GlyphAtlasEntry *b)
 {
-  if (a->pos < b->pos)
+  if (a->ch < b->ch)
     return -1;
-  if (a->pos > b->pos)
+  if (a->ch > b->ch)
     return 1;
   return 0;
 }
@@ -151,6 +146,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     /* Add padding to the glyph size */
     currentGlyph->bbox.w += padding * 2;
     currentGlyph->bbox.h += padding * 2;
+    /*
     fprintf(stderr,
         "currentGlyph: '%c'\n"
         "    currentGlyph->bbox.w: %d\n"
@@ -158,6 +154,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
         (char)currentGlyph->ch,
         currentGlyph->bbox.w,
         currentGlyph->bbox.h);
+        */
   }
   /* FIXME: I think there's a bug here in case we ever load a font with no
    * glyphs. The atlas seems to grow out of control. */
@@ -268,6 +265,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
         );
   }
   /* XXX */
+  /*
   for (int i = textureSize; i >= 0; --i) {
     for (int j = 0; j < textureSize / 8; ++j) {
       fprintf(stderr, "%c",
@@ -275,6 +273,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     }
     fprintf(stderr, "\n");
   }
+  */
   /* TODO: Output the atlas texture to a PNG file for debugging */
   /* Send our atlas texture to the GL */
   glBindTexture(GL_TEXTURE_2D, self->internal->textureBuffer);
@@ -303,7 +302,6 @@ void st_GlyphAtlas_renderASCIIGlyphs(
       GL_NEAREST  /* param */
       );
   FORCE_ASSERT_GL_ERROR();
-  fprintf(stderr, "configured texture: %d\n", self->internal->textureBuffer);
 
   if (self->internal->numGlyphs + numPendingGlyphs > self->internal->sizeGlyphs) {
     st_GlyphAtlasEntry *newGlyphs;
@@ -329,6 +327,13 @@ void st_GlyphAtlas_renderASCIIGlyphs(
       pendingGlyphs,
       sizeof(st_GlyphAtlasEntry) * numPendingGlyphs);
   self->internal->numGlyphs += numPendingGlyphs;
+  /* Sort the glyphs by character so that they can be searched */
+  qsort(
+    self->internal->glyphs,  /* ptr */
+    self->internal->numGlyphs,  /* count */
+    sizeof(st_GlyphAtlasEntry),  /* size */
+    (int(*)(const void *, const void *))st_compareGlyphCharacters  /* comp */
+    );
 
   free(atlasTexture);
   free(pendingGlyphs);
@@ -340,24 +345,22 @@ int st_GlyphAtlas_getGlyph(
     st_BoundingBox *bbox,
     int *atlasTextureIndex)
 {
-  size_t a, b, i;
+  int a, b, i;
   st_GlyphAtlasEntry *currentGlyph;
-  fprintf(stderr,
-      "self->internal->numGlyphs: %ld\n",
-      self->internal->numGlyphs);
+  assert(self->internal->numGlyphs > 0);  /* XXX */
   if (self->internal->numGlyphs == 0)
     return 1;
   /* Binary search for the glyph corresponding to the given character */
   /* FIXME: Check the loop conditions and write some unit tests for this thing;
    * this binary search is probably broken */
   a = 0; b = self->internal->numGlyphs;
-  while (a != b) {
+  while (a < b) {
     i = (b - a) / 2 + a;
     currentGlyph = &self->internal->glyphs[i];
     if (character < currentGlyph->ch) {
       b = i;
     } else if (character > currentGlyph->ch) {
-      a = i;
+      a = i + 1;
     } else {
       /* character == currentGlyph->ch */
       break;

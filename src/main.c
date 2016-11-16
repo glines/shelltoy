@@ -42,26 +42,14 @@ const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu
 /* TODO: We might even want to read a small font into memory */
 
 int main(int argc, char** argv) {
-  st_GlyphAtlas atlas;  /* XXX */
-  FT_Face face;  /* XXX */;
-  FT_Library ft;  /* XXX */
-  FT_Error error;  /* XXX */
   st_Terminal terminal;
 
   st_initSDL();
   st_Fonts_init();
 
-//  st_Fonts_loadMonospace(
-//      8,  /* width */
-//      15,  /* height */
-//      FONT_FACE_PATH  /* fontPath */
-//      );
-
   st_Terminal_init(&terminal);
 
   fprintf(stderr, "Made it past terminal init\n");  /* XXX */
-
-  st_Terminal_draw(&terminal);  /* XXX */
 
   while (1) {
     st_dispatchEvents();
