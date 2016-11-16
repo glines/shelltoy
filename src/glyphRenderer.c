@@ -22,10 +22,19 @@
  */
 
 #include <assert.h>
+#include <math.h>
 
 #include "fonts.h"
 
 #include "glyphRenderer.h"
+
+/* Private methods */
+void st_GlyphRenderer_updateCellSize(
+    st_GlyphRenderer *self);
+
+void st_GlyphRenderer_calculateFacePixelBBox(
+    const FT_Face face,
+    int *width, int *height);
 
 struct st_GlyphRenderer_Internal {
   /* TODO: Support multiple font faces in this structure */
@@ -33,6 +42,7 @@ struct st_GlyphRenderer_Internal {
    * FT_Face objects whenever possible. It might be best not to keep these
    * objects around, but I don't know. */
   FT_Face face;
+  int cellSize[2];
 };
 
 void st_GlyphRenderer_init(
@@ -84,6 +94,39 @@ void st_GlyphRenderer_init(
         fontPath);
     /* TODO: Fail gracefully? */
   }
+  st_GlyphRenderer_updateCellSize(self);
+}
+
+void st_GlyphRenderer_updateCellSize(
+    st_GlyphRenderer *self)
+{
+  /* Calculate the cell size for the current base font */
+  st_GlyphRenderer_calculateFacePixelBBox(
+      self->internal->face,  /* face */
+      &self->internal->cellSize[0],  /* width */
+      &self->internal->cellSize[1]  /* height */
+      );
+}
+
+/** Each FreeType font face defines a "bounding box" that encloses all glyphs.
+ * The atlas does not use this information, since it packs glyphs as tightly as
+ * possible, but we do need to compute bounding box information for the
+ * terminal. */
+void st_GlyphRenderer_calculateFacePixelBBox(
+    const FT_Face face,
+    int *width, int *height)
+{
+  double x_pixels_per_unit, y_pixels_per_unit, units_per_em;
+  /* Compute a scaling factor to convert from font units to pixels, as
+   * described in
+   * <https://www.freetype.org/freetype2/docs/tutorial/step2.html> */
+  units_per_em = (double)face->units_per_EM;
+  x_pixels_per_unit = face->size->metrics.x_ppem / units_per_em;
+  y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
+  *width = (int)ceil(
+      (double)(face->bbox.xMax - face->bbox.xMin) * x_pixels_per_unit);
+  *height = (int)ceil(
+      (double)(face->bbox.yMax - face->bbox.yMin) * y_pixels_per_unit);
 }
 
 void st_GlyphRenderer_destroy(
@@ -92,6 +135,14 @@ void st_GlyphRenderer_destroy(
   /* Free internal data structures */
   FT_Done_Face(self->internal->face);
   free(self->internal);
+}
+
+void st_GlyphRenderer_getCellSize(
+    const st_GlyphRenderer *self,
+    int *width, int *height)
+{
+  *width = self->internal->cellSize[0];
+  *height = self->internal->cellSize[1];
 }
 
 int st_GlyphRenderer_getGlyphDimensions(

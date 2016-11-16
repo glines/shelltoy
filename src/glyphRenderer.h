@@ -42,6 +42,10 @@ void st_GlyphRenderer_init(
 void st_GlyphRenderer_destroy(
     st_GlyphRenderer *self);
 
+void st_GlyphRenderer_getCellSize(
+    const st_GlyphRenderer *self,
+    int *width, int *height);
+
 int st_GlyphRenderer_getGlyphDimensions(
     st_GlyphRenderer *self,
     uint32_t character,

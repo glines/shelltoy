@@ -14,6 +14,9 @@ in int atlasIndex;  /* Index of the atlas texture to use for the glyph
 in vec2 atlasPos;  /* The position of the glyph in the atlas texture. This
                       position is the bottom-left corner of the glyph in pixel
                       coordinates. */
+in vec2 glyphSize;  /* The dimension of the glyph as it appears in the atlas,
+                       including padding. Most glyphs are slightly smaller than
+                       the terminal cell. */
 in vec2 offset;  /* The offset of the glyph within its cell. As they are stored
                     in the atlas, glyphs do not occupy an entire cell. Instead,
                     this offset must be applied to the glyph from the
@@ -28,26 +31,38 @@ out vec2 atlasTexCoord;  /* The coordinates at which to access the atlas
 flat out int fragAtlasIndex;  /* The index of the atlas texture sampler are
                                  also passed to the fragment shader. */
 
-uniform vec2 cellSize;  /* The pixel size of each cell in the terminal. This is
-                           used to calculate the position of this vertex on the
-                           terminal screen. */
+uniform ivec2 cellSize;  /* The pixel size of each cell in the terminal. This
+                            is used to calculate the position of this vertex on
+                            the terminal screen. */
 /* FIXME: I don't think we need gridSize for anything right now. It might be
  * useful for effects though. */
 uniform ivec2 gridSize;  /* The number of cells that make up the terminal screen. */
+uniform ivec2 viewportSize;  /* The dimensions of the viewport in pixels */
+uniform int atlasSize;  /* The dimensions of the atlas texture. Since the atlas
+                           texture is always a square, only one value is
+                           given. */
 
 
 /* TODO: Need to pass in an array of integers for the atlas size */
 
 void main(void) {
-  /* TODO: Transform the vertices in our quad to the glyph position */
-  /* NOTE: The quad covers the rectangle defined by (0,0) and (1,1) */
-  vec2 pos = cell * cellSize + vertPos * cellSize + offset;
+  /* FIXME: For now, this shader assumes cells start at the bottom left, when
+   * in fact they start at the top left */
 
-  /* TODO: Compute the atlas tex coord properly */
-  atlasTexCoord = atlasPos;
+  /* We compute the position of this vertex in screen space, which is expressed
+   * in pixel coordinates */
+  /* NOTE: The vertPos that comes into the shader is for a quad defined by the
+   * points (0, 0) and (1, 1). */
+  vec2 screenPos = cell * cellSize + vertPos * cellSize + offset;
+  /* Now we compute the position of this vertex in normalized device
+   * coordinates, which range from -1 to +1 */
+  vec2 normalizedPos = 2.0 * (screenPos / viewportSize) - vec2(1.0);
+
+  /* Compute the texture coordinates of our glyph in the atlas */
+  atlasTexCoord = (atlasPos + vertPos * glyphSize) / ivec2(atlasSize);
 
   /* Pass some parameters as non-interpolated input to the fragment shader */
   fragAtlasIndex = atlasIndex;
 
-  gl_Position = vec4(pos, 0.0, 1.0);
+  gl_Position = vec4(normalizedPos, 0.0, 1.0);
 }

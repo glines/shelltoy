@@ -37,6 +37,7 @@
 #define ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE 256
 #define ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE 4096
 #define ST_GLYPH_ATLAS_INIT_SIZE_GLYPHS 256
+#define ST_GLYPH_ATLAS_MAX_NUM_TEXTURES 4
 
 struct st_GlyphAtlas_Internal;
 
@@ -61,9 +62,6 @@ struct st_GlyphAtlas_Internal;
  */
 typedef struct st_GlyphAtlas_ {
   struct st_GlyphAtlas_Internal *internal;
-  /* Private */
-  GLuint textureBuffer;
-  size_t m_sizeGlyphs;
 } st_GlyphAtlas;
 typedef struct st_GlyphAtlas_ * st_GlyphAtlas_ptr;
 
@@ -105,5 +103,9 @@ int st_GlyphAtlas_getGlyph(
     st_BoundingBox *bbox,
     int *atlasTextureIndex);
 
+void st_GlyphAtlas_getTextures(
+    const st_GlyphAtlas *self,
+    GLuint *textures,
+    int *numTextures);
 
 #endif

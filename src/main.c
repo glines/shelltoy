@@ -59,6 +59,10 @@ int main(int argc, char** argv) {
 
   st_Terminal_init(&terminal);
 
+  fprintf(stderr, "Made it past terminal init\n");
+
+  st_Terminal_draw(&terminal);  /* XXX */
+
   while (1) {
     st_dispatchEvents();
     st_Terminal_draw(&terminal);

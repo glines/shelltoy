@@ -370,12 +370,76 @@ void st_ScreenRenderer_screenDrawCallback(
 void st_ScreenRenderer_draw(
     const st_ScreenRenderer *self)
 {
+  static const GLuint atlasSamplers[] = {
+    GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3, GL_TEXTURE4,
+    GL_TEXTURE5, GL_TEXTURE6, GL_TEXTURE7, GL_TEXTURE8, GL_TEXTURE9,
+    GL_TEXTURE10, GL_TEXTURE11, GL_TEXTURE12, GL_TEXTURE13, GL_TEXTURE14,
+    GL_TEXTURE15,
+  };
+  /* Note that OpenGL 3.x specifies that at least 16 texture units must be
+   * available. */
+  assert(ST_GLYPH_ATLAS_MAX_NUM_TEXTURES <= 16);
+  GLuint atlasTextures[ST_GLYPH_ATLAS_MAX_NUM_TEXTURES];
+  int numAtlasTextures;
+  GLuint atlasLocation, cellSizeLocation;
+  int cellSize[2];
+
   /* Use the glyph shader program */
   glUseProgram(self->internal->glyphShader);
   ASSERT_GL_ERROR();
 
+  /* Configure the texture samplers */
+  st_GlyphAtlas_getTextures(&self->atlas,
+      atlasTextures,  /* textures */
+      &numAtlasTextures  /* numTextures */
+      );
+  for (int i = 0; i < numAtlasTextures; ++i) {
+    glActiveTexture(atlasSamplers[i]);
+    FORCE_ASSERT_GL_ERROR();
+    fprintf(stderr, "about to bind texture: %d\n", atlasTextures[i]);
+    glBindTexture(GL_TEXTURE_2D, atlasTextures[i]);
+    FORCE_ASSERT_GL_ERROR();
+  }
+
+  /* Configure the uniform values */
+  /* FIXME: We should store these uniform locations and avoid looking for them
+   * at every draw call */
+  atlasLocation = glGetUniformLocation(
+      self->internal->glyphShader,
+      "atlas");
+  FORCE_ASSERT_GL_ERROR();
+  /* FIXME: The GL doesn't like it when we don't bind all of the textures */
+/*  glUniform1iv(atlasLocation, numAtlasTextures, atlasSamplers); */
+  glUniform1i(atlasLocation, 0);
+  FORCE_ASSERT_GL_ERROR();
+  cellSizeLocation = glGetUniformLocation(
+      self->internal->glyphShader,
+      "cellSize");
+  FORCE_ASSERT_GL_ERROR();
+  st_GlyphRenderer_getCellSize(&self->glyphRenderer,
+      &cellSize[0],  /* width */
+      &cellSize[1]  /* height */
+      );
+  glUniform2i(cellSizeLocation,
+      cellSize[0],
+      cellSize[1]);
+  FORCE_ASSERT_GL_ERROR();
+
   /* Use our VAO for instanced glyph rendering */
   glBindVertexArray(self->internal->glyphInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
+
+  fprintf(stderr, "Drawing screen\n");  /* XXX */
+
+  /* TODO: Draw the instanced glyph quad, which is simply two trinagles */
+  glDrawElementsInstanced(
+      /* FIXME: This might be better as GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN */
+      GL_TRIANGLES,  /* mode */
+      6,  /* count */
+      GL_UNSIGNED_INT,  /* type */
+      0,  /* indices */
+      self->internal->numGlyphs  /* primcount */
+      );
   FORCE_ASSERT_GL_ERROR();
 
   glBindVertexArray(0);

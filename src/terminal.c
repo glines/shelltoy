@@ -142,6 +142,9 @@ void st_Terminal_initWindow(st_Terminal *self) {
   FORCE_ASSERT_GL_ERROR();
   /* TODO: Calculate the window width and height */
   /* glViewport(0, 0, width, height); */
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  FORCE_ASSERT_GL_ERROR();
+  SDL_GL_SwapWindow(self->window);
 }
 
 void st_Terminal_initTSM(st_Terminal *self) {
@@ -225,4 +228,6 @@ void st_Terminal_draw(st_Terminal *self) {
   /* TODO: We probably need to provide viewport information to the screen
    * renderer here */
   st_ScreenRenderer_draw(&self->screenRenderer);
+
+  SDL_GL_SwapWindow(self->window);
 }

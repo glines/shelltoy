@@ -62,8 +62,8 @@ void st_GlyphAtlas_init(
       sizeof(st_GlyphAtlasEntry) * self->internal->sizeGlyphs);
   self->internal->numGlyphs = 0;
   /* Initialize our texture buffer */
-  glGenBuffers(1, &self->internal->textureBuffer);
-  /* TODO: Check for GL errors */
+  glGenTextures(1, &self->internal->textureBuffer);
+  FORCE_ASSERT_GL_ERROR();
 }
 
 void st_GlyphAtlas_destroy(
@@ -277,7 +277,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   }
   /* TODO: Output the atlas texture to a PNG file for debugging */
   /* Send our atlas texture to the GL */
-  glBindBuffer(GL_TEXTURE_BUFFER, self->textureBuffer);
+  glBindTexture(GL_TEXTURE_2D, self->internal->textureBuffer);
   FORCE_ASSERT_GL_ERROR();
   glTexImage2D(
       GL_TEXTURE_2D,  /* target */
@@ -291,6 +291,19 @@ void st_GlyphAtlas_renderASCIIGlyphs(
       atlasTexture  /* data */
       );
   FORCE_ASSERT_GL_ERROR();
+  glTexParameteri(
+      GL_TEXTURE_2D,  /* target */
+      GL_TEXTURE_MIN_FILTER,  /* pname */
+      GL_NEAREST  /* param */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glTexParameteri(
+      GL_TEXTURE_2D,  /* target */
+      GL_TEXTURE_MAG_FILTER,  /* pname */
+      GL_NEAREST  /* param */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  fprintf(stderr, "configured texture: %d\n", self->internal->textureBuffer);
 
   if (self->internal->numGlyphs + numPendingGlyphs > self->internal->sizeGlyphs) {
     st_GlyphAtlasEntry *newGlyphs;
@@ -385,3 +398,14 @@ void st_GlyphAtlas_blitGlyph(
 //  st_printAntiAliasedGlyphDebug(bitmap);  /* XXX */
 //  fprintf(stderr, "\n");  /* XXX */
 }
+
+void st_GlyphAtlas_getTextures(
+    const st_GlyphAtlas *self,
+    GLuint *textures,
+    int *numTextures)
+{
+  /* TODO; Support returning multiple textures */
+  textures[0] = self->internal->textureBuffer;
+  *numTextures = 1;
+}
+
