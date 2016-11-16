@@ -78,7 +78,8 @@ void st_PTY_openPTY(st_PTY *self) {
   struct epoll_event ev;
   int result;
   /* Open a pseudo terminal */
-  self->master_fd = posix_openpt(O_RDWR | O_NOCTTY);
+  /* TODO: Might want to add O_CLOEXEC later */
+  self->master_fd = posix_openpt(O_RDWR | O_NOCTTY | O_NONBLOCK);
   if (self->master_fd == -1) {
     perror("posix_openpt");
     fprintf(stderr, "Failed to open pseudo terminal\n");
@@ -217,7 +218,7 @@ void st_PTY_startChild(
 }
 
 void st_PTY_read(st_PTY *self) {
-  size_t len;
+  ssize_t len;
 #define PTY_BUFF_SIZE 4096
   char buff[PTY_BUFF_SIZE];
   /* FIXME: Not to sure how to do this properly */
