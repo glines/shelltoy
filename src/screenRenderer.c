@@ -37,6 +37,7 @@ typedef struct st_ScreenRenderer_GlyphInstance_ {
   float glyphSize[2];
   float offset[2];
 /*  int atlasIndex; */
+/*  int atlasSize; */
   int cell[2];
 } st_ScreenRenderer_GlyphInstance;
 
@@ -329,7 +330,7 @@ void st_ScreenRenderer_screenDrawCallback(
 {
   st_ScreenRenderer_GlyphInstance glyphInstance;
   st_BoundingBox bbox;
-  int atlasSize, atlasIndex;
+  int atlasIndex;
   int error;
 
   /* Skip whitespace */
@@ -405,7 +406,8 @@ void st_ScreenRenderer_draw(
   assert(ST_GLYPH_ATLAS_MAX_NUM_TEXTURES <= 16);
   GLuint atlasTextures[ST_GLYPH_ATLAS_MAX_NUM_TEXTURES];
   int numAtlasTextures;
-  GLuint atlasLocation, cellSizeLocation, viewportSizeLocation;
+  GLuint atlasLocation, cellSizeLocation, viewportSizeLocation,
+         atlasSizeLocation;
   int cellSize[2];
 
   /* Use the glyph shader program */
@@ -464,6 +466,15 @@ void st_ScreenRenderer_draw(
   FORCE_ASSERT_GL_ERROR();
   fprintf(stderr, "viewport: %dx%d\n",
       viewportWidth, viewportHeight);
+  /* Configure the atlasSize uniform */
+  atlasSizeLocation = glGetUniformLocation(
+      self->internal->glyphShader,
+      "atlasSize");
+  FORCE_ASSERT_GL_ERROR();
+  /* FIXME: Actually retrieve the atlas size */
+  glUniform1i(atlasSizeLocation,
+      512);
+  FORCE_ASSERT_GL_ERROR();
 
   /* Use our VAO for instanced glyph rendering */
   glBindVertexArray(self->internal->glyphInstanceVAO);

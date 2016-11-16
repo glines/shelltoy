@@ -246,7 +246,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   assert(done);
   /* Allocate memory for our atlas texture */
   atlasTexture = (uint8_t*)malloc(textureSize * textureSize);
-  memset(atlasTexture, 0, textureSize * textureSize);
+  memset(atlasTexture, 0 /* XXX */, textureSize * textureSize);
   for (int i = 0; i < numPendingGlyphs; ++i) {
     currentGlyph = &pendingGlyphs[i];
     /* Render each glyph */
