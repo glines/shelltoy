@@ -64,5 +64,5 @@ void main(void) {
   /* Pass some parameters as non-interpolated input to the fragment shader */
   fragAtlasIndex = atlasIndex;
 
-  gl_Position = vec4(normalizedPos + vec2(gl_InstanceID / 100.0f), 0.0, 1.0);
+  gl_Position = vec4(normalizedPos * 0.000001 + vertPos - 0.05 * vec2(gl_InstanceID), 0.0, 1.0);
 }
