@@ -102,7 +102,7 @@ void st_ScreenRenderer_initBuffers(
     { .pos = { 0.0f, 1.0f } },
     { .pos = { 1.0f, 1.0f } },
   };
-  static const int quadIndices[] = {
+  static const GLuint quadIndices[] = {
     0, 1, 2,
     3, 2, 1,
   };
@@ -164,7 +164,7 @@ void st_ScreenRenderer_initVAO(
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribPointer(
       vertPosLocation,  /* index */
-      4,  /* size */
+      2,  /* size */
       GL_FLOAT,  /* type */
       GL_FALSE,  /* normalized */
       sizeof(st_ScreenRenderer_QuadVertex),  /* stride */

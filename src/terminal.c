@@ -136,7 +136,7 @@ void st_Terminal_initWindow(st_Terminal *self) {
   FORCE_ASSERT_GL_ERROR();
   glDepthFunc(GL_LESS);
   FORCE_ASSERT_GL_ERROR();
-  glDisable(GL_CULL_FACE);
+  glDisable(GL_CULL_FACE);  /* XXX */
   FORCE_ASSERT_GL_ERROR();
   glFrontFace(GL_CCW);
   FORCE_ASSERT_GL_ERROR();
