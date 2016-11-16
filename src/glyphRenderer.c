@@ -209,3 +209,30 @@ FT_Bitmap *st_GlyphRenderer_renderGlyph(
   }
   return &self->internal->face->glyph->bitmap;
 }
+
+void st_GlyphRenderer_getGlyphOffset(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int *x, int *y)
+{
+  int glyph_index;
+  FT_Error error;
+  /* TODO: Look for a face that provides this glyph (once we add support for
+   * multiple faces) */
+  glyph_index = FT_Get_Char_Index(self->internal->face, character);
+  assert(glyph_index);
+  /* Load the glyph */
+  error = FT_Load_Glyph(
+      self->internal->face,  /* face */
+      glyph_index,  /* glyph_index */
+      FT_LOAD_DEFAULT  /* load_flags */
+      );
+  if (error != FT_Err_Ok) {
+    fprintf(stderr,
+        "Freetype error loading the glyph for ASCII character '%c'\n",
+        (char)character);
+  }
+  /* TODO: Calculate the offset of this glyph */
+  *x = 10;
+  *y = 10;
+}

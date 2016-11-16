@@ -330,7 +330,7 @@ void st_ScreenRenderer_screenDrawCallback(
 {
   st_ScreenRenderer_GlyphInstance glyphInstance;
   st_BoundingBox bbox;
-  int atlasIndex;
+  int atlasIndex, xOffset, yOffset;
   int error;
 
   /* Skip whitespace */
@@ -360,9 +360,13 @@ void st_ScreenRenderer_screenDrawCallback(
   glyphInstance.cell[1] = posy;
   fprintf(stderr, "cell: (%d, %d)\n",
       posx, posy);
-  /* FIXME: The glyph offset needs to be retrieved from somewhere */
-  glyphInstance.offset[0] = 0.0f;
-  glyphInstance.offset[1] = 0.0f;
+  st_GlyphRenderer_getGlyphOffset(&self->glyphRenderer,
+      *ch,  /* character */
+      &xOffset,  /* x */
+      &yOffset  /* y */
+      );
+  glyphInstance.offset[0] = (float)xOffset;
+  glyphInstance.offset[1] = (float)yOffset;
   /* FIXME: We need to determine which samplers are assigned for which atlas
    * textures */
 //  glyphInstance.atlasIndex = 0;

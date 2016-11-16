@@ -54,3 +54,8 @@ int st_GlyphRenderer_getGlyphDimensions(
 FT_Bitmap *st_GlyphRenderer_renderGlyph(
     st_GlyphRenderer *self,
     uint32_t character);
+
+void st_GlyphRenderer_getGlyphOffset(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int *x, int *y);
