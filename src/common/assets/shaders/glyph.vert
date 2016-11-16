@@ -59,7 +59,7 @@ void main(void) {
   vec2 normalizedPos = 2.0 * (screenPos / viewportSize) - vec2(1.0);
 
   /* Compute the texture coordinates of our glyph in the atlas */
-  atlasTexCoord = (atlasPos + vertPos * glyphSize * 3.0) / vec2(atlasSize);
+  atlasTexCoord = (atlasPos + vertPos * glyphSize) / vec2(atlasSize);
 
   /* Pass some parameters as non-interpolated input to the fragment shader */
   fragAtlasIndex = atlasIndex;

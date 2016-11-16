@@ -108,4 +108,7 @@ void st_GlyphAtlas_getTextures(
     GLuint *textures,
     int *numTextures);
 
+int st_GlyphAtlas_getTextureSize(
+    const st_GlyphAtlas *self);
+
 #endif

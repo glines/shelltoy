@@ -41,6 +41,7 @@ struct st_GlyphAtlas_Internal {
   st_GlyphAtlasEntry *glyphs;
   size_t numGlyphs, sizeGlyphs;
   GLuint textureBuffer;
+  int textureSize;
 };
 
 /* Private method declarations */
@@ -116,7 +117,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   size_t numPendingGlyphs, numPlacedGlyphs;
   int done;
   uint8_t *atlasTexture;
-  size_t textureSize;
+  int textureSize;
   const int padding = 2;
   int error;
 
@@ -174,7 +175,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
       textureSize <= ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE && !done;
       textureSize *= 2)
   {
-    fprintf(stderr, "Growing atlas texture to %ldx%ld\n",
+    fprintf(stderr, "Growing atlas texture to %dx%d\n",
         textureSize, textureSize);
     st_NaiveCollisionDetection_init(&collisionDetection);
     /* Position glyphs in the texture, starting with the largest glyphs */
@@ -244,6 +245,9 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     st_NaiveCollisionDetection_destroy(&collisionDetection);
   }
   assert(done);
+  fprintf(stderr, "Ultimate atlas texture size: %dx%d\n",
+      textureSize, textureSize);
+  self->internal->textureSize = textureSize;
   /* Allocate memory for our atlas texture */
   atlasTexture = (uint8_t*)malloc(textureSize * textureSize);
   memset(atlasTexture, 0 /* XXX */, textureSize * textureSize);
@@ -385,8 +389,20 @@ void st_GlyphAtlas_blitGlyph(
   int destIndex;
   /* Iterate over the rows in the bitmap and copy each row to the
    * atlas texture */
+  assert(bitmap->pitch >= 0);  /* TODO: Handle negative pitch (i.e. flipped y
+                                  coordinates). This will probably work, I just
+                                  haven't tested it yet, so this assert is here
+                                  for when we encounter a negative pitch value
+                                  in the future. */
   for (int row = 0; row < bitmap->rows; ++row) {
-    destIndex = (glyph->bbox.y + row + padding) * textureSize + glyph->bbox.x + padding;
+    if (bitmap->pitch < 0) {
+      destIndex = (glyph->bbox.y + row + padding) * textureSize;
+    } else {
+      assert(bitmap->pitch != 0);
+      /* bitmap->pitch > 0 */
+      destIndex = (glyph->bbox.y + bitmap->rows - row + padding) * textureSize;
+    }
+    destIndex += glyph->bbox.x + padding;
 #ifndef NDEBUG
     for (int i = 0; i < bitmap->width; ++i) {
       /* Make sure we don't blit over any existing glyphs */
@@ -412,3 +428,8 @@ void st_GlyphAtlas_getTextures(
   *numTextures = 1;
 }
 
+int st_GlyphAtlas_getTextureSize(
+    const st_GlyphAtlas *self)
+{
+  return self->internal->textureSize;
+}

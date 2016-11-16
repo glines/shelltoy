@@ -405,7 +405,7 @@ void st_ScreenRenderer_draw(
    * available. */
   assert(ST_GLYPH_ATLAS_MAX_NUM_TEXTURES <= 16);
   GLuint atlasTextures[ST_GLYPH_ATLAS_MAX_NUM_TEXTURES];
-  int numAtlasTextures;
+  int numAtlasTextures, atlasSize;
   GLuint atlasLocation, cellSizeLocation, viewportSizeLocation,
          atlasSizeLocation;
   int cellSize[2];
@@ -472,8 +472,9 @@ void st_ScreenRenderer_draw(
       "atlasSize");
   FORCE_ASSERT_GL_ERROR();
   /* FIXME: Actually retrieve the atlas size */
+  atlasSize = st_GlyphAtlas_getTextureSize(&self->atlas);
   glUniform1i(atlasSizeLocation,
-      512);
+      atlasSize);
   FORCE_ASSERT_GL_ERROR();
 
   /* Use our VAO for instanced glyph rendering */
