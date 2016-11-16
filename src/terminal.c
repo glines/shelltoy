@@ -227,7 +227,9 @@ void st_Terminal_draw(st_Terminal *self) {
   /* Draw the glyphs on the screen */
   /* TODO: We probably need to provide viewport information to the screen
    * renderer here */
-  st_ScreenRenderer_draw(&self->screenRenderer);
+  st_ScreenRenderer_draw(&self->screenRenderer,
+      640,  /* FIXME: Actually get the latest window size */
+      480);
 
   SDL_GL_SwapWindow(self->window);
 }

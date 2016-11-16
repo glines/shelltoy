@@ -368,7 +368,8 @@ void st_ScreenRenderer_screenDrawCallback(
 }
 
 void st_ScreenRenderer_draw(
-    const st_ScreenRenderer *self)
+    const st_ScreenRenderer *self,
+    int viewportWidth, int viewportHeight)
 {
   static const GLuint atlasSamplers[] = {
     GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3, GL_TEXTURE4,
@@ -381,7 +382,7 @@ void st_ScreenRenderer_draw(
   assert(ST_GLYPH_ATLAS_MAX_NUM_TEXTURES <= 16);
   GLuint atlasTextures[ST_GLYPH_ATLAS_MAX_NUM_TEXTURES];
   int numAtlasTextures;
-  GLuint atlasLocation, cellSizeLocation;
+  GLuint atlasLocation, cellSizeLocation, viewportSizeLocation;
   int cellSize[2];
 
   /* Use the glyph shader program */
@@ -404,6 +405,7 @@ void st_ScreenRenderer_draw(
   /* Configure the uniform values */
   /* FIXME: We should store these uniform locations and avoid looking for them
    * at every draw call */
+  /* Configure the atlas texture sampler uniform */
   atlasLocation = glGetUniformLocation(
       self->internal->glyphShader,
       "atlas");
@@ -412,6 +414,7 @@ void st_ScreenRenderer_draw(
 /*  glUniform1iv(atlasLocation, numAtlasTextures, atlasSamplers); */
   glUniform1i(atlasLocation, 0);
   FORCE_ASSERT_GL_ERROR();
+  /* Configure the cellSize uniform */
   cellSizeLocation = glGetUniformLocation(
       self->internal->glyphShader,
       "cellSize");
@@ -423,6 +426,15 @@ void st_ScreenRenderer_draw(
   glUniform2i(cellSizeLocation,
       cellSize[0],
       cellSize[1]);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure the viewportSize uniform */
+  viewportSizeLocation = glGetUniformLocation(
+      self->internal->glyphShader,
+      "viewportSize");
+  FORCE_ASSERT_GL_ERROR();
+  glUniform2i(viewportSizeLocation,
+      viewportWidth,
+      viewportHeight);
   FORCE_ASSERT_GL_ERROR();
 
   /* Use our VAO for instanced glyph rendering */

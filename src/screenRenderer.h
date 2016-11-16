@@ -51,6 +51,8 @@ void st_ScreenRenderer_updateScreen(
     st_ScreenRenderer *self,
     struct tsm_screen *screen);
 void st_ScreenRenderer_draw(
-    const st_ScreenRenderer *self);
+    const st_ScreenRenderer *self,
+    int viewportWidth,
+    int viewportHeight);
 
 #endif

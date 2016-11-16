@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 
   st_Terminal_init(&terminal);
 
-  fprintf(stderr, "Made it past terminal init\n");
+  fprintf(stderr, "Made it past terminal init\n");  /* XXX */
 
   st_Terminal_draw(&terminal);  /* XXX */
 
