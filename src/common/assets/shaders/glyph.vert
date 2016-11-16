@@ -1,4 +1,4 @@
-#version 430
+#version 330
 
 in vec2 vertPos;  /* Position of our vertex in the glyph quad. The vertex
                      position is always one of the four corners of the square
@@ -53,7 +53,7 @@ void main(void) {
    * in pixel coordinates */
   /* NOTE: The vertPos that comes into the shader is for a quad defined by the
    * points (0, 0) and (1, 1). */
-  vec2 screenPos = cell * cellSize + vertPos * cellSize + offset;
+  vec2 screenPos = cell * cellSize + vertPos * glyphSize + offset;
   /* Now we compute the position of this vertex in normalized device
    * coordinates, which range from -1 to +1 */
   vec2 normalizedPos = 2.0 * (screenPos / viewportSize) - vec2(1.0);
@@ -64,5 +64,5 @@ void main(void) {
   /* Pass some parameters as non-interpolated input to the fragment shader */
   fragAtlasIndex = atlasIndex;
 
-  gl_Position = vec4(normalizedPos * 0.0001 + vertPos, 0.0, 1.0);
+  gl_Position = vec4(normalizedPos + vec2(gl_InstanceID / 100.0f), 0.0, 1.0);
 }
