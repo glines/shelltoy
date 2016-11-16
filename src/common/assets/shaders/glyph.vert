@@ -53,16 +53,16 @@ void main(void) {
    * in pixel coordinates */
   /* NOTE: The vertPos that comes into the shader is for a quad defined by the
    * points (0, 0) and (1, 1). */
-  vec2 screenPos = cell * cellSize + vertPos * glyphSize + offset;
+  vec2 screenPos = cell * cellSize + offset + vertPos * glyphSize;
   /* Now we compute the position of this vertex in normalized device
    * coordinates, which range from -1 to +1 */
   vec2 normalizedPos = 2.0 * (screenPos / viewportSize) - vec2(1.0);
 
   /* Compute the texture coordinates of our glyph in the atlas */
-  atlasTexCoord = (atlasPos + vertPos * glyphSize) / ivec2(atlasSize);
+  atlasTexCoord = (atlasPos + vertPos * glyphSize) / vec2(atlasSize);
 
   /* Pass some parameters as non-interpolated input to the fragment shader */
   fragAtlasIndex = atlasIndex;
 
-  gl_Position = vec4(normalizedPos * 0.000001 + vertPos - 0.05 * vec2(gl_InstanceID), 0.0, 1.0);
+  gl_Position = vec4(normalizedPos, 0.0, 1.0);
 }

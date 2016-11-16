@@ -141,7 +141,8 @@ void st_Terminal_initWindow(st_Terminal *self) {
   glFrontFace(GL_CCW);
   FORCE_ASSERT_GL_ERROR();
   /* TODO: Calculate the window width and height */
-  /* glViewport(0, 0, width, height); */
+  glViewport(0, 0, 640, 480);
+  FORCE_ASSERT_GL_ERROR();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   FORCE_ASSERT_GL_ERROR();
   SDL_GL_SwapWindow(self->window);

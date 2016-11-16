@@ -36,7 +36,7 @@ typedef struct st_ScreenRenderer_GlyphInstance_ {
   float atlasPos[2];
   float glyphSize[2];
   float offset[2];
-  int atlasIndex;
+/*  int atlasIndex; */
   int cell[2];
 } st_ScreenRenderer_GlyphInstance;
 
@@ -255,11 +255,10 @@ void st_ScreenRenderer_initVAO(
   FORCE_ASSERT_GL_ERROR();
   glEnableVertexAttribArray(cellLocation);
   FORCE_ASSERT_GL_ERROR();
-  glVertexAttribPointer(
+  glVertexAttribIPointer(
       cellLocation,  /* index */
       2,  /* size */
       GL_INT,  /* type */
-      0,  /* normalized */
       sizeof(st_ScreenRenderer_GlyphInstance),  /* stride */
       ((st_ScreenRenderer_GlyphInstance*)0)->cell  /* pointer */
       );
@@ -353,16 +352,19 @@ void st_ScreenRenderer_screenDrawCallback(
   /* Set up therest of the glyph instance data structure */
   glyphInstance.glyphSize[0] = (float)bbox.w;
   glyphInstance.glyphSize[1] = (float)bbox.h;
+  fprintf(stderr, "glyphSize: %d, %d\n", bbox.w, bbox.h);
   glyphInstance.atlasPos[0] = (float)bbox.x;
   glyphInstance.atlasPos[1] = (float)bbox.y;
   glyphInstance.cell[0] = posx;
   glyphInstance.cell[1] = posy;
+  fprintf(stderr, "cell: (%d, %d)\n",
+      posx, posy);
   /* FIXME: The glyph offset needs to be retrieved from somewhere */
   glyphInstance.offset[0] = 0.0f;
   glyphInstance.offset[1] = 0.0f;
   /* FIXME: We need to determine which samplers are assigned for which atlas
    * textures */
-  glyphInstance.atlasIndex = 0;
+//  glyphInstance.atlasIndex = 0;
 
   /* Make sure we have memory allocated for the new glyph instance */
   if (self->internal->numGlyphs + 1 > self->internal->sizeGlyphs) {
@@ -444,9 +446,12 @@ void st_ScreenRenderer_draw(
       &cellSize[0],  /* width */
       &cellSize[1]  /* height */
       );
-  glUniform2i(cellSizeLocation,
+  fprintf(stderr, "cellSize: %dx%d\n",
       cellSize[0],
       cellSize[1]);
+  glUniform2i(cellSizeLocation,
+      cellSize[0],
+      cellSize[1]);  /* XXX */
   FORCE_ASSERT_GL_ERROR();
   /* Configure the viewportSize uniform */
   viewportSizeLocation = glGetUniformLocation(
@@ -457,6 +462,8 @@ void st_ScreenRenderer_draw(
       viewportWidth,
       viewportHeight);
   FORCE_ASSERT_GL_ERROR();
+  fprintf(stderr, "viewport: %dx%d\n",
+      viewportWidth, viewportHeight);
 
   /* Use our VAO for instanced glyph rendering */
   glBindVertexArray(self->internal->glyphInstanceVAO);
