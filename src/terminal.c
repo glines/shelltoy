@@ -4,6 +4,12 @@
 
 #include "terminal.h"
 
+/* Internal data structure */
+struct st_Terminal_Internal {
+  st_ScreenRenderer screenRenderer;
+  st_GlyphRenderer glyphRenderer;
+};
+
 /* Private methods */
 void st_Terminal_tsmLogCallback(
     st_Terminal *self,
@@ -19,19 +25,12 @@ void st_Terminal_tsmWriteCallback(
     const char *u8,
     size_t len,
     st_Terminal *self);
-void st_Terminal_drawCallback(
-  struct tsm_screen *con,
-  uint32_t id,
-  const uint32_t *ch,
-  size_t len,
-  unsigned int width,
-  unsigned int posx,
-  unsigned int posy,
-  const struct tsm_screen_attr *attr,
-  tsm_age_t age,
-  st_Terminal *self);
 void st_Terminal_initWindow(st_Terminal *self);
 void st_Terminal_initTSM(st_Terminal *self);
+void st_Terminal_calculatePseudoTerminalSize(
+    st_Terminal *self,
+    int *ptyWidth,
+    int *ptyHeight);
 
 void st_Terminal_tsmLogCallback(
     st_Terminal *self,
@@ -54,25 +53,7 @@ void st_Terminal_tsmWriteCallback(
     st_Terminal *self)
 {
   /* TODO: something */
-}
-
-void st_Terminal_drawCallback(
-  struct tsm_screen *con,
-  uint32_t id,
-  const uint32_t *ch,
-  size_t len,
-  unsigned int width,
-  unsigned int posx,
-  unsigned int posy,
-  const struct tsm_screen_attr *attr,
-  tsm_age_t age,
-  st_Terminal *self)
-{
-  /* TODO: Update the OpenGL buffers backing the instance rendered text */
-  fprintf(stderr, "Printing character: '%c' at location (%d, %d)\n",
-      (char)(*ch),
-      posx,
-      posy);
+  /* FIXME: What is this supposed to do realy? */
 }
 
 /* FIXME: I don't think this is needed; read events are sent through SDL */
@@ -99,7 +80,8 @@ void st_Terminal_initWindow(st_Terminal *self) {
       SDL_WINDOWPOS_UNDEFINED,  /* y */
       640,  /* w */
       480,  /* w */
-      SDL_WINDOW_OPENGL  /* flags */
+      SDL_WINDOW_OPENGL
+      | SDL_WINDOW_RESIZABLE  /* flags */
       );
   if (self->window == NULL) {
     fprintf(stderr, "Failed to create SDL window: %s\n",
@@ -107,6 +89,10 @@ void st_Terminal_initWindow(st_Terminal *self) {
     /* TODO: Fail gracefully */
     assert(0);
   }
+  /* Store the window dimensions */
+  self->width = 640;
+  self->height = 480;
+
   /* Create an OpenGL context for our window */
   self->glContext = SDL_GL_CreateContext(self->window);
   if (self->glContext == NULL) {
@@ -165,16 +151,39 @@ void st_Terminal_initTSM(st_Terminal *self) {
       );
 }
 
+void st_Terminal_calculatePseudoTerminalSize(
+    st_Terminal *self,
+    int *ptyWidth,
+    int *ptyHeight)
+{
+  int cellWidth, cellHeight;
+  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+      &cellWidth,  /* width */
+      &cellHeight  /* height */
+      );
+  /* TODO: The pseudo terminal size is the number of (halfwidth) glyph cells
+   * that will fit in the terminal window */
+  *ptyWidth = self->width / cellWidth;
+  *ptyHeight = self->height / cellHeight;
+}
+
 /* TODO: Allow the user to configure the shell command to invoke */
 #define ENV_PATH "/usr/bin/env"
 #define SHELL "bash"
 
 void st_Terminal_init(st_Terminal *self) {
   size_t len;
+  /* Allocate memory for internal data structures */
+  self->internal = (struct st_Terminal_Internal *)malloc(
+      sizeof(struct st_Terminal_Internal));
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
+  /* Initialize the glyph renderer */
+  st_GlyphRenderer_init(&self->internal->glyphRenderer);
   /* Initialize the screen renderer */
-  st_ScreenRenderer_init(&self->screenRenderer);
+  st_ScreenRenderer_init(&self->internal->screenRenderer,
+      &self->internal->glyphRenderer  /* glyphRenderer */
+      );
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
@@ -208,10 +217,36 @@ void st_Terminal_init(st_Terminal *self) {
 }
 
 void st_Terminal_destroy(st_Terminal *self) {
-  st_ScreenRenderer_destroy(&self->screenRenderer);
+  st_ScreenRenderer_destroy(&self->internal->screenRenderer);
   /* FIXME: Destroy the libtsm state machine */
   /* FIXME: Destroy the libtsm screen */
   st_PTY_destroy(&self->pty);
+  /* Release memory for internal data structures */
+  free(self->internal);
+}
+
+void st_Terminal_windowSizeChanged(
+    st_Terminal *self,
+    int width,
+    int height)
+{
+  int ptyWidth, ptyHeight;
+  /* Store the new window width and height */
+  self->width = width;
+  self->height = height;
+  fprintf(stderr, "new window dimensions: %dx%d\n", width, height);
+  /* Change the pseudo terminal screen size */
+  st_Terminal_calculatePseudoTerminalSize(self, &ptyWidth, &ptyHeight);
+  st_PTY_resize(&self->pty,
+      ptyWidth,  /* width */
+      ptyHeight  /* height */
+      );
+  /* Update the GL viewport size */
+  glViewport(0, 0, width, height);
+  FORCE_ASSERT_GL_ERROR();
+  /* Re-draw the screen */
+  st_Terminal_draw(self);
+  SDL_GL_SwapWindow(self->window);
 }
 
 void st_Terminal_updateScreen(st_Terminal *self) {
@@ -220,17 +255,25 @@ void st_Terminal_updateScreen(st_Terminal *self) {
   /* TODO: Make sure we have loaded all of the glyphs that we need */
   /* TODO: Make sure the changes get rendered immediately (might be useful to
    * render even sooner than the toy can render) */
-  st_ScreenRenderer_updateScreen(&self->screenRenderer, self->screen);
+  st_ScreenRenderer_updateScreen(&self->internal->screenRenderer,
+      self->screen,  /* screen */
+      &self->internal->glyphRenderer  /* glyphRenderer */
+      );
 }
 
 void st_Terminal_draw(st_Terminal *self) {
+  /* Clear the screen */
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  FORCE_ASSERT_GL_ERROR();
+
   /* TODO: Draw the background */
+
   /* Draw the glyphs on the screen */
-  /* TODO: We probably need to provide viewport information to the screen
-   * renderer here */
-  st_ScreenRenderer_draw(&self->screenRenderer,
-      640,  /* FIXME: Actually get the latest window size */
-      480);
+  st_ScreenRenderer_draw(&self->internal->screenRenderer,
+      &self->internal->glyphRenderer,  /* glyphRenderer */
+      self->width,  /* viewportWidth */
+      self->height  /* viewportHeight */
+      );
 
   SDL_GL_SwapWindow(self->window);
 }

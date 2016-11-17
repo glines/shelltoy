@@ -16,6 +16,7 @@ typedef struct {
   pthread_t poll_thread;
   st_PTY_readCallback_t callback;
   void *callback_data;
+  int width, height;
 } st_PTY;
 
 /* TODO: We need a method to execute a child process? */

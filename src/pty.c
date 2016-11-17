@@ -246,4 +246,8 @@ void st_PTY_resize(st_PTY *self, int width, int height) {
   ws.ws_row = height;
   result = ioctl(self->master_fd, TIOCSWINSZ, &ws);
   /* TODO: Check result for errors */
+
+  /* Store the new width and height */
+  self-> width = width;
+  self-> height = height;
 }

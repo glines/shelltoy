@@ -9,9 +9,9 @@
 
 #include "glyphAtlas.h"
 
-typedef struct st_shell {
-  SDL_Window *window;
-} st_shell;
+struct st_Shelltoy {
+  st_Terminal terminal;
+} shelltoy;
 
 void st_initSDL() {
   SDL_Init(SDL_INIT_VIDEO);
@@ -25,11 +25,26 @@ void st_dispatchEvents() {
   /* Dispatch all events in the SDL event queue */
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
-    if (event.type == st_PTY_eventType()) {
-      fprintf(stderr, "Recieved PTY event\n");
-      /* Instruct the pty to read from the pseudo terminal */
-      st_PTY *pty = (st_PTY *)event.user.data1;
-      st_PTY_read(pty);
+    switch (event.type) {
+      case SDL_WINDOWEVENT:
+        switch (event.window.event) {
+          case SDL_WINDOWEVENT_SIZE_CHANGED:
+            /* TODO: Support event dispatch to multiple terminals here */
+            /* Inform the terminal of the new window size */
+            st_Terminal_windowSizeChanged(&shelltoy.terminal,
+                event.window.data1,  /* width */
+                event.window.data2  /* height */
+                );
+            break;
+        }
+        break;
+      default:
+        if (event.type == st_PTY_eventType()) {
+          fprintf(stderr, "Recieved PTY event\n");
+          /* Instruct the pty to read from the pseudo terminal */
+          st_PTY *pty = (st_PTY *)event.user.data1;
+          st_PTY_read(pty);
+        }
     }
   }
 }
@@ -42,22 +57,20 @@ const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu
 /* TODO: We might even want to read a small font into memory */
 
 int main(int argc, char** argv) {
-  st_Terminal terminal;
-
   st_initSDL();
   st_Fonts_init();
 
-  st_Terminal_init(&terminal);
+  st_Terminal_init(&shelltoy.terminal);
 
   fprintf(stderr, "Made it past terminal init\n");  /* XXX */
 
   while (1) {
     st_dispatchEvents();
-    st_Terminal_draw(&terminal);
+    st_Terminal_draw(&shelltoy.terminal);
     SDL_Delay(50);
     /* TODO: Write a more intelligent loop that waits for vsync, etc. */
   }
-  st_Terminal_destroy(&terminal);
+  st_Terminal_destroy(&shelltoy.terminal);
 
   st_quitSDL();
 

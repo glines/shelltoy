@@ -36,22 +36,24 @@ typedef struct st_ScreenRenderer_ {
   /* FIXME: Probably move atlas and glyphRenderer to an internal data
    * structure */
   st_GlyphAtlas atlas;
-  st_GlyphRenderer glyphRenderer;
 
   struct st_ScreenRenderer_Internal *internal;
 } st_ScreenRenderer;
 
 void st_ScreenRenderer_init(
-    st_ScreenRenderer *self);
+    st_ScreenRenderer *self,
+    st_GlyphRenderer *glyphRenderer);
 
 void st_ScreenRenderer_destroy(
     st_ScreenRenderer *self);
 
 void st_ScreenRenderer_updateScreen(
     st_ScreenRenderer *self,
-    struct tsm_screen *screen);
+    struct tsm_screen *screen,
+    st_GlyphRenderer *glyphRenderer);
 void st_ScreenRenderer_draw(
     const st_ScreenRenderer *self,
+    const st_GlyphRenderer *glyphRenderer,
     int viewportWidth,
     int viewportHeight);
 

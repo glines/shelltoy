@@ -41,6 +41,12 @@ typedef struct st_ScreenRenderer_GlyphInstance_ {
   int cell[2];
 } st_ScreenRenderer_GlyphInstance;
 
+
+typedef struct st_ScreenRenderer_ScreenDrawCallbackData_ {
+  st_ScreenRenderer *self;
+  st_GlyphRenderer *glyphRenderer;
+} st_ScreenRenderer_ScreenDrawCallbackData;
+
 struct st_ScreenRenderer_Internal {
   st_ScreenRenderer_GlyphInstance *glyphs;
   size_t numGlyphs, sizeGlyphs;
@@ -66,10 +72,11 @@ void st_ScreenRenderer_screenDrawCallback(
     unsigned int posy,
     const struct tsm_screen_attr *attr,
     tsm_age_t age,
-    st_ScreenRenderer *self);
+    st_ScreenRenderer_ScreenDrawCallbackData *data);
 
 void st_ScreenRenderer_init(
-    st_ScreenRenderer *self)
+    st_ScreenRenderer *self,
+    st_GlyphRenderer *glyphRenderer)
 {
   /* Allocate memory for internal data structures */
   self->internal = (struct st_ScreenRenderer_Internal*)malloc(
@@ -81,12 +88,10 @@ void st_ScreenRenderer_init(
   st_ScreenRenderer_initShaders(self);
   st_ScreenRenderer_initBuffers(self);
   st_ScreenRenderer_initVAO(self);
-  /* Initialize the glyph renderer */
-  st_GlyphRenderer_init(&self->glyphRenderer);
   /* Initialize the glyph atlas */
   st_GlyphAtlas_init(&self->atlas);
   /* Render glyphs to the atlas representative of ASCII terminals */
-  st_GlyphAtlas_renderASCIIGlyphs(&self->atlas, &self->glyphRenderer);
+  st_GlyphAtlas_renderASCIIGlyphs(&self->atlas, glyphRenderer);
 }
 
 void st_ScreenRenderer_initShaders(
@@ -280,8 +285,6 @@ void st_ScreenRenderer_destroy(
 {
   /* Destroy the glyph atlas */
   st_GlyphAtlas_destroy(&self->atlas);
-  /* Destroy the glyph renderer */
-  st_GlyphRenderer_destroy(&self->glyphRenderer);
   /* Free internal data structures */
   free(self->internal->glyphs);
   free(self->internal);
@@ -289,15 +292,21 @@ void st_ScreenRenderer_destroy(
 
 void st_ScreenRenderer_updateScreen(
     st_ScreenRenderer *self,
-    struct tsm_screen *screen)
+    struct tsm_screen *screen,
+    st_GlyphRenderer *glyphRenderer)
 {
+  st_ScreenRenderer_ScreenDrawCallbackData data;
+
   /* Fill the glyph instance buffer with the latest screen contents */
+  data.self = self;
+  data.glyphRenderer = glyphRenderer;
   self->internal->numGlyphs = 0;
   tsm_screen_draw(
       screen,  /* con */
       (tsm_screen_draw_cb)st_ScreenRenderer_screenDrawCallback,  /* draw_cb */
-      self  /* data */
+      &data  /* data */
       );
+
   /* Send the recently updated glyph instance buffer to the GL */
   /* TODO: Check for GL errors */
   fprintf(stderr, "self->internal->glyphInstanceBuffer: %d\n",
@@ -326,9 +335,11 @@ void st_ScreenRenderer_screenDrawCallback(
   unsigned int posy,
   const struct tsm_screen_attr *attr,
   tsm_age_t age,
-  st_ScreenRenderer *self)
+  st_ScreenRenderer_ScreenDrawCallbackData *data)
 {
   st_ScreenRenderer_GlyphInstance glyphInstance;
+  st_ScreenRenderer *self;
+  st_GlyphRenderer *glyphRenderer;
   st_BoundingBox bbox;
   int atlasIndex, xOffset, yOffset;
   int error;
@@ -336,6 +347,9 @@ void st_ScreenRenderer_screenDrawCallback(
   /* Skip whitespace */
   if (!(*ch))
     return;
+
+  self = data->self;
+  glyphRenderer = data->glyphRenderer;
 
   /* Look this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(&self->atlas,
@@ -360,7 +374,7 @@ void st_ScreenRenderer_screenDrawCallback(
   glyphInstance.cell[1] = posy;
   fprintf(stderr, "cell: (%d, %d)\n",
       posx, posy);
-  st_GlyphRenderer_getGlyphOffset(&self->glyphRenderer,
+  st_GlyphRenderer_getGlyphOffset(glyphRenderer,
       *ch,  /* character */
       &xOffset,  /* x */
       &yOffset  /* y */
@@ -397,6 +411,7 @@ void st_ScreenRenderer_screenDrawCallback(
 
 void st_ScreenRenderer_draw(
     const st_ScreenRenderer *self,
+    const st_GlyphRenderer *glyphRenderer,
     int viewportWidth, int viewportHeight)
 {
   static const GLuint atlasSamplers[] = {
@@ -448,7 +463,7 @@ void st_ScreenRenderer_draw(
       self->internal->glyphShader,
       "cellSize");
   FORCE_ASSERT_GL_ERROR();
-  st_GlyphRenderer_getCellSize(&self->glyphRenderer,
+  st_GlyphRenderer_getCellSize(glyphRenderer,
       &cellSize[0],  /* width */
       &cellSize[1]  /* height */
       );
