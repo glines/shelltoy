@@ -53,7 +53,10 @@ void main(void) {
    * in pixel coordinates */
   /* NOTE: The vertPos that comes into the shader is for a quad defined by the
    * points (0, 0) and (1, 1). */
-  vec2 screenPos = cell * cellSize + offset + vertPos * glyphSize;
+  vec2 screenPos =
+    vec2(cell.x * cellSize.x,
+        viewportSize.y - (1 + cell.y) * cellSize.y)
+    + offset + vertPos * glyphSize;
   /* Now we compute the position of this vertex in normalized device
    * coordinates, which range from -1 to +1 */
   vec2 normalizedPos = 2.0 * (screenPos / viewportSize) - vec2(1.0);
