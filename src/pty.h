@@ -29,7 +29,10 @@ typedef struct {
  */
 int st_PTY_eventType();
 
-void st_PTY_init(st_PTY *self);
+void st_PTY_init(
+    st_PTY *self,
+    int width,
+    int height);
 void st_PTY_destroy(st_PTY *self);
 
 void st_PTY_startChild(
@@ -37,9 +40,7 @@ void st_PTY_startChild(
     const char *path,
     char *const argv[],
     st_PTY_readCallback_t callback,
-    void *callback_data,
-    int width,
-    int height);
+    void *callback_data);
 
 void st_PTY_read(st_PTY *self);
 void st_PTY_write(st_PTY *self, const char *u8, size_t len);

@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
   st_initSDL();
   st_Fonts_init();
 
-  st_Terminal_init(&shelltoy.terminal);
+  st_Terminal_init(&shelltoy.terminal, argc - 1, &argv[1]);
 
   fprintf(stderr, "Made it past terminal init\n");  /* XXX */
 

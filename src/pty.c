@@ -87,6 +87,8 @@ void st_PTY_openPTY(st_PTY *self) {
     assert(0);
   }
   /* Set up poll to watch for changes to the pseudo terminal master */
+  /* FIXME: Move this epoll stuff to a central location (since we can watch
+   * more than one fd at a time) */
   self->epoll_fd = epoll_create1(0);
   if (self->epoll_fd < 0) {
     perror("epoll_create1");
@@ -128,7 +130,14 @@ void st_PTY_joinChildProcess(st_PTY *self) {
   /* TODO: Wait for the child process to exit */
 }
 
-void st_PTY_init(st_PTY *self) {
+void st_PTY_init(
+    st_PTY *self,
+    int width,
+    int height)
+{
+  self->width = width;
+  self->height = height;
+  self->master_fd = -1;
   st_PTY_openPTY(self);
 }
 
@@ -143,6 +152,9 @@ void st_PTY_prepareChild(st_PTY *self) {
   int slave_fd;
   size_t len;
   char *slave_name, *temp;
+  int result;
+  struct winsize ws;
+  struct termios attr;
   /* Allow the child to access the pseudo terminal */
   if (grantpt(self->master_fd) < 0) {
     perror("grantpt");
@@ -179,6 +191,28 @@ void st_PTY_prepareChild(st_PTY *self) {
     assert(0);
   }
   free(slave_name);
+  /* Get the terminal attributes */
+  if (tcgetattr(slave_fd, &attr) < 0) {
+    fprintf(stderr, "Failed to get pseudo terminal attributes");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  /* Set erase character to normal backspace */
+  attr.c_cc[VERASE] = 010;
+  /* Set the terminal attributes */
+  if (tcsetattr(slave_fd, TCSANOW, &attr) < 0) {
+    fprintf(stderr, "Failed to set pseudo terminal attributes");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  /* Create a new process group session for the child */
+  setsid();
+  /* Send the window size to the pty */
+  memset(&ws, 0, sizeof(ws));
+  ws.ws_col = self->width;
+  ws.ws_row = self->height;
+  result = ioctl(slave_fd, TIOCSWINSZ, &ws);
+  /* TODO: Check result for errors */
   /* Redirect stdin, stdout, and stderr to the pseudo terminal slave */
   /* TODO: Check for errors here */
   dup2(slave_fd, STDIN_FILENO);
@@ -191,9 +225,7 @@ void st_PTY_startChild(
     const char *path,
     char *const argv[],
     st_PTY_readCallback_t callback,
-    void *callback_data,
-    int width,
-    int height)
+    void *callback_data)
 {
   pid_t result;
   /* Register the read callback */
@@ -214,6 +246,8 @@ void st_PTY_startChild(
     /* TODO: Fail gracefully? */
     exit(EXIT_FAILURE);
   }
+  /* FIXME: wlterm will wait for the child setup here, and subsequently set up
+   * epoll. Maybe we need to do something like that. */
   self->child = result;
 }
 
@@ -246,6 +280,8 @@ void st_PTY_resize(st_PTY *self, int width, int height) {
   struct winsize ws;
   int result;
 
+  assert(self->master_fd >= 0);
+
   /* Send the new window size to the pseudo terminal slave. See page 718 of
    * Advanced Programming in the UNIX Environment, Third Edition. */
   memset(&ws, 0, sizeof(ws));
@@ -253,6 +289,7 @@ void st_PTY_resize(st_PTY *self, int width, int height) {
   ws.ws_row = height;
   result = ioctl(self->master_fd, TIOCSWINSZ, &ws);
   /* TODO: Check result for errors */
+  assert(result == 0);
 
   /* Store the new width and height */
   self-> width = width;

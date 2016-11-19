@@ -16,11 +16,15 @@ typedef struct {
   struct tsm_screen *screen;
   struct tsm_vte *vte;
   int width, height;
+  int columns, rows;
 
   struct st_Terminal_Internal *internal;
 } st_Terminal;
 
-void st_Terminal_init(st_Terminal *self);
+void st_Terminal_init(
+    st_Terminal *self,
+    int argc,
+    char **argv);
 void st_Terminal_destroy(st_Terminal *self);
 
 void st_Terminal_windowSizeChanged(

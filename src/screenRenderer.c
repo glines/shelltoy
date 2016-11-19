@@ -476,7 +476,6 @@ void st_ScreenRenderer_draw(
       self->internal->glyphShader,
       "atlasSize");
   FORCE_ASSERT_GL_ERROR();
-  /* FIXME: Actually retrieve the atlas size */
   atlasSize = st_GlyphAtlas_getTextureSize(&self->atlas);
   glUniform1i(atlasSizeLocation,
       atlasSize);

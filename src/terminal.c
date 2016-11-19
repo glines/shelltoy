@@ -31,8 +31,8 @@ void st_Terminal_initWindow(st_Terminal *self);
 void st_Terminal_initTSM(st_Terminal *self);
 void st_Terminal_calculatePseudoTerminalSize(
     st_Terminal *self,
-    int *ptyWidth,
-    int *ptyHeight);
+    int *columns,
+    int *rows);
 
 void st_Terminal_tsmLogCallback(
     st_Terminal *self,
@@ -159,26 +159,41 @@ void st_Terminal_initTSM(st_Terminal *self) {
 
 void st_Terminal_calculatePseudoTerminalSize(
     st_Terminal *self,
-    int *ptyWidth,
-    int *ptyHeight)
+    int *columns,
+    int *rows)
 {
   int cellWidth, cellHeight;
   st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
       &cellWidth,  /* width */
       &cellHeight  /* height */
       );
-  /* TODO: The pseudo terminal size is the number of (halfwidth) glyph cells
-   * that will fit in the terminal window */
-  *ptyWidth = self->width / cellWidth;
-  *ptyHeight = self->height / cellHeight;
+  /* The pseudo terminal size is the number of (halfwidth) glyph cells that
+   * will fit in the terminal window */
+  *columns = self->width / cellWidth;
+  *rows = self->height / cellHeight;
 }
 
 /* TODO: Allow the user to configure the shell command to invoke */
 #define ENV_PATH "/usr/bin/env"
 #define SHELL "bash"
 
-void st_Terminal_init(st_Terminal *self) {
+void st_Terminal_init(
+    st_Terminal *self,
+    int argc,
+    char **argv)
+{
   size_t len;
+  int ptyWidth, ptyHeight;
+  char **argv_nullTerminated;
+  assert(argc > 0);
+  /* TODO: Copy arguments into a null terminated array */
+  argv_nullTerminated = (char**)malloc(sizeof(char*) * (argc + 1));
+  for (int i = 0; i < argc; ++i) {
+    len = strlen(argv[i]);
+    argv_nullTerminated[i] = (char*)malloc(len + 1);
+    strcpy(argv_nullTerminated[i], argv[i]);
+  }
+  argv_nullTerminated[argc] = NULL;
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
@@ -193,31 +208,28 @@ void st_Terminal_init(st_Terminal *self) {
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
-  st_PTY_init(&self->pty);
-  char **argv = (char **)malloc(3 * sizeof(char *));
-#define COPY_STRING(dst,src) \
-  len = strlen(src); \
-  dst = (char*)malloc(len + 1); \
-  strncpy(dst, src, len); \
-  dst[len] = '\0';
-  COPY_STRING(argv[0], ENV_PATH);
-  COPY_STRING(argv[1], SHELL);
-  argv[2] = NULL;
+  st_Terminal_calculatePseudoTerminalSize(self,
+      &ptyWidth,  /* ptyWidth */
+      &ptyHeight  /* ptyHeight */
+      );
+  st_PTY_init(&self->pty,
+      ptyWidth,  /* width */
+      ptyHeight  /* height */
+      );
   /* TODO: Construct a st_MonospaceFont object that combines multiple font
    * faces into one font that supports normal, bold, and wide glyphs */
   /* TODO: Calculate terminal width and height */
   st_PTY_startChild(&self->pty,
-      "/usr/bin/env",  /* path */
-      argv,  /* argv */
+      argv_nullTerminated[0],  /* path */
+      argv_nullTerminated,  /* argv */
       (st_PTY_readCallback_t)st_Terminal_ptyReadCallback,  /* callback */
-      self,  /* callback_data */
-      80,  /* width */
-      24  /* height */
+      self  /* callback_data */
       );
-  /* FIXME: Is it safe to free argv at this point? */
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
+  /* Free memory allocated for arguments */
+  for (int i = 0; i < argc; ++i) {
+    free(argv_nullTerminated[i]);
+  }
+  free(argv_nullTerminated);
   /* TODO: Start sending input from the child process to tsm_vte_input()? */
   /* TODO: Start sending keyboard input to tsm_vte_handle_keyboard()? */
 }
@@ -236,29 +248,43 @@ void st_Terminal_windowSizeChanged(
     int width,
     int height)
 {
-  int ptyWidth, ptyHeight;
   int result;
+  int newColumns, newRows;
   /* Store the new window width and height */
   self->width = width;
   self->height = height;
   fprintf(stderr, "new window dimensions: %dx%d\n", width, height);
-  /* Change the pseudo terminal screen size */
-  st_Terminal_calculatePseudoTerminalSize(self, &ptyWidth, &ptyHeight);
-  fprintf(stderr, "new size: %dx%d\n", ptyWidth, ptyHeight);
-  result = tsm_screen_resize(
-      self->screen,  /* con */
-      ptyWidth,  /* x */
-      ptyHeight  /* y */
+  /* Calculate new pseudo terminal size */
+  st_Terminal_calculatePseudoTerminalSize(self,
+      &newColumns,  /* columns */
+      &newRows  /* rows */
       );
-  if (result < 0) {
-    fprintf(stderr, "Failed to resize libtsm screen\n");
-    /* TODO: Fail gracefully */
-    assert(0);
+  if ((newColumns != self->columns) || (newRows != self->rows))
+  {
+    self->columns = newColumns;
+    self->rows = newRows;
+    fprintf(stderr, "new size: %dx%d\n", self->columns, self->rows);
+    /* Change the pseudo terminal screen size */
+    result = tsm_screen_resize(
+        self->screen,  /* con */
+        self->columns,  /* x */
+        self->rows  /* y */
+        );
+    if (result < 0) {
+      fprintf(stderr, "Failed to resize libtsm screen\n");
+      /* TODO: Fail gracefully */
+      assert(0);
+    }
+    st_PTY_resize(&self->pty,
+        self->columns,  /* width */
+        self->rows  /* height */
+        );
+    /* Update the screen */
+    st_ScreenRenderer_updateScreen(&self->internal->screenRenderer,
+        self->screen,  /* screen */
+        &self->internal->glyphRenderer  /* glyphRenderer */
+        );
   }
-  st_PTY_resize(&self->pty,
-      ptyWidth,  /* width */
-      ptyHeight  /* height */
-      );
   /* Update the GL viewport size */
   glViewport(0, 0, width, height);
   FORCE_ASSERT_GL_ERROR();
