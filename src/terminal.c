@@ -377,16 +377,55 @@ void st_Terminal_keyInput(
 
   /* TODO: Handle shift+pgup events to scroll through back buffer */
 
-  /* TODO: Convert SDL keys to XKB keys */
-  switch (keycode) {
-    case SDLK_BACKSPACE:
-      key_xkb = XKB_KEY_BackSpace;
-      break;
-    case SDLK_RETURN:
-      key_xkb = XKB_KEY_Return;
-      break;
-    default:
-      return;
+  /* Handle control key sequences */
+  if (modifiers & KMOD_CTRL) {
+    /* Convert SDL keys to XKB keys */
+    switch (keycode) {
+#define SDL_XKB(x) \
+      case SDLK_ ## x: \
+        key_xkb = XKB_KEY_ ## x; \
+        break;
+      SDL_XKB(a)
+      SDL_XKB(b)
+      SDL_XKB(c)
+      SDL_XKB(d)
+      SDL_XKB(e)
+      SDL_XKB(f)
+      SDL_XKB(g)
+      SDL_XKB(h)
+      SDL_XKB(i)
+      SDL_XKB(j)
+      SDL_XKB(k)
+      SDL_XKB(l)
+      SDL_XKB(m)
+      SDL_XKB(n)
+      SDL_XKB(o)
+      SDL_XKB(p)
+      SDL_XKB(q)
+      SDL_XKB(r)
+      SDL_XKB(s)
+      SDL_XKB(t)
+      SDL_XKB(u)
+      SDL_XKB(v)
+      SDL_XKB(w)
+      SDL_XKB(x)
+      SDL_XKB(y)
+      SDL_XKB(z)
+    }
+  } else {
+    /* Convert miscellaneous SDL keys to XKB keys */
+    switch (keycode) {
+      case SDLK_BACKSPACE:
+        key_xkb = XKB_KEY_BackSpace;
+        break;
+      case SDLK_RETURN:
+        key_xkb = XKB_KEY_Return;
+        break;
+      default:
+        /* Nothing to handle; most input will be handled through the SDL text
+         * input event */
+        return;
+    }
   }
 
   /* Send the key to the vte state machine */
