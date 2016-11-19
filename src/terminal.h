@@ -35,5 +35,9 @@ void st_Terminal_draw(st_Terminal *self);
 void st_Terminal_textInput(
     st_Terminal *self,
     const char *text);
+void st_Terminal_keyInput(
+    st_Terminal *self,
+    SDL_Keycode keycode,
+    uint16_t modifiers);
 
 #endif

@@ -44,6 +44,12 @@ void st_dispatchEvents() {
             event.text.text  /* text */
             );
         break;
+      case SDL_KEYDOWN:
+        st_Terminal_keyInput(&shelltoy.terminal,
+            event.key.keysym.sym,  /* keycode */
+            event.key.keysym.mod  /* modifiers */
+            );
+        break;
       default:
         if (event.type == st_PTY_eventType()) {
           fprintf(stderr, "Recieved PTY event\n");

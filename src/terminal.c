@@ -1,5 +1,7 @@
 #include <assert.h>
 
+#include "../extern/xkbcommon-keysyms.h"
+
 #include "common/glError.h"
 
 #include "terminal.h"
@@ -311,9 +313,56 @@ void st_Terminal_textInput(
       /* FIXME: It's not clear what result signifies or what
        * tsm_screen_sb_reset() actually does. */
       tsm_screen_sb_reset(self->screen);
-      fprintf(stderr, "result was true\n");  /* XXX */
-    } else {
-      fprintf(stderr, "RESULT WAS FALSE!!!\n");  /* XXX */
     }
+  }
+}
+void st_Terminal_keyInput(
+    st_Terminal *self,
+    SDL_Keycode keycode,
+    uint16_t modifiers)
+{
+  unsigned int modifiers_tsm;
+  uint32_t key_xkb;
+  int result;
+
+  /* TODO: Convert the SDL modifier flags to libtsm modifier flags */
+  modifiers_tsm = 0;
+  if (modifiers & KMOD_CAPS)
+    modifiers_tsm |= TSM_LOCK_MASK;
+  if (modifiers & KMOD_CTRL)
+    modifiers_tsm |= TSM_CONTROL_MASK;
+  if (modifiers & KMOD_SHIFT)
+    modifiers_tsm |= TSM_SHIFT_MASK;
+  if (modifiers & KMOD_ALT)
+    modifiers_tsm |= TSM_ALT_MASK;
+  if (modifiers & KMOD_GUI)
+    modifiers_tsm |= TSM_LOGO_MASK;
+
+  /* TODO: Handle shift+pgup events to scroll through back buffer */
+
+  /* TODO: Convert SDL keys to XKB keys */
+  switch (keycode) {
+    case SDLK_BACKSPACE:
+      key_xkb = XKB_KEY_BackSpace;
+      break;
+    case SDLK_RETURN:
+      key_xkb = XKB_KEY_Return;
+      break;
+    default:
+      return;
+  }
+
+  /* Send the key to the vte state machine */
+  result = tsm_vte_handle_keyboard(
+      self->vte,  /* vte */
+      key_xkb,  /* keysym */
+      XKB_KEY_NoSymbol,  /* ascii */
+      modifiers_tsm,  /* mods */
+      0  /* unicode */
+      );
+  if (result) {
+    /* FIXME: It's not clear what result signifies or what
+     * tsm_screen_sb_reset() actually does. */
+    tsm_screen_sb_reset(self->screen);
   }
 }
