@@ -18,6 +18,8 @@ target_link_libraries(shelltoy
     ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     )
+install(TARGETS shelltoy
+    RUNTIME DESTINATION bin)
 
 add_subdirectory("./common")
 add_subdirectory("./toys")
