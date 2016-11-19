@@ -52,11 +52,12 @@ void st_Terminal_tsmWriteCallback(
     size_t len,
     st_Terminal *self)
 {
-  /* TODO: something */
-  /* FIXME: What is this supposed to do realy? */
+  int result;
+
+  /* Write to the pseudo terminal */
+  st_PTY_write(&self->pty, u8, len);
 }
 
-/* FIXME: I don't think this is needed; read events are sent through SDL */
 void st_Terminal_ptyReadCallback(
     st_Terminal *self,
     const char *u8,
@@ -68,7 +69,7 @@ void st_Terminal_ptyReadCallback(
       u8,  /* u8 */
       len  /* len */
       );
-  /* TODO: Update the terminal screen */
+  /* Update the terminal screen display */
   st_Terminal_updateScreen(self);
 }
 
@@ -92,6 +93,10 @@ void st_Terminal_initWindow(st_Terminal *self) {
   /* Store the window dimensions */
   self->width = 640;
   self->height = 480;
+
+  /* The terminal emulator recieves all text through the operating system's IME
+   * interface. See: <https://wiki.libsdl.org/Tutorials/TextInput> */
+  SDL_StartTextInput();
 
   /* Create an OpenGL context for our window */
   self->glContext = SDL_GL_CreateContext(self->window);
@@ -276,4 +281,39 @@ void st_Terminal_draw(st_Terminal *self) {
       );
 
   SDL_GL_SwapWindow(self->window);
+}
+
+void st_Terminal_textInput(
+    st_Terminal *self,
+    const char *text)
+{
+  uint32_t character;
+  int result;
+
+  fprintf(stderr, "SDL text input: '%s'\n", text);
+
+  /* FIXME: Convert the text from UTF-8 to UTF-32 (properly) */
+
+  /* Iterate over the input text to generate corresponding keyboard events */
+  for (int i = 0; text[i] != '\0'; ++i) {
+    character = (uint32_t)text[i];
+    /* FIXME: It's not clear what each of the arguments for
+     * tsm_vte_handle_keyboard() need to be set to. In particular, we don't
+     * actually have a keysym here. */
+    result = tsm_vte_handle_keyboard(
+        self->vte,  /* vte */
+        character,  /* keysym */
+        0,  /* ascii */
+        0,  /* mods */
+        character  /* unicode */
+        );
+    if (result) {
+      /* FIXME: It's not clear what result signifies or what
+       * tsm_screen_sb_reset() actually does. */
+      tsm_screen_sb_reset(self->screen);
+      fprintf(stderr, "result was true\n");  /* XXX */
+    } else {
+      fprintf(stderr, "RESULT WAS FALSE!!!\n");  /* XXX */
+    }
+  }
 }

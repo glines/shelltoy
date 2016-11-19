@@ -235,6 +235,13 @@ void st_PTY_read(st_PTY *self) {
   } while (len > 0);
 }
 
+void st_PTY_write(st_PTY *self, const char *u8, size_t len) {
+  /* TODO: wlterm uses some crazy ring buffer and writev(). We should look into
+   * why they do that. */
+  /* TODO: Check for errors? */
+  write(self->master_fd, u8, len);
+}
+
 void st_PTY_resize(st_PTY *self, int width, int height) {
   struct winsize ws;
   int result;

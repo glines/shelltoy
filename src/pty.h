@@ -10,7 +10,7 @@ typedef void (*st_PTY_readCallback_t)(
     size_t buff_size);
 
 typedef struct {
-  /* TODO: Declare handle to child process */
+  /* TODO: Move some of these to private data structures */
   pid_t child;
   int master_fd, epoll_fd;
   pthread_t poll_thread;
@@ -42,6 +42,7 @@ void st_PTY_startChild(
     int height);
 
 void st_PTY_read(st_PTY *self);
+void st_PTY_write(st_PTY *self, const char *u8, size_t len);
 
 void st_PTY_resize(st_PTY *self, int width, int height);
 

@@ -38,6 +38,12 @@ void st_dispatchEvents() {
             break;
         }
         break;
+      case SDL_TEXTINPUT:
+        /* FIXME: Handle control characters separately from text input */
+        st_Terminal_textInput(&shelltoy.terminal,
+            event.text.text  /* text */
+            );
+        break;
       default:
         if (event.type == st_PTY_eventType()) {
           fprintf(stderr, "Recieved PTY event\n");

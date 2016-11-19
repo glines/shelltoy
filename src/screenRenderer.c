@@ -514,7 +514,7 @@ void st_ScreenRenderer_draw(
   glDisable(GL_DEPTH_TEST);
   FORCE_ASSERT_GL_ERROR();
 
-  /* TODO: Draw the instanced glyph quad, which is simply two trinagles */
+  /* Draw the instanced glyph quad, which is simply two trinagles */
   glDrawElementsInstanced(
       /* FIXME: This might be better as GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN */
       GL_TRIANGLES,  /* mode */

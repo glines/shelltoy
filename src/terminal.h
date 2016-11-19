@@ -32,4 +32,8 @@ void st_Terminal_updateScreen(st_Terminal *self);
 
 void st_Terminal_draw(st_Terminal *self);
 
+void st_Terminal_textInput(
+    st_Terminal *self,
+    const char *text);
+
 #endif
