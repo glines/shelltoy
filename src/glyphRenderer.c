@@ -28,11 +28,16 @@
 
 #include "glyphRenderer.h"
 
+/* We convert the fixed-point 26.6 format (a.k.a. 1/64th pixel format) to an
+ * integer value in pixels, rounding up */
+#define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
+    ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
+
 /* Private methods */
 void st_GlyphRenderer_updateCellSize(
     st_GlyphRenderer *self);
 
-void st_GlyphRenderer_calculateFacePixelBBox(
+void st_GlyphRenderer_calculateCellSize(
     const FT_Face face,
     int *width, int *height);
 
@@ -84,7 +89,7 @@ void st_GlyphRenderer_init(
   error = FT_Set_Char_Size(
       self->internal->face,  /* face */
       0,  /* char_width */
-      16*64,  /* char_height */
+      5 << 6,  /* char_height */
       300,  /* horz_resolution */
       300  /* vert_resolution */
       );
@@ -100,9 +105,13 @@ void st_GlyphRenderer_init(
 void st_GlyphRenderer_updateCellSize(
     st_GlyphRenderer *self)
 {
+  FT_Face face;
+
+  face = self->internal->face;
+
   /* Calculate the cell size for the current base font */
-  st_GlyphRenderer_calculateFacePixelBBox(
-      self->internal->face,  /* face */
+  st_GlyphRenderer_calculateCellSize(
+      face,  /* face */
       &self->internal->cellSize[0],  /* width */
       &self->internal->cellSize[1]  /* height */
       );
@@ -112,21 +121,45 @@ void st_GlyphRenderer_updateCellSize(
  * The atlas does not use this information, since it packs glyphs as tightly as
  * possible, but we do need to compute bounding box information for the
  * terminal. */
-void st_GlyphRenderer_calculateFacePixelBBox(
+void st_GlyphRenderer_calculateCellSize(
     const FT_Face face,
     int *width, int *height)
 {
   double x_pixels_per_unit, y_pixels_per_unit, units_per_em;
+  FT_UInt glyph_index;
+  FT_Error error;
+
   /* Compute a scaling factor to convert from font units to pixels, as
    * described in
    * <https://www.freetype.org/freetype2/docs/tutorial/step2.html> */
   units_per_em = (double)face->units_per_EM;
   x_pixels_per_unit = face->size->metrics.x_ppem / units_per_em;
   y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
-  *width = (int)ceil(
-      (double)(face->bbox.xMax - face->bbox.xMin) * x_pixels_per_unit);
-  *height = (int)ceil(
-      (double)(face->bbox.yMax - face->bbox.yMin) * y_pixels_per_unit);
+
+  /* Horizontal distance between glyphs is estimated by looking at the glyph
+   * for 'M'.  bbox is not appropriate here since some monospace fonts contain
+   * characters far wider than expected. */
+  glyph_index = FT_Get_Char_Index(face, (FT_ULong)'M');
+  if (glyph_index == 0) {
+    fprintf(stderr, "Font does not contain the character 'M'\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  error = FT_Load_Glyph(
+      face,  /* face */
+      glyph_index,  /* glyph_index */
+      FT_LOAD_DEFAULT  /* load_flags */
+      );
+  if (error != FT_Err_Ok) {
+    fprintf(stderr,
+        "Freetype error loading the glyph for ASCII character 'M'\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  *width = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiAdvance);
+
+  /* Distance between baselines is given by the height member of FT_FaceRec */
+  *height = (int)ceil((double)face->height * y_pixels_per_unit);
 }
 
 void st_GlyphRenderer_destroy(
@@ -170,10 +203,6 @@ int st_GlyphRenderer_getGlyphDimensions(
         (char)character);
   }
   /* Calculate the pixel dimensions of this glyph, as we would render it */
-  /* We convert the fixed-point 26.6 format (a.k.a. 1/64th pixel format) to an
-   * integer value in pixels, rounding up */
-#define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
-    ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
   *width = 
     TWENTY_SIX_SIX_TO_PIXELS(self->internal->face->glyph->metrics.width);
   *height = 
@@ -215,15 +244,28 @@ void st_GlyphRenderer_getGlyphOffset(
     uint32_t character,
     int *x, int *y)
 {
-  int glyph_index;
+  double x_pixels_per_unit, y_pixels_per_unit, units_per_em;
+  FT_UInt glyph_index;
+  FT_Face face;
   FT_Error error;
+
+  face = self->internal->face;
+
+  /* Compute a scaling factor to convert from font units to pixels, as
+   * described in
+   * <https://www.freetype.org/freetype2/docs/tutorial/step2.html> */
+  /* TODO: Cache this result */
+  units_per_em = (double)face->units_per_EM;
+  x_pixels_per_unit = face->size->metrics.x_ppem / units_per_em;
+  y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
+
   /* TODO: Look for a face that provides this glyph (once we add support for
    * multiple faces) */
-  glyph_index = FT_Get_Char_Index(self->internal->face, character);
+  glyph_index = FT_Get_Char_Index(face, character);
   assert(glyph_index);
   /* Load the glyph */
   error = FT_Load_Glyph(
-      self->internal->face,  /* face */
+      face,  /* face */
       glyph_index,  /* glyph_index */
       FT_LOAD_DEFAULT  /* load_flags */
       );
@@ -231,8 +273,10 @@ void st_GlyphRenderer_getGlyphOffset(
     fprintf(stderr,
         "Freetype error loading the glyph for ASCII character '%c'\n",
         (char)character);
+    /* TODO: Fail gracefully */
+    assert(0);
   }
   /* TODO: Calculate the offset of this glyph */
-  *x = 10;
-  *y = 10;
+  *x = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingX);
+  *y = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingY + face->size->metrics.descender - face->glyph->metrics.height);
 }
