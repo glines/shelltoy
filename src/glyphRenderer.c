@@ -160,6 +160,9 @@ void st_GlyphRenderer_calculateCellSize(
 
   /* Distance between baselines is given by the height member of FT_FaceRec */
   *height = (int)ceil((double)face->height * y_pixels_per_unit);
+
+  /* NOTE: The following calculation also seems to work well */
+/*  *height = TWENTY_SIX_SIX_TO_PIXELS(face->size->metrics.height); */
 }
 
 void st_GlyphRenderer_destroy(
@@ -278,5 +281,5 @@ void st_GlyphRenderer_getGlyphOffset(
   }
   /* TODO: Calculate the offset of this glyph */
   *x = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingX);
-  *y = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingY + face->size->metrics.descender - face->glyph->metrics.height);
+  *y = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingY - face->size->metrics.descender - face->glyph->metrics.height);
 }
