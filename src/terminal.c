@@ -133,8 +133,7 @@ void st_Terminal_initWindow(st_Terminal *self) {
   FORCE_ASSERT_GL_ERROR();
   glFrontFace(GL_CCW);
   FORCE_ASSERT_GL_ERROR();
-  /* TODO: Calculate the window width and height */
-  glViewport(0, 0, 640, 480);
+  glViewport(0, 0, self->width, self->height);
   FORCE_ASSERT_GL_ERROR();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   FORCE_ASSERT_GL_ERROR();
@@ -238,12 +237,24 @@ void st_Terminal_windowSizeChanged(
     int height)
 {
   int ptyWidth, ptyHeight;
+  int result;
   /* Store the new window width and height */
   self->width = width;
   self->height = height;
   fprintf(stderr, "new window dimensions: %dx%d\n", width, height);
   /* Change the pseudo terminal screen size */
   st_Terminal_calculatePseudoTerminalSize(self, &ptyWidth, &ptyHeight);
+  fprintf(stderr, "new size: %dx%d\n", ptyWidth, ptyHeight);
+  result = tsm_screen_resize(
+      self->screen,  /* con */
+      ptyWidth,  /* x */
+      ptyHeight  /* y */
+      );
+  if (result < 0) {
+    fprintf(stderr, "Failed to resize libtsm screen\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
   st_PTY_resize(&self->pty,
       ptyWidth,  /* width */
       ptyHeight  /* height */

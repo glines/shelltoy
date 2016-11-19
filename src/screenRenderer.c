@@ -367,13 +367,10 @@ void st_ScreenRenderer_screenDrawCallback(
   /* Set up therest of the glyph instance data structure */
   glyphInstance.glyphSize[0] = (float)bbox.w;
   glyphInstance.glyphSize[1] = (float)bbox.h;
-  fprintf(stderr, "glyphSize: %d, %d\n", bbox.w, bbox.h);
   glyphInstance.atlasPos[0] = (float)bbox.x;
   glyphInstance.atlasPos[1] = (float)bbox.y;
   glyphInstance.cell[0] = posx;
   glyphInstance.cell[1] = posy;
-  fprintf(stderr, "cell: (%d, %d)\n",
-      posx, posy);
   st_GlyphRenderer_getGlyphOffset(glyphRenderer,
       *ch,  /* character */
       &xOffset,  /* x */
@@ -402,11 +399,6 @@ void st_ScreenRenderer_screenDrawCallback(
   /* Append the glyph instance data structure to our buffer */
   memcpy(&self->internal->glyphs[self->internal->numGlyphs++], &glyphInstance,
       sizeof(st_ScreenRenderer_GlyphInstance));
-
-//  fprintf(stderr, "Instanced glyph for character: '%c' at location (%d, %d)\n",
-//      (char)(*ch),
-//      posx,
-//      posy);  /* XXX */
 }
 
 void st_ScreenRenderer_draw(
@@ -441,7 +433,6 @@ void st_ScreenRenderer_draw(
   for (int i = 0; i < numAtlasTextures; ++i) {
     glActiveTexture(atlasSamplers[i]);
     FORCE_ASSERT_GL_ERROR();
-    fprintf(stderr, "about to bind texture: %d\n", atlasTextures[i]);
     glBindTexture(GL_TEXTURE_2D, atlasTextures[i]);
     FORCE_ASSERT_GL_ERROR();
   }
@@ -467,9 +458,6 @@ void st_ScreenRenderer_draw(
       &cellSize[0],  /* width */
       &cellSize[1]  /* height */
       );
-  fprintf(stderr, "cellSize: %dx%d\n",
-      cellSize[0],
-      cellSize[1]);
   glUniform2i(cellSizeLocation,
       cellSize[0],
       cellSize[1]);  /* XXX */
@@ -483,8 +471,6 @@ void st_ScreenRenderer_draw(
       viewportWidth,
       viewportHeight);
   FORCE_ASSERT_GL_ERROR();
-  fprintf(stderr, "viewport: %dx%d\n",
-      viewportWidth, viewportHeight);
   /* Configure the atlasSize uniform */
   atlasSizeLocation = glGetUniformLocation(
       self->internal->glyphShader,
@@ -499,9 +485,6 @@ void st_ScreenRenderer_draw(
   /* Use our VAO for instanced glyph rendering */
   glBindVertexArray(self->internal->glyphInstanceVAO);
   FORCE_ASSERT_GL_ERROR();
-
-  fprintf(stderr, "Drawing screen\n");  /* XXX */
-  fprintf(stderr, "numGlyphs: %ld\n", self->internal->numGlyphs);
 
   /* Configure blending mode */
   glEnable(GL_BLEND);
