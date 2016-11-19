@@ -421,6 +421,13 @@ void st_Terminal_keyInput(
       case SDLK_RETURN:
         key_xkb = XKB_KEY_Return;
         break;
+      case SDLK_TAB:
+        /* FIXME: Somehow tab completion still does not always work with bash */
+        /* FIXME: I'm not sure if XKB_KEY_Tab or XKB_Key_ISO_Left_Tab should be
+         * used here. libtsm will send "\x09" for the former and "\e[Z" for the
+         * latter. */
+        key_xkb = XKB_KEY_ISO_Left_Tab;
+        break;
       default:
         /* Nothing to handle; most input will be handled through the SDL text
          * input event */
