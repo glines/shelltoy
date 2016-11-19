@@ -503,6 +503,17 @@ void st_ScreenRenderer_draw(
   fprintf(stderr, "Drawing screen\n");  /* XXX */
   fprintf(stderr, "numGlyphs: %ld\n", self->internal->numGlyphs);
 
+  /* Configure blending mode */
+  glEnable(GL_BLEND);
+  FORCE_ASSERT_GL_ERROR();
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  FORCE_ASSERT_GL_ERROR();
+  /* Disable depth test */
+  /* NOTE: We assume no glyphs occlude any other glyphs. This obviates the need
+   * to sort glyphs by depth to avoid having them fail the depth test. */
+  glDisable(GL_DEPTH_TEST);
+  FORCE_ASSERT_GL_ERROR();
+
   /* TODO: Draw the instanced glyph quad, which is simply two trinagles */
   glDrawElementsInstanced(
       /* FIXME: This might be better as GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN */
@@ -512,6 +523,13 @@ void st_ScreenRenderer_draw(
       0,  /* indices */
       self->internal->numGlyphs  /* primcount */
       );
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Restore depth test */
+  glEnable(GL_DEPTH_TEST);
+  FORCE_ASSERT_GL_ERROR();
+  /* Restore blending mode */
+  glDisable(GL_BLEND);
   FORCE_ASSERT_GL_ERROR();
 
   glBindVertexArray(0);

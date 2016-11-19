@@ -9,5 +9,5 @@ out vec4 color;
 
 void main(void) {
   float alpha = texture(atlas[0], atlasTexCoord).r;
-  color = vec4(vec3(alpha), 1.0);
+  color = vec4(vec3(1.0), alpha);
 }
