@@ -692,11 +692,14 @@ void st_ScreenRenderer_drawBackgroundCells(
       );
   FORCE_ASSERT_GL_ERROR();  /* XXX: Remove the FORCE here */
   fprintf(stderr, "numBackgroundCells: %ld\n", self->internal->numBackgroundCells);
+
+  glBindVertexArray(0);
+  ASSERT_GL_ERROR();
 }
 
-void st_ScreenRenderer_draw(
+void st_ScreenRenderer_drawGlyphs(
     const st_ScreenRenderer *self,
-    const st_GlyphRenderer *glyphRenderer,
+    int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight)
 {
   static const GLuint atlasSamplers[] = {
@@ -712,37 +715,6 @@ void st_ScreenRenderer_draw(
   int numAtlasTextures, atlasSize;
   GLuint atlasLocation, cellSizeLocation, viewportSizeLocation,
          atlasSizeLocation;
-  int cellSize[2];
-
-  /* Get cell size from our glyph renderer */
-  /* FIXME: The need for this call seems a little strange. Our glyphs have long
-   * since been rendered to the glyph atlas. We should have simply stored the
-   * cell size when the atlas was updated. */
-  st_GlyphRenderer_getCellSize(glyphRenderer,
-      &cellSize[0],  /* width */
-      &cellSize[1]  /* height */
-      );
-
-  /* Configure blending mode */
-  glEnable(GL_BLEND);
-  ASSERT_GL_ERROR();
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  ASSERT_GL_ERROR();
-  /* Disable depth test */
-  /* NOTE: We assume no glyphs occlude any other glyphs. This obviates the need
-   * to sort glyphs by depth to avoid having them fail the depth test. */
-  glDisable(GL_DEPTH_TEST);
-  ASSERT_GL_ERROR();
-
-  /* Draw the background cells */
-  st_ScreenRenderer_drawBackgroundCells(self,
-      cellSize[0],  /* cellWidth */
-      cellSize[1],  /* cellHeight */
-      viewportWidth,  /* viewportWidth */
-      viewportHeight  /* viewportHeight */
-      );
-
-  /* TODO: Move the glyph drawing to a subroutine */
 
   /* Use the glyph shader program */
   glUseProgram(self->internal->glyphShader);
@@ -783,8 +755,8 @@ void st_ScreenRenderer_draw(
       "cellSize");
   ASSERT_GL_ERROR();
   glUniform2i(cellSizeLocation,
-      cellSize[0],
-      cellSize[1]);
+      cellWidth,
+      cellHeight);
   ASSERT_GL_ERROR();
   /* Configure the viewportSize uniform */
   /* FIXME: Store the viewportSize attribute location */
@@ -817,13 +789,57 @@ void st_ScreenRenderer_draw(
       );
   ASSERT_GL_ERROR();
 
+  glBindVertexArray(0);
+  ASSERT_GL_ERROR();
+}
+
+void st_ScreenRenderer_draw(
+    const st_ScreenRenderer *self,
+    const st_GlyphRenderer *glyphRenderer,
+    int viewportWidth, int viewportHeight)
+{
+  int cellSize[2];
+
+  /* Get cell size from our glyph renderer */
+  /* FIXME: The need for this call seems a little strange. Our glyphs have long
+   * since been rendered to the glyph atlas. We should have simply stored the
+   * cell size when the atlas was updated. */
+  st_GlyphRenderer_getCellSize(glyphRenderer,
+      &cellSize[0],  /* width */
+      &cellSize[1]  /* height */
+      );
+
+  /* Configure blending mode */
+  glEnable(GL_BLEND);
+  ASSERT_GL_ERROR();
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  ASSERT_GL_ERROR();
+  /* Disable depth test */
+  /* NOTE: We assume no glyphs occlude any other glyphs. This obviates the need
+   * to sort glyphs by depth to avoid having them fail the depth test. */
+  glDisable(GL_DEPTH_TEST);
+  ASSERT_GL_ERROR();
+
+  /* Draw the background cells */
+  st_ScreenRenderer_drawBackgroundCells(self,
+      cellSize[0],  /* cellWidth */
+      cellSize[1],  /* cellHeight */
+      viewportWidth,  /* viewportWidth */
+      viewportHeight  /* viewportHeight */
+      );
+
+  /* Draw the glyphs on top of the background cells */
+  st_ScreenRenderer_drawGlyphs(self,
+      cellSize[0],  /* cellWidth */
+      cellSize[1],  /* cellHeight */
+      viewportWidth,  /* viewportWidth */
+      viewportHeight  /* viewportHeight */
+      );
+
   /* Restore depth test */
   glEnable(GL_DEPTH_TEST);
   ASSERT_GL_ERROR();
   /* Restore blending mode */
   glDisable(GL_BLEND);
-  ASSERT_GL_ERROR();
-
-  glBindVertexArray(0);
   ASSERT_GL_ERROR();
 }
