@@ -29,6 +29,7 @@
 #include "glyphAtlas.h"
 
 #define ST_SCREEN_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
+#define ST_SCREEN_RENDERER_INIT_SIZE_BACKGROUND_CELLS (80 * 24 * 2)
 
 struct st_ScreenRenderer_Internal;
 
