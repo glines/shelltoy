@@ -86,6 +86,8 @@ void st_GlyphRenderer_init(
   /* TODO: Fail gracefully? */
   /* TODO: Support setting different font sizes */
   /* TODO: Support differentiation between bitmap and vector fonts here */
+  /* TODO: Try out using FT_SIZE_REQUEST_TYPE_CELL, since it is obviously
+   * intended for terminal emulator applications. */
   error = FT_Set_Char_Size(
       self->internal->face,  /* face */
       0,  /* char_width */
