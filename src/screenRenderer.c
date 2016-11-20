@@ -83,6 +83,18 @@ void st_ScreenRenderer_screenDrawCallback(
     const struct tsm_screen_attr *attr,
     tsm_age_t age,
     st_ScreenRenderer_ScreenDrawCallbackData *data);
+void st_ScreenRenderer_addBackgroundCellInstance(
+    st_ScreenRenderer *self,
+    int posx,
+    int posy,
+    const struct tsm_screen_attr *attr);
+void st_ScreenRenderer_addGlyphInstance(
+    st_ScreenRenderer *self,
+    st_GlyphRenderer *glyphRenderer,
+    uint32_t ch,
+    int posx,
+    int posy,
+    const struct tsm_screen_attr *attr);
 int st_ScreenRenderer_colorCodeToRGB(
     const st_ScreenRenderer *self,
     int8_t code,
@@ -477,33 +489,117 @@ void st_ScreenRenderer_screenDrawCallback(
   tsm_age_t age,
   st_ScreenRenderer_ScreenDrawCallbackData *data)
 {
-  st_ScreenRenderer_GlyphInstance glyphInstance;
-  st_ScreenRenderer_BackgroundInstance backgroundInstance;
   st_ScreenRenderer *self;
   st_GlyphRenderer *glyphRenderer;
-  st_BoundingBox bbox;
-  int atlasIndex, xOffset, yOffset;
-  int error, result;
-
-  /* Skip whitespace if there is no background color */
-  /* FIXME: I'm not sure how to check for no background color. It might be
-   * color codes 16 or 17. */
-  if (!(*ch) || (*ch == 0x20))
-    return;
 
   self = data->self;
   glyphRenderer = data->glyphRenderer;
 
+  /* Add background instances for cells with a background color */
+  /* FIXME: I'm not sure how to check for no background color. It might be
+   * color codes 16 or 17. */
+  if (attr->bccode != 17 || attr->inverse) {
+    st_ScreenRenderer_addBackgroundCellInstance(self,
+        posx,  /* posx */
+        posy,  /* posy */
+        attr  /* attr */
+        );
+  }
+
+  /* Add glyph instances for non-whitespace characters */
+  if ((*ch) && (*ch != 0x20)) {
+    st_ScreenRenderer_addGlyphInstance(self,
+        glyphRenderer,  /* glyphRenderer */
+        *ch,  /* ch */
+        posx,  /* posx */
+        posy,  /* posx */
+        attr  /* attr */
+        );
+  }
+}
+
+void st_ScreenRenderer_addBackgroundCellInstance(
+    st_ScreenRenderer *self,
+    int posx,
+    int posy,
+    const struct tsm_screen_attr *attr)
+{
+  st_ScreenRenderer_BackgroundInstance backgroundInstance;
+  int result;
+
+  /* Set up the background instance data structure */
+  backgroundInstance.cell[0] = posx;
+  backgroundInstance.cell[1] = posy;
+
+  /* Determine the background color */
+  backgroundInstance.bgColor[3] = 255;  /* Assume background alpha of one */
+  if (attr->bccode < 0) {
+    /* Use RGB for the background color */
+    backgroundInstance.bgColor[0] = attr->br;
+    backgroundInstance.bgColor[1] = attr->bg;
+    backgroundInstance.bgColor[2] = attr->bb;
+  } else {
+    result = st_ScreenRenderer_colorCodeToRGB(self,
+        attr->bccode,  /* code */
+        backgroundInstance.bgColor  /* rgb */
+        );
+    if (!result) {
+      /* Use the default background color */
+      // assert(0);  /* XXX: We should never actually reach here */
+      /* Set the color to magenta for easier debugging */
+      backgroundInstance.bgColor[0] = 255;
+      backgroundInstance.bgColor[1] = 0;
+      backgroundInstance.bgColor[2] = 255;
+      backgroundInstance.bgColor[3] = 255;
+    }
+  }
+
+  /* Make sure we have memory allocated for the new background instance */
+  if (self->internal->numBackgroundCells + 1 > self->internal->sizeBackgroundCells) {
+    st_ScreenRenderer_BackgroundInstance *newBackgroundCells;
+
+    /* Double the number of background cells to ensure we have enough space */
+    newBackgroundCells = (st_ScreenRenderer_BackgroundInstance*)malloc(
+        sizeof(st_ScreenRenderer_BackgroundInstance)
+        * self->internal->sizeBackgroundCells * 2);
+    memcpy(newBackgroundCells, self->internal->backgroundCells,
+        sizeof(st_ScreenRenderer_BackgroundInstance)
+        * self->internal->sizeBackgroundCells);
+    free(self->internal->backgroundCells);
+    self->internal->backgroundCells = newBackgroundCells;
+    self->internal->sizeBackgroundCells *= 2;
+  }
+
+  /* Append the background instance data structure to our buffer */
+  memcpy(
+      &self->internal->backgroundCells[self->internal->numBackgroundCells++],
+      &backgroundInstance,
+      sizeof(st_ScreenRenderer_BackgroundInstance));
+}
+
+void st_ScreenRenderer_addGlyphInstance(
+    st_ScreenRenderer *self,
+    st_GlyphRenderer *glyphRenderer,
+    uint32_t ch,
+    int posx,
+    int posy,
+    const struct tsm_screen_attr *attr)
+{
+  st_ScreenRenderer_GlyphInstance glyphInstance;
+  st_BoundingBox bbox;
+  int atlasIndex, xOffset, yOffset;
+  int error, result;
+
   /* Look for this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(&self->atlas,
-      *ch,  /* character */
+      ch,  /* character */
       &bbox,  /* bbox */
       &atlasIndex  /* atlasTextureIndex */
       );
   if (error) {
     /* A glyph for the given character could not be found in the atlas */
     /* TODO: Try to add a glyph for this character */
-    fprintf(stderr, "Could not find glyph for '0x%08x'\n", *ch);
+    fprintf(stderr, "Could not find glyph for '0x%08x'\n", ch);
     return;
   }
 
@@ -515,7 +611,7 @@ void st_ScreenRenderer_screenDrawCallback(
   glyphInstance.cell[0] = posx;
   glyphInstance.cell[1] = posy;
   st_GlyphRenderer_getGlyphOffset(glyphRenderer,
-      *ch,  /* character */
+      ch,  /* character */
       &xOffset,  /* x */
       &yOffset  /* y */
       );
@@ -565,54 +661,6 @@ void st_ScreenRenderer_screenDrawCallback(
   /* Append the glyph instance data structure to our buffer */
   memcpy(&self->internal->glyphs[self->internal->numGlyphs++], &glyphInstance,
       sizeof(st_ScreenRenderer_GlyphInstance));
-
-  /* Set up the background instance data structure */
-  backgroundInstance.cell[0] = posx;
-  backgroundInstance.cell[1] = posy;
-
-  /* Determine the background color */
-  backgroundInstance.bgColor[3] = 255;  /* Assume background alpha of one */
-  if (attr->bccode < 0) {
-    /* Use RGB for the background color */
-    backgroundInstance.bgColor[0] = attr->br;
-    backgroundInstance.bgColor[1] = attr->bg;
-    backgroundInstance.bgColor[2] = attr->bb;
-  } else {
-    result = st_ScreenRenderer_colorCodeToRGB(self,
-        attr->bccode,  /* code */
-        backgroundInstance.bgColor  /* rgb */
-        );
-    if (!result) {
-      /* Use the default background color */
-      // assert(0);  /* XXX: We should never actually reach here */
-      backgroundInstance.bgColor[0] = 0;
-      backgroundInstance.bgColor[1] = 0;
-      backgroundInstance.bgColor[2] = 0;
-      backgroundInstance.bgColor[3] = 0;  /* Background alpha of zero */
-    }
-  }
-
-  /* Make sure we have memory allocated for the new background instance */
-  if (self->internal->numBackgroundCells + 1 > self->internal->sizeBackgroundCells) {
-    st_ScreenRenderer_BackgroundInstance *newBackgroundCells;
-
-    /* Double the number of background cells to ensure we have enough space */
-    newBackgroundCells = (st_ScreenRenderer_BackgroundInstance*)malloc(
-        sizeof(st_ScreenRenderer_BackgroundInstance)
-        * self->internal->sizeBackgroundCells * 2);
-    memcpy(newBackgroundCells, self->internal->backgroundCells,
-        sizeof(st_ScreenRenderer_BackgroundInstance)
-        * self->internal->sizeBackgroundCells);
-    free(self->internal->backgroundCells);
-    self->internal->backgroundCells = newBackgroundCells;
-    self->internal->sizeBackgroundCells *= 2;
-  }
-
-  /* Append the background instance data structure to our buffer */
-  memcpy(
-      &self->internal->backgroundCells[self->internal->numBackgroundCells++],
-      &backgroundInstance,
-      sizeof(st_ScreenRenderer_BackgroundInstance));
 }
 
 int st_ScreenRenderer_colorCodeToRGB(
