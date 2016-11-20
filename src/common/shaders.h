@@ -7,5 +7,6 @@
   GLuint st_Shaders_ ## name ## Shader();
 
 ST_DECLARE_SHADER(glyph)
+ST_DECLARE_SHADER(background)
 
 #endif

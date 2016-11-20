@@ -57,7 +57,8 @@ struct st_ScreenRenderer_Internal {
   size_t numBackgroundCells, sizeBackgroundCells;
   GLuint quadVertexBuffer, quadIndexBuffer;
   GLuint glyphInstanceBuffer, glyphInstanceVAO;
-  GLuint glyphShader;
+  GLuint backgroundInstanceBuffer, backgroundInstanceVAO;
+  GLuint glyphShader, backgroundShader;
 };
 
 /* Private method declarations */
@@ -66,6 +67,10 @@ void st_ScreenRenderer_initShaders(
 void st_ScreenRenderer_initBuffers(
     st_ScreenRenderer *self);
 void st_ScreenRenderer_initVAO(
+    st_ScreenRenderer *self);
+void st_ScreenRenderer_initGlyphInstanceVAO(
+    st_ScreenRenderer *self);
+void st_ScreenRenderer_initBackgroundInstanceVAO(
     st_ScreenRenderer *self);
 void st_ScreenRenderer_screenDrawCallback(
     struct tsm_screen *con,
@@ -82,6 +87,10 @@ int st_ScreenRenderer_colorCodeToRGB(
     const st_ScreenRenderer *self,
     int8_t code,
     uint8_t *rgb);
+void st_ScreenRenderer_drawBackgroundCells(
+    const st_ScreenRenderer *self,
+    int cellWidth, int cellHeight,
+    int viewportWidth, int viewportHeight);
 
 void st_ScreenRenderer_init(
     st_ScreenRenderer *self,
@@ -114,6 +123,7 @@ void st_ScreenRenderer_initShaders(
     st_ScreenRenderer *self)
 {
   self->internal->glyphShader = st_Shaders_glyphShader();
+  self->internal->backgroundShader = st_Shaders_backgroundShader();
 }
 
 void st_ScreenRenderer_initBuffers(
@@ -158,13 +168,20 @@ void st_ScreenRenderer_initBuffers(
   /* Initialize the glyph instance buffer */
   glGenBuffers(1, &self->internal->glyphInstanceBuffer);
   FORCE_ASSERT_GL_ERROR();
-  fprintf(stderr, "initialized self->internal->glyphInstanceBuffer: %d\n",
-      self->internal->glyphInstanceBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
+
+  /* Initialize the background instance buffer */
+  glGenBuffers(1, &self->internal->backgroundInstanceBuffer);
   FORCE_ASSERT_GL_ERROR();
 }
 
 void st_ScreenRenderer_initVAO(
+    st_ScreenRenderer *self)
+{
+  st_ScreenRenderer_initGlyphInstanceVAO(self);
+  st_ScreenRenderer_initBackgroundInstanceVAO(self);
+}
+
+void st_ScreenRenderer_initGlyphInstanceVAO(
     st_ScreenRenderer *self)
 {
   GLuint vertPosLocation, atlasIndexLocation, atlasPosLocation,
@@ -314,6 +331,83 @@ void st_ScreenRenderer_initVAO(
   FORCE_ASSERT_GL_ERROR();
 }
 
+void st_ScreenRenderer_initBackgroundInstanceVAO(
+    st_ScreenRenderer *self)
+{
+  GLuint vertPosLocation, cellLocation, bgColorLocation;
+
+  glGenVertexArrays(1, &self->internal->backgroundInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
+  glBindVertexArray(self->internal->backgroundInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the vertex attributes from the quad buffer */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->quadVertexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure vertPos */
+  vertPosLocation = glGetAttribLocation(
+      self->internal->backgroundShader,
+      "vertPos");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(vertPosLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      vertPosLocation,  /* index */
+      2,  /* size */
+      GL_FLOAT,  /* type */
+      GL_FALSE,  /* normalized */
+      sizeof(st_ScreenRenderer_QuadVertex),  /* stride */
+      ((st_ScreenRenderer_QuadVertex*)0)->pos  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the vertex attributes from the glyph instance buffer */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->backgroundInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure cell */
+  cellLocation = glGetAttribLocation(
+      self->internal->backgroundShader,
+      "cell");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(cellLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribIPointer(
+      cellLocation,  /* index */
+      2,  /* size */
+      GL_INT,  /* type */
+      sizeof(st_ScreenRenderer_BackgroundInstance),  /* stride */
+      ((st_ScreenRenderer_BackgroundInstance*)0)->cell  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(cellLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure bgColor */
+  bgColorLocation = glGetAttribLocation(
+      self->internal->backgroundShader,
+      "bgColor");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(bgColorLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      bgColorLocation,  /* index */
+      4,  /* size */
+      GL_UNSIGNED_BYTE,  /* type */
+      1,  /* normalized */
+      sizeof(st_ScreenRenderer_BackgroundInstance),  /* stride */
+      ((st_ScreenRenderer_BackgroundInstance*)0)->bgColor  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(bgColorLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the IBO for drawing glyph quads */
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->internal->quadIndexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+
+  glBindVertexArray(0);
+  FORCE_ASSERT_GL_ERROR();
+}
+
 void st_ScreenRenderer_destroy(
     st_ScreenRenderer *self)
 {
@@ -336,6 +430,7 @@ void st_ScreenRenderer_updateScreen(
   data.self = self;
   data.glyphRenderer = glyphRenderer;
   self->internal->numGlyphs = 0;
+  self->internal->numBackgroundCells = 0;
   tsm_screen_draw(
       screen,  /* con */
       (tsm_screen_draw_cb)st_ScreenRenderer_screenDrawCallback,  /* draw_cb */
@@ -343,9 +438,6 @@ void st_ScreenRenderer_updateScreen(
       );
 
   /* Send the recently updated glyph instance buffer to the GL */
-  /* TODO: Check for GL errors */
-  fprintf(stderr, "self->internal->glyphInstanceBuffer: %d\n",
-      self->internal->glyphInstanceBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
   ASSERT_GL_ERROR();
   glBufferData(
@@ -353,7 +445,20 @@ void st_ScreenRenderer_updateScreen(
       self->internal->numGlyphs
       * sizeof(st_ScreenRenderer_GlyphInstance),  /* size */
       self->internal->glyphs,  /* data */
-      GL_DYNAMIC_DRAW);
+      GL_DYNAMIC_DRAW  /* usage */
+      );
+  ASSERT_GL_ERROR();
+
+  /* Send the recently updated background instance buffer to the GL */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->backgroundInstanceBuffer);
+  ASSERT_GL_ERROR();
+  glBufferData(
+      GL_ARRAY_BUFFER,  /* target */
+      self->internal->numBackgroundCells
+      * sizeof(st_ScreenRenderer_BackgroundInstance),  /* size */
+      self->internal->backgroundCells,  /* data */
+      GL_DYNAMIC_DRAW  /* usage */
+      );
   ASSERT_GL_ERROR();
 }
 
@@ -539,6 +644,56 @@ int st_ScreenRenderer_colorCodeToRGB(
   return 0;
 }
 
+void st_ScreenRenderer_drawBackgroundCells(
+    const st_ScreenRenderer *self,
+    int cellWidth, int cellHeight,
+    int viewportWidth, int viewportHeight)
+{
+  GLuint cellSizeLocation, viewportSizeLocation;
+
+  /* Use the background cell shader program */
+  glUseProgram(self->internal->backgroundShader);
+  ASSERT_GL_ERROR();
+
+  /* Use our VAO for instanced background cell rendering */
+  glBindVertexArray(self->internal->backgroundInstanceVAO);
+  ASSERT_GL_ERROR();
+
+  /* Configure the uniform values */
+  /* Configure the cellSize uniform */
+  /* FIXME: Store the cellSize attribute location */
+  cellSizeLocation = glGetUniformLocation(
+      self->internal->backgroundShader,
+      "cellSize");
+  ASSERT_GL_ERROR();
+  glUniform2i(cellSizeLocation,
+      cellWidth,
+      cellHeight);
+  ASSERT_GL_ERROR();
+  /* Configure the viewportSize uniform */
+  /* FIXME: Store the viewportSize attribute location */
+  viewportSizeLocation = glGetUniformLocation(
+      self->internal->backgroundShader,
+      "viewportSize");
+  ASSERT_GL_ERROR();
+  glUniform2i(viewportSizeLocation,
+      viewportWidth,
+      viewportHeight);
+  ASSERT_GL_ERROR();
+
+  /* Draw the instanced background cells, which are quads */
+  glDrawElementsInstanced(
+      /* FIXME: This might be better as GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN */
+      GL_TRIANGLES,  /* mode */
+      6,  /* count */
+      GL_UNSIGNED_INT,  /* mode */
+      0,  /* indices */
+      self->internal->numBackgroundCells  /* primcount */
+      );
+  FORCE_ASSERT_GL_ERROR();  /* XXX: Remove the FORCE here */
+  fprintf(stderr, "numBackgroundCells: %ld\n", self->internal->numBackgroundCells);
+}
+
 void st_ScreenRenderer_draw(
     const st_ScreenRenderer *self,
     const st_GlyphRenderer *glyphRenderer,
@@ -559,6 +714,36 @@ void st_ScreenRenderer_draw(
          atlasSizeLocation;
   int cellSize[2];
 
+  /* Get cell size from our glyph renderer */
+  /* FIXME: The need for this call seems a little strange. Our glyphs have long
+   * since been rendered to the glyph atlas. We should have simply stored the
+   * cell size when the atlas was updated. */
+  st_GlyphRenderer_getCellSize(glyphRenderer,
+      &cellSize[0],  /* width */
+      &cellSize[1]  /* height */
+      );
+
+  /* Configure blending mode */
+  glEnable(GL_BLEND);
+  ASSERT_GL_ERROR();
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  ASSERT_GL_ERROR();
+  /* Disable depth test */
+  /* NOTE: We assume no glyphs occlude any other glyphs. This obviates the need
+   * to sort glyphs by depth to avoid having them fail the depth test. */
+  glDisable(GL_DEPTH_TEST);
+  ASSERT_GL_ERROR();
+
+  /* Draw the background cells */
+  st_ScreenRenderer_drawBackgroundCells(self,
+      cellSize[0],  /* cellWidth */
+      cellSize[1],  /* cellHeight */
+      viewportWidth,  /* viewportWidth */
+      viewportHeight  /* viewportHeight */
+      );
+
+  /* TODO: Move the glyph drawing to a subroutine */
+
   /* Use the glyph shader program */
   glUseProgram(self->internal->glyphShader);
   ASSERT_GL_ERROR();
@@ -570,10 +755,14 @@ void st_ScreenRenderer_draw(
       );
   for (int i = 0; i < numAtlasTextures; ++i) {
     glActiveTexture(atlasSamplers[i]);
-    FORCE_ASSERT_GL_ERROR();
+    ASSERT_GL_ERROR();
     glBindTexture(GL_TEXTURE_2D, atlasTextures[i]);
-    FORCE_ASSERT_GL_ERROR();
+    ASSERT_GL_ERROR();
   }
+
+  /* Use our VAO for instanced glyph rendering */
+  glBindVertexArray(self->internal->glyphInstanceVAO);
+  ASSERT_GL_ERROR();
 
   /* Configure the uniform values */
   /* FIXME: We should store these uniform locations and avoid looking for them
@@ -582,59 +771,42 @@ void st_ScreenRenderer_draw(
   atlasLocation = glGetUniformLocation(
       self->internal->glyphShader,
       "atlas");
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
   /* FIXME: The GL doesn't like it when we don't bind all of the textures */
 /*  glUniform1iv(atlasLocation, numAtlasTextures, atlasSamplers); */
   glUniform1i(atlasLocation, 0);
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
   /* Configure the cellSize uniform */
+  /* FIXME: Store the cellSize attribute location */
   cellSizeLocation = glGetUniformLocation(
       self->internal->glyphShader,
       "cellSize");
-  FORCE_ASSERT_GL_ERROR();
-  st_GlyphRenderer_getCellSize(glyphRenderer,
-      &cellSize[0],  /* width */
-      &cellSize[1]  /* height */
-      );
+  ASSERT_GL_ERROR();
   glUniform2i(cellSizeLocation,
       cellSize[0],
-      cellSize[1]);  /* XXX */
-  FORCE_ASSERT_GL_ERROR();
+      cellSize[1]);
+  ASSERT_GL_ERROR();
   /* Configure the viewportSize uniform */
+  /* FIXME: Store the viewportSize attribute location */
   viewportSizeLocation = glGetUniformLocation(
       self->internal->glyphShader,
       "viewportSize");
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
   glUniform2i(viewportSizeLocation,
       viewportWidth,
       viewportHeight);
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
   /* Configure the atlasSize uniform */
   atlasSizeLocation = glGetUniformLocation(
       self->internal->glyphShader,
       "atlasSize");
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
   atlasSize = st_GlyphAtlas_getTextureSize(&self->atlas);
   glUniform1i(atlasSizeLocation,
       atlasSize);
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
 
-  /* Use our VAO for instanced glyph rendering */
-  glBindVertexArray(self->internal->glyphInstanceVAO);
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Configure blending mode */
-  glEnable(GL_BLEND);
-  FORCE_ASSERT_GL_ERROR();
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  FORCE_ASSERT_GL_ERROR();
-  /* Disable depth test */
-  /* NOTE: We assume no glyphs occlude any other glyphs. This obviates the need
-   * to sort glyphs by depth to avoid having them fail the depth test. */
-  glDisable(GL_DEPTH_TEST);
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Draw the instanced glyph quad, which is simply two trinagles */
+  /* Draw the instanced glyph quads */
   glDrawElementsInstanced(
       /* FIXME: This might be better as GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN */
       GL_TRIANGLES,  /* mode */
@@ -643,15 +815,15 @@ void st_ScreenRenderer_draw(
       0,  /* indices */
       self->internal->numGlyphs  /* primcount */
       );
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
 
   /* Restore depth test */
   glEnable(GL_DEPTH_TEST);
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
   /* Restore blending mode */
   glDisable(GL_BLEND);
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
 
   glBindVertexArray(0);
-  FORCE_ASSERT_GL_ERROR();
+  ASSERT_GL_ERROR();
 }
