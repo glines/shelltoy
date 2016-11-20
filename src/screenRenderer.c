@@ -39,6 +39,8 @@ typedef struct st_ScreenRenderer_GlyphInstance_ {
 /*  int atlasIndex; */
 /*  int atlasSize; */
   int cell[2];
+  uint8_t fgColor[3];
+  uint8_t bgColor[4];
 } st_ScreenRenderer_GlyphInstance;
 
 
@@ -73,6 +75,10 @@ void st_ScreenRenderer_screenDrawCallback(
     const struct tsm_screen_attr *attr,
     tsm_age_t age,
     st_ScreenRenderer_ScreenDrawCallbackData *data);
+int st_ScreenRenderer_colorCodeToRGB(
+    const st_ScreenRenderer *self,
+    int8_t code,
+    uint8_t *rgb);
 
 void st_ScreenRenderer_init(
     st_ScreenRenderer *self,
@@ -152,7 +158,8 @@ void st_ScreenRenderer_initVAO(
     st_ScreenRenderer *self)
 {
   GLuint vertPosLocation, atlasIndexLocation, atlasPosLocation,
-         glyphSizeLocation, offsetLocation, cellLocation;
+         glyphSizeLocation, offsetLocation, cellLocation, fgColorLocation,
+         bgColorLocation;
 
   glGenVertexArrays(1, &self->internal->glyphInstanceVAO);
   FORCE_ASSERT_GL_ERROR();
@@ -271,6 +278,42 @@ void st_ScreenRenderer_initVAO(
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(cellLocation, 1);
   FORCE_ASSERT_GL_ERROR();
+  /* Configure fgColor */
+  fgColorLocation = glGetAttribLocation(
+      self->internal->glyphShader,
+      "fgColor");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(fgColorLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      fgColorLocation,  /* index */
+      3,  /* size */
+      GL_UNSIGNED_BYTE,  /* type */
+      1,  /* normalized */
+      sizeof(st_ScreenRenderer_GlyphInstance),  /* stride */
+      ((st_ScreenRenderer_GlyphInstance*)0)->fgColor  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(fgColorLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure bgColor */
+  bgColorLocation = glGetAttribLocation(
+      self->internal->glyphShader,
+      "bgColor");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(bgColorLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      bgColorLocation,  /* index */
+      4,  /* size */
+      GL_UNSIGNED_BYTE,  /* type */
+      1,  /* normalized */
+      sizeof(st_ScreenRenderer_GlyphInstance),  /* stride */
+      ((st_ScreenRenderer_GlyphInstance*)0)->bgColor  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(bgColorLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
 
   /* Configure the IBO for drawing glyph quads */
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->internal->quadIndexBuffer);
@@ -342,16 +385,16 @@ void st_ScreenRenderer_screenDrawCallback(
   st_GlyphRenderer *glyphRenderer;
   st_BoundingBox bbox;
   int atlasIndex, xOffset, yOffset;
-  int error;
+  int error, result;
 
   /* Skip whitespace */
-  if (!(*ch))
+  if (!(*ch) || (*ch == 0x20))
     return;
 
   self = data->self;
   glyphRenderer = data->glyphRenderer;
 
-  /* Look this glyph in our atlas */
+  /* Look for this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(&self->atlas,
       *ch,  /* character */
       &bbox,  /* bbox */
@@ -364,7 +407,7 @@ void st_ScreenRenderer_screenDrawCallback(
     return;
   }
 
-  /* Set up therest of the glyph instance data structure */
+  /* Set up the glyph instance data structure */
   glyphInstance.glyphSize[0] = (float)bbox.w;
   glyphInstance.glyphSize[1] = (float)bbox.h;
   glyphInstance.atlasPos[0] = (float)bbox.x;
@@ -381,6 +424,51 @@ void st_ScreenRenderer_screenDrawCallback(
   /* FIXME: We need to determine which samplers are assigned for which atlas
    * textures */
 //  glyphInstance.atlasIndex = 0;
+
+  /* Determine the foreground color */
+  if (attr->fccode < 0) {
+    /* Use RGB for the foreground color */
+    glyphInstance.fgColor[0] = attr->fr;
+    glyphInstance.fgColor[1] = attr->fg;
+    glyphInstance.fgColor[2] = attr->fb;
+  } else {
+    result = st_ScreenRenderer_colorCodeToRGB(self,
+        attr->fccode,  /* code */
+        glyphInstance.fgColor  /* rgb */
+        );
+    if (!result) {
+      /* Use the default foreground color */
+      /* TODO: Allow the user to configure the default foreground color */
+      glyphInstance.fgColor[0] = 255;
+      glyphInstance.fgColor[1] = 255;
+      glyphInstance.fgColor[2] = 255;
+    }
+  }
+
+  /* Determine the background color */
+  glyphInstance.bgColor[3] = 255;  /* Assume background alpha of one */
+  if (attr->bccode < 0) {
+    /* Use RGB for the foreground color */
+    glyphInstance.bgColor[0] = attr->br;
+    glyphInstance.bgColor[1] = attr->bg;
+    glyphInstance.bgColor[2] = attr->bb;
+  } else {
+    result = st_ScreenRenderer_colorCodeToRGB(self,
+        attr->bccode,  /* code */
+        glyphInstance.bgColor  /* rgb */
+        );
+    if (!result) {
+      /* Use the default background color */
+      /* TODO: Allow the user to configure the default background color */
+      glyphInstance.bgColor[0] = 0;
+      glyphInstance.bgColor[1] = 0;
+      glyphInstance.bgColor[2] = 0;
+      glyphInstance.bgColor[3] = 0;  /* Background alpha of zero */
+    }
+  }
+
+  /* TODO: Implement bold glyph attributes */
+  /* TODO: Implement inverse colors */
 
   /* Make sure we have memory allocated for the new glyph instance */
   if (self->internal->numGlyphs + 1 > self->internal->sizeGlyphs) {
@@ -399,6 +487,35 @@ void st_ScreenRenderer_screenDrawCallback(
   /* Append the glyph instance data structure to our buffer */
   memcpy(&self->internal->glyphs[self->internal->numGlyphs++], &glyphInstance,
       sizeof(st_ScreenRenderer_GlyphInstance));
+}
+
+int st_ScreenRenderer_colorCodeToRGB(
+    const st_ScreenRenderer *self,
+    int8_t code,
+    uint8_t *rgb)
+{
+  /* TODO: Allow the user to configure the color scheme */
+  switch (code) {
+#define CODE_RGB(code,r,g,b) \
+    case code: \
+      rgb[0] = r; \
+      rgb[1] = g; \
+      rgb[2] = b; \
+      return 1;
+    CODE_RGB(0, 0, 0, 0)  /* black */
+    CODE_RGB(1, 255, 0, 0)  /* red */
+    CODE_RGB(2, 0, 255, 0)  /* green */
+    CODE_RGB(3, 255, 255, 0)  /* yellow */
+    CODE_RGB(4, 0, 0, 255)  /* blue */
+    CODE_RGB(5, 255, 0, 255)  /* magenta */
+    CODE_RGB(6, 0, 255, 255)  /* cyan */
+    CODE_RGB(7, 255, 255, 255)  /* white */
+    default:
+      /* TODO: Fail gracefully */
+      /* FIXME: What are color codes 16 and 17? */
+      fprintf(stderr, "Unknown color code: '%d'\n", code);
+  }
+  return 0;
 }
 
 void st_ScreenRenderer_draw(

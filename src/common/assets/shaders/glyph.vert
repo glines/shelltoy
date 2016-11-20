@@ -21,15 +21,20 @@ in vec2 offset;  /* The offset of the glyph within its cell. As they are stored
                     in the atlas, glyphs do not occupy an entire cell. Instead,
                     this offset must be applied to the glyph from the
                     bottom-left corner of its cell. */
-/* FIXME: I'm not sure if the cell is being measured from the bottom left or
- * the top right here. Guess we'll find out. */
 in ivec2 cell;  /* The integer position of the cell on the terminal screen of
-                   our glyph. */
+                   our glyph. Note that this position is measured from the top
+                   left of the screen, as is typical with terminal emulators. */
+in vec3 fgColor;  /* The color of the glyph. */
+in vec4 bgColor;  /* The color of the background behind the glyph. Notice that
+                     this has an alpha value, which is used for un-colored
+                     backgrounds.  */
 
 out vec2 atlasTexCoord;  /* The coordinates at which to access the atlas
                             texture are passed to the fragment shader. */
 flat out int fragAtlasIndex;  /* The index of the atlas texture sampler are
                                  also passed to the fragment shader. */
+flat out vec3 fragFgColor;
+flat out vec4 fragBgColor;
 
 uniform ivec2 cellSize;  /* The pixel size of each cell in the terminal. This
                             is used to calculate the position of this vertex on
@@ -66,6 +71,10 @@ void main(void) {
 
   /* Pass some parameters as non-interpolated input to the fragment shader */
   fragAtlasIndex = atlasIndex;
+
+  /* Pass foreground and background colors to the fragment shader */
+  fragFgColor = fgColor;
+  fragBgColor = bgColor;
 
   gl_Position = vec4(normalizedPos, 0.0, 1.0);
 }
