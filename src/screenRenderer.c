@@ -438,7 +438,29 @@ void st_ScreenRenderer_updateScreen(
 {
   st_ScreenRenderer_ScreenDrawCallbackData data;
 
-  /* Fill the glyph instance buffer with the latest screen contents */
+  /* Disown the old buffers to avoid synchronization cost. See:
+   * <https://www.opengl.org/wiki/Buffer_Object_Streaming> */
+  /* FIXME: We could be even nicer to the GL driver by always requesting
+   * sufficiently large buffer sizes. */
+  glBufferData(
+      GL_ARRAY_BUFFER,  /* target */
+      self->internal->numGlyphs
+      * sizeof(st_ScreenRenderer_GlyphInstance),  /* size */
+      NULL,  /* data */
+      GL_STREAM_DRAW  /* usage */
+      );
+  ASSERT_GL_ERROR();
+  glBufferData(
+      GL_ARRAY_BUFFER,  /* target */
+      self->internal->numBackgroundCells
+      * sizeof(st_ScreenRenderer_BackgroundInstance),  /* size */
+      NULL,  /* data */
+      GL_STREAM_DRAW  /* usage */
+      );
+  ASSERT_GL_ERROR();
+
+  /* Fill the background and glyph instance buffers with the latest screen
+   * contents */
   data.self = self;
   data.glyphRenderer = glyphRenderer;
   self->internal->numGlyphs = 0;
@@ -457,7 +479,7 @@ void st_ScreenRenderer_updateScreen(
       self->internal->numGlyphs
       * sizeof(st_ScreenRenderer_GlyphInstance),  /* size */
       self->internal->glyphs,  /* data */
-      GL_DYNAMIC_DRAW  /* usage */
+      GL_STREAM_DRAW  /* usage */
       );
   ASSERT_GL_ERROR();
 
@@ -469,7 +491,7 @@ void st_ScreenRenderer_updateScreen(
       self->internal->numBackgroundCells
       * sizeof(st_ScreenRenderer_BackgroundInstance),  /* size */
       self->internal->backgroundCells,  /* data */
-      GL_DYNAMIC_DRAW  /* usage */
+      GL_STREAM_DRAW  /* usage */
       );
   ASSERT_GL_ERROR();
 }

@@ -91,7 +91,7 @@ void st_GlyphRenderer_init(
   error = FT_Set_Char_Size(
       self->internal->face,  /* face */
       0,  /* char_width */
-      5 << 6,  /* char_height */
+      4 << 6,  /* char_height */
       300,  /* horz_resolution */
       300  /* vert_resolution */
       );
