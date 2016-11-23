@@ -398,6 +398,7 @@ void st_Terminal_keyInput(
       SDL_XKB(e)
       SDL_XKB(f)
       SDL_XKB(g)
+      /* FIXME: CTRL+h does not work for some reason. */
       SDL_XKB(h)
       SDL_XKB(i)
       SDL_XKB(j)
@@ -421,19 +422,54 @@ void st_Terminal_keyInput(
   } else {
     /* Convert miscellaneous SDL keys to XKB keys */
     switch (keycode) {
-      case SDLK_BACKSPACE:
-        key_xkb = XKB_KEY_BackSpace;
+#define SDLK2XKB(sdl,xkb) \
+      case SDLK_ ## sdl: \
+        key_xkb = XKB_KEY_ ## xkb; \
         break;
-      case SDLK_RETURN:
-        key_xkb = XKB_KEY_Return;
-        break;
-      case SDLK_TAB:
-        /* FIXME: Somehow tab completion still does not always work with bash */
-        /* FIXME: I'm not sure if XKB_KEY_Tab or XKB_Key_ISO_Left_Tab should be
-         * used here. libtsm will send "\x09" for the former and "\e[Z" for the
-         * latter. */
-        key_xkb = XKB_KEY_Tab;
-        break;
+      SDLK2XKB(BACKSPACE, BackSpace)
+      SDLK2XKB(DELETE, Delete)
+      SDLK2XKB(DOWN, Down)
+      SDLK2XKB(END, End)
+      SDLK2XKB(ESCAPE, Escape)
+      SDLK2XKB(F1, F1)
+      SDLK2XKB(F2, F2)
+      SDLK2XKB(F3, F3)
+      SDLK2XKB(F4, F4)
+      SDLK2XKB(F5, F5)
+      SDLK2XKB(F6, F6)
+      SDLK2XKB(F7, F7)
+      SDLK2XKB(F8, F8)
+      SDLK2XKB(F9, F9)
+      SDLK2XKB(F10, F10)
+      SDLK2XKB(F11, F11)
+      SDLK2XKB(F12, F12)
+      SDLK2XKB(F13, F13)
+      SDLK2XKB(F14, F14)
+      SDLK2XKB(F15, F15)
+      SDLK2XKB(F16, F16)
+      SDLK2XKB(F17, F17)
+      SDLK2XKB(F18, F18)
+      SDLK2XKB(F19, F19)
+      SDLK2XKB(F20, F20)
+      /* FIXME: For some reason, the home key does not work. */
+      SDLK2XKB(HOME, Home)
+      SDLK2XKB(INSERT, Insert)
+      SDLK2XKB(KP_BACKSPACE, KP_Delete)
+      SDLK2XKB(KP_ENTER, KP_Enter)
+      SDLK2XKB(LEFT, Left)
+      SDLK2XKB(PAGEDOWN, Page_Down);
+      SDLK2XKB(PAGEUP, Page_Up)
+      SDLK2XKB(PAUSE, Pause)
+      SDLK2XKB(RETURN, Return)
+      SDLK2XKB(RIGHT, Right)
+      SDLK2XKB(SCROLLLOCK, Scroll_Lock)
+      SDLK2XKB(SYSREQ, Sys_Req)
+      /* FIXME: Somehow tab completion still does not always work with bash */
+      /* FIXME: I'm not sure if XKB_KEY_Tab or XKB_KEY_ISO_Left_Tab should be
+       * used here. libtsm will send "\x09" for the former and "\e[Z" for the
+       * latter. */
+      SDLK2XKB(TAB, Tab)
+      SDLK2XKB(UP, Up)
       default:
         /* Nothing to handle; most input will be handled through the SDL text
          * input event */

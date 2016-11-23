@@ -56,6 +56,9 @@ void st_dispatchEvents() {
           /* Instruct the pty to read from the pseudo terminal */
           st_PTY *pty = (st_PTY *)event.user.data1;
           st_PTY_read(pty);
+          /* FIXME: We need to draw immediately after the screen changes */
+          /* FIXME: A flag should be set to re-draw now that the screen has
+           * changed */
         }
     }
   }
@@ -81,6 +84,8 @@ int main(int argc, char** argv) {
     st_Terminal_draw(&shelltoy.terminal);
     SDL_Delay(50);
     /* TODO: Write a more intelligent loop that waits for vsync, etc. */
+    /* FIXME: We really need to avoid drawing if the terminal window has not
+     * changed. */
   }
   st_Terminal_destroy(&shelltoy.terminal);
 
