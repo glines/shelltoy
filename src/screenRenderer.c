@@ -616,6 +616,8 @@ void st_ScreenRenderer_addGlyphInstance(
   error = st_GlyphAtlas_getGlyph(&self->atlas,
       ch,  /* character */
       &bbox,  /* bbox */
+      &xOffset,  /* xOffset */
+      &yOffset,  /* yOffset */
       &atlasIndex  /* atlasTextureIndex */
       );
   if (error) {
@@ -632,11 +634,6 @@ void st_ScreenRenderer_addGlyphInstance(
   glyphInstance.atlasPos[1] = (float)bbox.y;
   glyphInstance.cell[0] = posx;
   glyphInstance.cell[1] = posy;
-  st_GlyphRenderer_getGlyphOffset(glyphRenderer,
-      ch,  /* character */
-      &xOffset,  /* x */
-      &yOffset  /* y */
-      );
   glyphInstance.offset[0] = (float)xOffset;
   glyphInstance.offset[1] = (float)yOffset;
   /* FIXME: We need to determine which samplers are assigned for which atlas

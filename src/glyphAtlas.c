@@ -34,6 +34,7 @@
 /* Private data structures */
 typedef struct st_GlyphAtlasEntry_ {
   st_BoundingBox bbox;
+  int xOffset, yOffset;
   uint32_t ch;
 } st_GlyphAtlasEntry;
 
@@ -144,6 +145,12 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     /* Add this glyph to our list of glyphs */
     numPendingGlyphs += 1;
     currentGlyph->ch = c;
+    /* Store the glyph offset */
+    st_GlyphRenderer_getGlyphOffset(glyphRenderer,
+        c,  /* character */
+        &currentGlyph->xOffset,  /* x */
+        &currentGlyph->yOffset  /* y */
+        );
     /* Add padding to the glyph size */
     currentGlyph->bbox.w += padding * 2;
     currentGlyph->bbox.h += padding * 2;
@@ -347,6 +354,8 @@ int st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
     st_BoundingBox *bbox,
+    int *xOffset,
+    int *yOffset,
     int *atlasTextureIndex)
 {
   int a, b, i;
@@ -373,6 +382,8 @@ int st_GlyphAtlas_getGlyph(
   if (currentGlyph->ch != character)
     return 1;
   memcpy(bbox, &currentGlyph->bbox, sizeof(*bbox));
+  *xOffset = currentGlyph->xOffset;
+  *yOffset = currentGlyph->yOffset;
   /* FIXME: Set the atlas texture index once we start using more than one atlas
    * texture */
   *atlasTextureIndex = 0;

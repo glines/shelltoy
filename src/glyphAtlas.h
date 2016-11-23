@@ -101,6 +101,8 @@ int st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
     st_BoundingBox *bbox,
+    int *xOffset,
+    int *yOffset,
     int *atlasTextureIndex);
 
 void st_GlyphAtlas_getTextures(
