@@ -281,7 +281,15 @@ void st_GlyphRenderer_getGlyphOffset(
     /* TODO: Fail gracefully */
     assert(0);
   }
-  /* TODO: Calculate the offset of this glyph */
+  /* Calculate the horizontal offset of this glyph */
   *x = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingX);
-  *y = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingY - face->size->metrics.descender - face->glyph->metrics.height);
+  /* Calculate the vertical offset of this glyph */
+  FT_Pos linegap = face->size->metrics.height
+    - face->size->metrics.ascender
+    + face->size->metrics.descender;
+  *y = TWENTY_SIX_SIX_TO_PIXELS(
+      face->glyph->metrics.horiBearingY
+      - face->size->metrics.descender
+      - face->glyph->metrics.height
+      - linegap / 2);  /* Distribute the linegap above and below the glyph */
 }

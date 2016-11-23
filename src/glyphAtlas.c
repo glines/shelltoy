@@ -152,8 +152,11 @@ void st_GlyphAtlas_renderASCIIGlyphs(
         &currentGlyph->yOffset  /* y */
         );
     /* Add padding to the glyph size */
-    currentGlyph->bbox.w += padding * 2;
-    currentGlyph->bbox.h += padding * 2;
+    currentGlyph->bbox.w += 2 * padding;
+    currentGlyph->bbox.h += 2 * padding;
+    /* Compensate for the padding in the glyph offset */
+    currentGlyph->xOffset -= padding;
+    currentGlyph->yOffset -= padding;
     /*
     fprintf(stderr,
         "currentGlyph: '%c'\n"
