@@ -15,6 +15,7 @@ target_link_libraries(shelltoy
     common
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARY}
+    ${JSMN_LIBRARY}
     ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     )
