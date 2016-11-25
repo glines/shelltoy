@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2016 Jonathan Glines
+ * Jonathan Glines <jonathan@glines.net>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
 #include <assert.h>
 
 #include "../extern/xkbcommon-keysyms.h"
@@ -10,6 +33,7 @@
 struct st_Terminal_Internal {
   st_ScreenRenderer screenRenderer;
   st_GlyphRenderer glyphRenderer;
+  st_Profile profile;
 };
 
 /* Private methods */
@@ -203,10 +227,15 @@ void st_Terminal_init(
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
+  /* Read the default profile provided by the config */
+  st_Config_getDefaultProfile(&self->internal->profile);
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
   /* Initialize the glyph renderer */
-  st_GlyphRenderer_init(&self->internal->glyphRenderer);
+  st_GlyphRenderer_init(&self->internal->glyphRenderer,
+      self->internal->profile.defaultFontPath,  /* defaultFont */
+      self->internal->profile.boldfaceFontPath  /* boldfaceFont */
+      );
   /* Initialize the screen renderer */
   st_ScreenRenderer_init(&self->internal->screenRenderer,
       &self->internal->glyphRenderer  /* glyphRenderer */
