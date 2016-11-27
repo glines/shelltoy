@@ -52,8 +52,8 @@ struct st_GlyphRenderer_Internal {
 
 void st_GlyphRenderer_init(
     st_GlyphRenderer *self,
-    const char *defaultFont,
-    const char *boldfaceFont)
+    const char *fontFace,
+    float fontSize)
 {
   /* FIXME: Get rid of this path */
 #define FONT_FACE_PATH "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu-fonts-2.37/share/fonts/truetype/DejaVuSansMono.ttf"
@@ -61,6 +61,8 @@ void st_GlyphRenderer_init(
   FT_Error error;
   FT_Library ft;
   const char *fontPath = FONT_FACE_PATH;
+
+  /* TODO: Determine the font path using fontconfig */
 
   ft = st_Fonts_getFreeTypeInstance();
 

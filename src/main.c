@@ -29,6 +29,7 @@
 
 #include "terminal.h"
 #include "config.h"
+#include "fonts.h"
 
 struct st_Shelltoy {
   st_Config config;
@@ -136,6 +137,7 @@ int main(int argc, char** argv) {
       );
 
   st_initSDL();
+  st_Fonts_init();
 
   st_Terminal_init(&shelltoy.terminal,
     profile,  /* profile */

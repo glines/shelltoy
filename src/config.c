@@ -37,6 +37,13 @@ void st_Config_parseConfig(
     st_Config *self,
     const char *config,
     size_t len);
+int st_Config_buildConfig(
+    st_Config *self,
+    json_t *root);
+int st_Config_buildProfile(
+    st_Config *self,
+    st_Profile *profile,
+    json_t *profile_json);
 const st_Profile *st_Config_getDefaultProfile(
     const st_Config *self);
 
@@ -55,9 +62,8 @@ void st_Config_init(
   /* TODO: Allocate memory for internal data structures */
   self->internal = (struct st_Config_Internal *)malloc(
       sizeof(struct st_Config_Internal));
-  self->internal->sizeProfiles = ST_CONFIG_INIT_SIZE_PROFILES;
-  self->internal->profiles = (st_Profile *)malloc(
-      sizeof(st_Profile) * self->internal->sizeProfiles);
+  self->internal->sizeProfiles = 0;
+  self->internal->profiles = NULL;
   self->internal->numProfiles = 0;
   self->internal->defaultProfileIndex = -1;
 
@@ -124,40 +130,186 @@ void st_Config_parseConfig(
     const char *config,
     size_t len)
 {
-  json_t *root, *defaultProfile;
-  json_error_t error;
+  int error;
+  json_t *root;
+  json_error_t error_json;
 
-  root = json_loads(config, 0, &error);
+  root = json_loads(config, 0, &error_json);
   if (root == NULL) {
     fprintf(stderr,
         "Config error on line %d: %s\n"
         "Failed to parse JSON config.\n",
-        error.line, error.text);
+        error_json.line, error_json.text);
     assert(0);
     /* FIXME: Fail gracefully */
   }
+
+  error = st_Config_buildConfig(self, root);
+  json_decref(root);
+  if (error) {
+    assert(0);
+    /* FIXME: Fail gracefully */
+  }
+}
+
+int st_Config_buildConfig(
+    st_Config *self,
+    json_t *root)
+{
+  json_t *defaultProfile_json, *profiles;
+  int error;
 
   if (!json_is_object(root)) {
     fprintf(stderr, "Config error: root is not an object\n");
-    json_decref(root);
-    assert(0);
-    /* FIXME: Fail gracefully */
+    return 1;
   }
 
-  defaultProfile = json_object_get(root, "defaultProfile");
-  if (!json_is_string(defaultProfile)) {
+  /* Traverse the root JSON object to set values in our config */
+
+  /* Retrieve the array of profiles */
+  profiles = json_object_get(root, "profiles");
+  if (!json_is_array(profiles)) {
+    /* TODO: Add an error message for when profiles is missing */
+    fprintf(stderr, "Config error: profiles is not an array\n");
+    return 1;
+  }
+
+  /* Allocate memory for storing our profiles */
+  self->internal->sizeProfiles = json_array_size(profiles);
+  assert(self->internal->profiles == NULL);
+  self->internal->profiles = (st_Profile *)malloc(
+      sizeof(st_Profile) * self->internal->sizeProfiles);
+  /* Iterate to add each profile */
+  for (size_t i = 0; i < json_array_size(profiles); ++i) {
+    json_t *profile_json;
+    st_Profile *profile;
+
+    /* Build the profile from its JSON representation */
+    profile_json = json_array_get(profiles, i);
+    profile = &self->internal->profiles[self->internal->numProfiles++];
+    error = st_Config_buildProfile(self,
+        profile,
+        profile_json);
+    if (error)
+      return error;
+  }
+  /* TODO: Sort the profiles by name */
+
+  /* Retrieve the default profile */
+  defaultProfile_json = json_object_get(root, "defaultProfile");
+  if (!json_is_string(defaultProfile_json)) {
     fprintf(stderr, "Config error: defaultProfile is not a string\n");
-    json_decref(root);
-    assert(0);
-    /* FIXME: Fail gracefully */
+    /* FIXME: This might not be an error if the user actually specified a
+     * profile to use */
+    return 1;
+  }
+  /* Binary search to find the default profile */
+  {
+    int a, b, i;
+    int result;
+    result = -1;
+    st_Profile *defaultProfile;
+    a = 0; b = self->internal->numProfiles;
+    while (a < b) {
+      i = (b - a) / 2 + a;
+      defaultProfile = &self->internal->profiles[i];
+      result = strcmp(
+          json_string_value(defaultProfile_json),
+          defaultProfile->name);
+      if (result < 0) {
+        b = i;
+      } else if (result > 0) {
+        a = i + 1;
+      } else {
+        /* result == 0 */
+        break;
+      }
+    }
+    if (result != 0 &&
+        strcmp(
+          json_string_value(defaultProfile_json),
+          defaultProfile->name) != 0)
+    {
+      fprintf(stderr, "Config error: defaultProfile '%s' does not exist\n",
+          json_string_value(defaultProfile_json));
+      /* FIXME: This might not be an error if the user actually specified a
+       * profile to use */
+      return 1;
+    }
+    self->internal->defaultProfileIndex = i;
   }
 
-  fprintf(stderr, "defaultProfile: %s\n",
-      json_string_value(defaultProfile));
+  return 0;
+}
 
-  /* TODO: Actually fill out the config object */
+int st_Config_buildProfile(
+    st_Config *self,
+    st_Profile *profile,
+    json_t *profile_json)
+{
+  json_t *name, *fontFace, *fontSize, *antialiasFont, *brightIsBold;
 
-  json_decref(root);
+  if (!json_is_object(profile_json)) {
+    fprintf(stderr, "Config error: profile is not an object\n");
+    return 1;
+  }
+
+  /* Get the name of this profile */
+  name = json_object_get(profile_json, "name");
+  if (name == NULL) {
+    fprintf(stderr, "Config error: profile is missing a name\n");
+    return 1;
+  }
+  if (!json_is_string(name)) {
+    fprintf(stderr, "Config error: profile name is not a string\n");
+    return 1;
+  }
+  profile->name = (char *)malloc(strlen(json_string_value(name)) + 1);
+  strcpy(profile->name, json_string_value(name));
+
+  /* Set the profile strings */
+#define SET_PROFILE_STRING(key) \
+  key = json_object_get(profile_json, #key); \
+  if (key == NULL) { \
+    fprintf(stderr, "Config error: profile '%s' missing value for '%s'", \
+        profile->name, \
+        #key); \
+    return 1; \
+  } \
+  if (!json_is_string(key)) { \
+    fprintf(stderr, \
+        "Config error: value of '%s' in profile '%s' is not a string\n", \
+        #key, \
+        profile->name); \
+    return 1; \
+  } \
+  profile->key = (char *)malloc(strlen(json_string_value(key)) + 1); \
+  strcpy(profile->key, json_string_value(key));
+  SET_PROFILE_STRING(fontFace)
+
+  /* Set the numerical profile values */
+  fontSize = json_object_get(profile_json, "fontSize");
+  if (!json_is_real(fontSize)) {
+    fprintf(stderr, "Config error: profile fontSize is not a number\n");
+    return 1;
+  }
+  profile->fontSize = (float)json_real_value(fontSize);
+
+  /* Set the profile flags */
+  profile->flags = 0;
+#define SET_PROFILE_FLAG(key,flag) \
+  key = json_object_get(profile_json, #key); \
+  if (!json_is_boolean(key)) { \
+    fprintf(stderr, "Config error: profile " #key " is not a boolean\n"); \
+    return 1; \
+  } \
+  profile->flags |= json_boolean_value(key) ? ST_PROFILE_ ## flag : 0;
+  SET_PROFILE_FLAG(antialiasFont, ANTIALIAS_FONT);
+  SET_PROFILE_FLAG(brightIsBold, BRIGHT_IS_BOLD);
+
+  /* TODO: Set the profile colors */
+
+  return 0;
 }
 
 void st_Config_destroy(
@@ -166,6 +318,7 @@ void st_Config_destroy(
   /* Free memory allocated for internal data structures */
   free(self->internal->profiles);
   free(self->internal);
+  /* FIXME: Free memory occupied by strings stored in profiles */
 }
 
 const st_Profile *

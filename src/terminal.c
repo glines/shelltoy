@@ -233,8 +233,8 @@ void st_Terminal_init(
   st_Terminal_initWindow(self);
   /* Initialize the glyph renderer */
   st_GlyphRenderer_init(&self->internal->glyphRenderer,
-      profile->defaultFontPath,  /* defaultFont */
-      profile->boldfaceFontPath  /* boldfaceFont */
+      profile->fontFace,  /* fontFace */
+      profile->fontSize  /* fontSize */
       );
   /* Initialize the screen renderer */
   st_ScreenRenderer_init(&self->internal->screenRenderer,

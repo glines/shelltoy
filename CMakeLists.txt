@@ -11,10 +11,13 @@ find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(libtsm REQUIRED)
 find_package(Jansson REQUIRED)
+# FIXME: I might need to use the ${FONTCONFIG_DEFINITIONS} variable somewhere
+find_package(Fontconfig REQUIRED)
 
 add_subdirectory("./extern")
 
 include_directories(SYSTEM
+    ${FONTCONFIG_INCLUDE_DIR}
     ${GLEW_INCLUDE_DIR}
     ${JANSSON_INCLUDE_DIRS}
     ${LIBTSM_INCLUDE_DIR}

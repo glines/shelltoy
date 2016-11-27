@@ -38,8 +38,8 @@ typedef struct st_GlyphRenderer_ {
 
 void st_GlyphRenderer_init(
     st_GlyphRenderer *self,
-    const char *defaultFont,
-    const char *boldfaceFont);
+    const char *fontFace,
+    float fontSize);
 
 void st_GlyphRenderer_destroy(
     st_GlyphRenderer *self);

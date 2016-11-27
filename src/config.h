@@ -23,8 +23,6 @@
 
 #include "profile.h"
 
-#define ST_CONFIG_INIT_SIZE_PROFILES 4
-
 struct st_Config_Internal;
 
 typedef struct st_Config {

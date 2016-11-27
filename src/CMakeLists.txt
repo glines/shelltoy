@@ -14,6 +14,7 @@ add_executable(shelltoy
     )
 target_link_libraries(shelltoy
     common
+    ${FONTCONFIG_LIBRARIES}
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARY}
     ${JANSSON_LIBRARIES}

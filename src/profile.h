@@ -24,9 +24,15 @@
 #ifndef SHELLTOY_PROFILE_H_
 #define SHELLTOY_PROFILE_H_
 
+typedef enum st_Profile_Flag_ {
+  ST_PROFILE_ANTIALIAS_FONT = 1 << 0,
+  ST_PROFILE_BRIGHT_IS_BOLD = 1 << 1,
+} st_Profile_Flag;
+
 typedef struct st_Profile_ {
-  const char *name;
-  const char *defaultFontPath, *boldfaceFontPath;
+  char *name, *fontFace;
+  float fontSize;
+  int flags;
 } st_Profile;
 
 #endif
