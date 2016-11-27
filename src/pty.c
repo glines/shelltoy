@@ -267,8 +267,8 @@ void st_PTY_startChild(
     perror("execv");
     fprintf(stderr, "Failed to execute shell: %s\n",
         path);
-    /* TODO: Fail gracefully? */
-    exit(EXIT_FAILURE);
+    /* Exit the child without calling routines registered with atexit(3) */
+    quick_exit(EXIT_FAILURE);
   }
   /* FIXME: wlterm will wait for the child setup here, and subsequently set up
    * epoll. Maybe we need to do something like that. */

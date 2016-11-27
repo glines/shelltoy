@@ -21,6 +21,7 @@ target_link_libraries(shelltoy
     ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     )
+set_property(TARGET shelltoy PROPERTY C_STANDARD 11)
 install(TARGETS shelltoy
     RUNTIME DESTINATION bin)
 
