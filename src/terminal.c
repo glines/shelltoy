@@ -26,6 +26,7 @@
 #include "../extern/xkbcommon-keysyms.h"
 
 #include "common/glError.h"
+#include "profile.h"
 
 #include "terminal.h"
 
@@ -209,6 +210,7 @@ void st_Terminal_calculatePseudoTerminalSize(
 
 void st_Terminal_init(
     st_Terminal *self,
+    const st_Profile *profile,
     int argc,
     char **argv)
 {
@@ -227,14 +229,12 @@ void st_Terminal_init(
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
-  /* Read the default profile provided by the config */
-  st_Config_getDefaultProfile(&self->internal->profile);
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
   /* Initialize the glyph renderer */
   st_GlyphRenderer_init(&self->internal->glyphRenderer,
-      self->internal->profile.defaultFontPath,  /* defaultFont */
-      self->internal->profile.boldfaceFontPath  /* boldfaceFont */
+      profile->defaultFontPath,  /* defaultFont */
+      profile->boldfaceFontPath  /* boldfaceFont */
       );
   /* Initialize the screen renderer */
   st_ScreenRenderer_init(&self->internal->screenRenderer,

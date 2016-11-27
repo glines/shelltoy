@@ -21,43 +21,23 @@
  * IN THE SOFTWARE.
  */
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+#include "profile.h"
 
-#include <inttypes.h>
+#define ST_CONFIG_INIT_SIZE_PROFILES 4
 
-struct st_GlyphRenderer_Internal;
+struct st_Config_Internal;
 
-/** A wrapper around the glyph rendering faciliies of FreeType. This class
- * combines font faces from multiple sources, including boldface and asian
- * fonts, and renders any given character with the appropriate font face.
- */
-typedef struct st_GlyphRenderer_ {
-  struct st_GlyphRenderer_Internal *internal;
-} st_GlyphRenderer;
+typedef struct st_Config {
+  struct st_Config_Internal *internal;
+} st_Config;
 
-void st_GlyphRenderer_init(
-    st_GlyphRenderer *self,
-    const char *defaultFont,
-    const char *boldfaceFont);
+void st_Config_init(
+    st_Config *self,
+    const char *configFilePath);
+void st_Config_destroy(
+    st_Config *self);
 
-void st_GlyphRenderer_destroy(
-    st_GlyphRenderer *self);
-
-void st_GlyphRenderer_getCellSize(
-    const st_GlyphRenderer *self,
-    int *width, int *height);
-
-int st_GlyphRenderer_getGlyphDimensions(
-    st_GlyphRenderer *self,
-    uint32_t character,
-    int *width, int *height);
-
-FT_Bitmap *st_GlyphRenderer_renderGlyph(
-    st_GlyphRenderer *self,
-    uint32_t character);
-
-void st_GlyphRenderer_getGlyphOffset(
-    st_GlyphRenderer *self,
-    uint32_t character,
-    int *x, int *y);
+const st_Profile *
+st_Config_getProfile(
+    const st_Config *self,
+    const char *name);

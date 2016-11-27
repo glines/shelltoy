@@ -25,6 +25,7 @@
 
 #include <SDL.h>
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -293,10 +294,15 @@ void st_PTY_read(st_PTY *self) {
 }
 
 void st_PTY_write(st_PTY *self, const char *u8, size_t len) {
+  ssize_t bytes_written;
   /* TODO: wlterm uses some crazy ring buffer and writev(). We should look into
    * why they do that. */
   /* TODO: Check for errors? */
-  write(self->master_fd, u8, len);
+  bytes_written = write(self->master_fd, u8, len);
+  if (bytes_written < 0) {
+    fprintf(stderr, "Error writting to pseudo terminal: %s\n",
+        strerror(errno));
+  }
 }
 
 void st_PTY_resize(st_PTY *self, int width, int height) {

@@ -51,7 +51,9 @@ struct st_GlyphRenderer_Internal {
 };
 
 void st_GlyphRenderer_init(
-    st_GlyphRenderer *self)
+    st_GlyphRenderer *self,
+    const char *defaultFont,
+    const char *boldfaceFont)
 {
   /* FIXME: Get rid of this path */
 #define FONT_FACE_PATH "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu-fonts-2.37/share/fonts/truetype/DejaVuSansMono.ttf"

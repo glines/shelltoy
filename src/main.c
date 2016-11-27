@@ -23,16 +23,15 @@
 
 #include <SDL.h>
 #include <assert.h>
+#include <getopt.h>
 #include <libtsm.h>
 #include <stdlib.h>
 
-#include "fonts.h"
-#include "pty.h"
 #include "terminal.h"
-
-#include "glyphAtlas.h"
+#include "config.h"
 
 struct st_Shelltoy {
+  st_Config config;
   st_Terminal terminal;
 } shelltoy;
 
@@ -95,10 +94,52 @@ const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu
 /* TODO: We might even want to read a small font into memory */
 
 int main(int argc, char** argv) {
-  st_initSDL();
-  st_Fonts_init();
+  char *configFilePath, *profileName;
+  size_t len;
+  const st_Profile *profile;
 
-  st_Terminal_init(&shelltoy.terminal, argc - 1, &argv[1]);
+  configFilePath = NULL;
+
+  /* Parse command line arguments */
+  while (1) {
+    int c;
+    static struct option long_options[] = {
+      {"config", required_argument,    0, 'c' },
+      {    NULL,                 0, NULL,   0 },
+    };
+
+    c = getopt_long(
+        argc, argv,
+        "",  /* optstring */
+        long_options,  /* longopts */
+        NULL  /* longindex */
+        );
+    if (c == -1)
+      break;
+
+    switch (c) {
+      case 'c':
+        fprintf(stderr, "Using config file path: %s\n", optarg);
+        len = strlen(optarg);
+        configFilePath = (char *)malloc(len + 1);
+        strcpy(configFilePath, optarg);
+        break;
+    }
+  }
+
+  /* Read the configuration from file */
+  st_Config_init(&shelltoy.config, configFilePath);
+
+  /* Get the terminal profile from the configuration */
+  profile = st_Config_getProfile(&shelltoy.config,
+      profileName  /* name */
+      );
+
+  st_initSDL();
+
+  st_Terminal_init(&shelltoy.terminal,
+    profile,  /* profile */
+    argc - 1, &argv[1]);
 
   fprintf(stderr, "Made it past terminal init\n");  /* XXX */
 

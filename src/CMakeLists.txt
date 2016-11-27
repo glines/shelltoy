@@ -1,6 +1,7 @@
 add_executable(shelltoy
     boundingBox.c
     collisionDetection.c
+    config.c
     fonts.c
     glyphAtlas.c
     glyphRenderer.c
@@ -13,9 +14,9 @@ add_executable(shelltoy
     )
 target_link_libraries(shelltoy
     common
+    jsmn
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARY}
-    ${JSMN_LIBRARY}
     ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     )

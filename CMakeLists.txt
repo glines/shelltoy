@@ -10,12 +10,13 @@ find_package(Freetype REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(libtsm REQUIRED)
+find_package(Jansson REQUIRED)
 
 add_subdirectory("./extern")
 
 include_directories(SYSTEM
     ${GLEW_INCLUDE_DIR}
-    ${JSMN_INCLUDE_DIR}
+    ${JANSSON_INCLUDE_DIRS}
     ${LIBTSM_INCLUDE_DIR}
     ${SDL2_INCLUDE_DIR}
     )

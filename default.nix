@@ -1,4 +1,4 @@
-{ stdenv, fetchgit, cmake, libtsm, SDL2, glew, freetype, dejavu_fonts, pkgconfig, check, vimNox, gprof2dot, oprofile }:
+{ stdenv, fetchgit, cmake, libtsm, SDL2, glew, freetype, dejavu_fonts, pkgconfig, check, vimNox, gprof2dot, oprofile, jansson }:
 
 stdenv.mkDerivation rec {
   name = "shelltoy-${version}";
@@ -10,7 +10,7 @@ stdenv.mkDerivation rec {
     sha256 = "0w3c53mwxkl7626iwwdzv4viyk4r1xfrqwycb0mmr4lkq33qw678";
   };
 
-  buildInputs = [ cmake libtsm SDL2 glew freetype dejavu_fonts pkgconfig check
+  buildInputs = [ cmake libtsm SDL2 glew freetype dejavu_fonts pkgconfig check jansson
     vimNox  /* For the xxd utility */
   ];
 }

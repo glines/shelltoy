@@ -21,43 +21,12 @@
  * IN THE SOFTWARE.
  */
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+#ifndef SHELLTOY_PROFILE_H_
+#define SHELLTOY_PROFILE_H_
 
-#include <inttypes.h>
+typedef struct st_Profile_ {
+  const char *name;
+  const char *defaultFontPath, *boldfaceFontPath;
+} st_Profile;
 
-struct st_GlyphRenderer_Internal;
-
-/** A wrapper around the glyph rendering faciliies of FreeType. This class
- * combines font faces from multiple sources, including boldface and asian
- * fonts, and renders any given character with the appropriate font face.
- */
-typedef struct st_GlyphRenderer_ {
-  struct st_GlyphRenderer_Internal *internal;
-} st_GlyphRenderer;
-
-void st_GlyphRenderer_init(
-    st_GlyphRenderer *self,
-    const char *defaultFont,
-    const char *boldfaceFont);
-
-void st_GlyphRenderer_destroy(
-    st_GlyphRenderer *self);
-
-void st_GlyphRenderer_getCellSize(
-    const st_GlyphRenderer *self,
-    int *width, int *height);
-
-int st_GlyphRenderer_getGlyphDimensions(
-    st_GlyphRenderer *self,
-    uint32_t character,
-    int *width, int *height);
-
-FT_Bitmap *st_GlyphRenderer_renderGlyph(
-    st_GlyphRenderer *self,
-    uint32_t character);
-
-void st_GlyphRenderer_getGlyphOffset(
-    st_GlyphRenderer *self,
-    uint32_t character,
-    int *x, int *y);
+#endif

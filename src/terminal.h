@@ -27,6 +27,7 @@
 #include <SDL.h>
 #include <libtsm.h>
 
+#include "profile.h"
 #include "pty.h"
 #include "screenRenderer.h"
 
@@ -46,6 +47,7 @@ typedef struct {
 
 void st_Terminal_init(
     st_Terminal *self,
+    const st_Profile *profile,
     int argc,
     char **argv);
 void st_Terminal_destroy(st_Terminal *self);
