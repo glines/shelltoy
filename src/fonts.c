@@ -27,6 +27,10 @@
 
 #include "fonts.h"
 
+/* Private methods */
+void st_Fonts_initFreetype();
+void st_Fonts_destroyFreetype();
+
 typedef struct st_Fonts_ {
   st_MonospaceFontFace *monospaceFonts;
   size_t numMonospaceFonts, sizeMonospaceFonts;
@@ -52,6 +56,13 @@ void st_Fonts_init() {
   st_Fonts_initFreetype();
 }
 
+void st_Fonts_destroy() {
+  st_Fonts *self = st_Fonts_instance();
+
+  /* Close freetype */
+  st_Fonts_destroyFreetype();
+}
+
 void st_Fonts_initFreetype() {
   st_Fonts *self = st_Fonts_instance();
 
@@ -59,6 +70,16 @@ void st_Fonts_initFreetype() {
   FT_Error error = FT_Init_FreeType(&self->ft);
   if (error != FT_Err_Ok) {
     fprintf(stderr, "Error initializing FreeType 2 library\n");
+    /* TODO: Print out an error string for this specific error */
+  }
+}
+
+void st_Fonts_destroyFreetype() {
+  st_Fonts *self = st_Fonts_instance();
+
+  FT_Error error = FT_Done_FreeType(self->ft);
+  if (error != FT_Err_Ok) {
+    fprintf(stderr, "Error closing FreeType 2 library\n");
     /* TODO: Print out an error string for this specific error */
   }
 }

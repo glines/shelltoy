@@ -204,6 +204,8 @@ int st_Config_buildConfig(
     return 1;
   }
   /* Binary search to find the default profile */
+  /* FIXME: Replace this with a call to st_Config_getProfile, which will
+   * require some refactoring. */
   {
     int a, b, i;
     int result;

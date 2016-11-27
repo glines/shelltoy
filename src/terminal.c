@@ -276,6 +276,7 @@ void st_Terminal_destroy(st_Terminal *self) {
   st_PTY_destroy(&self->pty);
   /* Release memory for internal data structures */
   free(self->internal);
+  /* FIXME: Close the SDL window */
 }
 
 void st_Terminal_windowSizeChanged(

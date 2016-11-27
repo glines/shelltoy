@@ -61,8 +61,6 @@ typedef struct {
 void st_Fonts_init();
 void st_Fonts_destroy();
 
-void st_Fonts_initFreetype();
-
 FT_Library st_Fonts_getFreeTypeInstance();
 
 st_MonospaceFontFace *st_Fonts_loadMonospace(

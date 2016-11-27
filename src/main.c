@@ -73,6 +73,11 @@ void st_dispatchEvents() {
             event.key.keysym.mod  /* modifiers */
             );
         break;
+      /* TODO: Handle SDL_WINDOWEVENT_CLOSE events if we ever have more than
+       * one terminal at a time. */
+      case SDL_QUIT:
+        exit(EXIT_SUCCESS);
+        break;
       default:
         if (event.type == st_PTY_eventType()) {
           fprintf(stderr, "Recieved PTY event\n");
@@ -85,6 +90,14 @@ void st_dispatchEvents() {
         }
     }
   }
+}
+
+void st_destroyConfig() {
+  st_Config_destroy(&shelltoy.config);
+}
+
+void st_destroyTerminal() {
+  st_Terminal_destroy(&shelltoy.terminal);
 }
 
 /* TODO: Load 'toy' information from JSON files with '.toy' extensions */
@@ -130,6 +143,7 @@ int main(int argc, char** argv) {
 
   /* Read the configuration from file */
   st_Config_init(&shelltoy.config, configFilePath);
+  atexit(st_destroyConfig);
 
   /* Get the terminal profile from the configuration */
   profile = st_Config_getProfile(&shelltoy.config,
@@ -137,13 +151,14 @@ int main(int argc, char** argv) {
       );
 
   st_initSDL();
+  atexit(st_quitSDL);
   st_Fonts_init();
+  atexit(st_Fonts_destroy);
 
   st_Terminal_init(&shelltoy.terminal,
     profile,  /* profile */
     argc - 1, &argv[1]);
-
-  fprintf(stderr, "Made it past terminal init\n");  /* XXX */
+  atexit(st_destroyTerminal);
 
   while (1) {
     st_dispatchEvents();
@@ -153,9 +168,7 @@ int main(int argc, char** argv) {
     /* FIXME: We really need to avoid drawing if the terminal window has not
      * changed. */
   }
-  st_Terminal_destroy(&shelltoy.terminal);
 
-  st_quitSDL();
-
-  return EXIT_SUCCESS;
+  assert(0);  /* Should never reach here */
+  return EXIT_FAILURE;
 }
