@@ -14,9 +14,9 @@ add_executable(shelltoy
     )
 target_link_libraries(shelltoy
     common
-    jsmn
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARY}
+    ${JANSSON_LIBRARIES}
     ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     )

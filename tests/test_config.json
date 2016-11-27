@@ -1,0 +1,46 @@
+{
+  "defaultProfile": "dark",
+  "profiles": [
+    {
+      "name": "light",
+      "fontFace": "DejaVu Sans Mono",
+      "fontSize": 13.0,
+      "fallbackFontFaces": [
+        "IPAGothic"
+      ],
+      "antialiasFont": true,
+      "brightIsBold": true,
+      "colors": {
+        "color0": [ 0, 0, 0 ],
+        "color1": [ 255, 0, 0 ],
+        "color2": [ 0, 255, 0 ],
+        "color3": [ 255, 255, 0 ],
+        "color4": [ 0, 0, 255 ],
+        "color5": [ 255, 0, 255 ],
+        "color6": [ 0, 255, 255 ],
+        "color7": [ 255, 255, 255 ]
+      }
+    },
+    {
+      "name": "tango-dark",
+      "color0": [ 46, 52, 54 ],
+      "color1": [ 164, 0, 0 ],
+      "color2": [ 78, 154, 6 ],
+      "color3": [ 196, 160, 0 ],
+      "color4": [ 52, 101, 164 ],
+      "color5": [ 117, 80, 123 ],
+      "color6": [ 206, 92, 0 ],
+      "color7": [ 186, 189, 185 ],
+      "color8": [ 85, 87, 83 ],
+      "color9": [ 239, 41, 41 ],
+      "color10": [ 138, 226, 52 ],
+      "color11": [ 252, 233, 79 ],
+      "color12": [ 114, 159, 207 ],
+      "color13": [ 173, 127, 168 ],
+      "color14": [ 252, 175, 62 ],
+      "color15": [ 238, 238, 236 ]
+    }
+  ],
+  "colorSchemes": [
+  ]
+}

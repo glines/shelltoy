@@ -23,7 +23,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <jsmn.h>
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,6 +60,8 @@ void st_Config_init(
       sizeof(st_Profile) * self->internal->sizeProfiles);
   self->internal->numProfiles = 0;
   self->internal->defaultProfileIndex = -1;
+
+  st_Config_readConfigFile(self, configFilePath);
 }
 
 void st_Config_readConfigFile(
@@ -122,35 +124,40 @@ void st_Config_parseConfig(
     const char *config,
     size_t len)
 {
-  jsmn_parser parser;
-  jsmntok_t *tokens;
-  size_t numTokens;
-  int result;
+  json_t *root, *defaultProfile;
+  json_error_t error;
 
-  jsmn_init(&parser);
-
-  /* Determine the number of tokens in this config file */
-  result = jsmn_parse(&parser, config, len, NULL, 0);
-  if (result < 1) {
-    const char *reason;
-    switch (result) {
-      case JSMN_ERROR_INVAL:
-        reason = "Bad token; JSON string is corrupted.";
-        break;
-      case JSMN_ERROR_PART:
-        reason = "JSON string is too short; expecting more JSON data.";
-        break;
-    }
-    /* FIXME: Find a JSON library with better error diagnostics */
-    fprintf(stderr, "Failed to parse config file: %s.",
-        reason);
+  root = json_loads(config, 0, &error);
+  if (root == NULL) {
+    fprintf(stderr,
+        "Config error on line %d: %s\n"
+        "Failed to parse JSON config.\n",
+        error.line, error.text);
+    assert(0);
+    /* FIXME: Fail gracefully */
   }
-  tokens = (jsmntok_t *)malloc(numTokens * sizeof(jsmntok_t));
-  /* Parse the config file */
-  result = jsmn_parse(&parser, config, len, tokens, numTokens);
-  assert(result >= 0);
 
-  free(tokens);
+  if (!json_is_object(root)) {
+    fprintf(stderr, "Config error: root is not an object\n");
+    json_decref(root);
+    assert(0);
+    /* FIXME: Fail gracefully */
+  }
+
+  defaultProfile = json_object_get(root, "defaultProfile");
+  if (!json_is_string(defaultProfile)) {
+    fprintf(stderr, "Config error: defaultProfile is not a string\n");
+    json_decref(root);
+    assert(0);
+    /* FIXME: Fail gracefully */
+  }
+
+  fprintf(stderr, "defaultProfile: %s\n",
+      json_string_value(defaultProfile));
+
+  /* TODO: Actually fill out the config object */
+
+  json_decref(root);
 }
 
 void st_Config_destroy(
