@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
 
   st_Terminal_init(&shelltoy.terminal,
     profile,  /* profile */
-    argc - 1, &argv[1]);
+    argc - optind, &argv[optind]);
   atexit(st_destroyTerminal);
 
   while (1) {
