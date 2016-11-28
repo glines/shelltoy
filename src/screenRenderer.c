@@ -757,8 +757,7 @@ void st_ScreenRenderer_drawBackgroundCells(
       0,  /* indices */
       self->internal->numBackgroundCells  /* primcount */
       );
-  FORCE_ASSERT_GL_ERROR();  /* XXX: Remove the FORCE here */
-  fprintf(stderr, "numBackgroundCells: %ld\n", self->internal->numBackgroundCells);
+  ASSERT_GL_ERROR();
 
   glBindVertexArray(0);
   ASSERT_GL_ERROR();

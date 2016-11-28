@@ -23,6 +23,7 @@
 
 #include <SDL.h>
 #include <assert.h>
+#include <errno.h>
 #include <getopt.h>
 #include <libtsm.h>
 #include <stdlib.h>
@@ -80,10 +81,16 @@ void st_dispatchEvents() {
         break;
       default:
         if (event.type == st_PTY_eventType()) {
+          int error;
           fprintf(stderr, "Recieved PTY event\n");
           /* Instruct the pty to read from the pseudo terminal */
           st_PTY *pty = (st_PTY *)event.user.data1;
-          st_PTY_read(pty);
+          error = st_PTY_read(pty);
+          if (error == EWOULDBLOCK) {
+            /* TODO: Reset the epoll handle so that we will get a pty event
+             * soon? */
+            /* TODO: Should we simply schedule a new pty event? */
+          }
           /* FIXME: We need to draw immediately after the screen changes */
           /* FIXME: A flag should be set to re-draw now that the screen has
            * changed */

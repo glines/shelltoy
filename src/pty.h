@@ -65,7 +65,7 @@ void st_PTY_startChild(
     st_PTY_readCallback_t callback,
     void *callback_data);
 
-void st_PTY_read(st_PTY *self);
+int st_PTY_read(st_PTY *self);
 void st_PTY_write(st_PTY *self, const char *u8, size_t len);
 
 void st_PTY_resize(st_PTY *self, int width, int height);

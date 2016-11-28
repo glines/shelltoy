@@ -439,6 +439,8 @@ void st_Terminal_keyInput(
       SDL_XKB(o)
       SDL_XKB(p)
       SDL_XKB(q)
+      /* FIXME: For some reason, CTRL+r does not activate bash
+       * reverse-i-search. */
       SDL_XKB(r)
       SDL_XKB(s)
       SDL_XKB(t)

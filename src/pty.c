@@ -275,22 +275,28 @@ void st_PTY_startChild(
   self->child = result;
 }
 
-void st_PTY_read(st_PTY *self) {
+int st_PTY_read(st_PTY *self) {
   ssize_t len;
-#define PTY_BUFF_SIZE 4096
-  char buff[PTY_BUFF_SIZE];
-  /* FIXME: Not to sure how to do this properly */
-  /* FIXME: This needs an arbitrary limit (as with wlterm) */
+#define ST_PTY_BUFF_SIZE 4096
+#define ST_PTY_MAX_READ 32
+  char buff[ST_PTY_BUFF_SIZE];
+  int count;
+  /* Loop to read data sent from the pseudo terminal */
+  /* This read loop is limited (as with wlterm) so that we do not block the
+   * main thread for too long. When the read limit is reached, we return
+   * EWOULDBLOCK to indicate to the caller that there is still more data to
+   * read. */
+  count = 0;
   do {
     /* Read from the pseudo terminal master file descriptor and send
      * everything to the libtsm state machine through our callback */
     len = read(self->master_fd, buff, sizeof(buff));
     if (len > 0) {
       self->callback(self->callback_data, buff, len);
-      buff[len] = '\0';  /* XXX */
-      fprintf(stderr, "%s", buff);  /* XXX: hack */
     }
-  } while (len > 0);
+  } while (len > 0 && count < ST_PTY_MAX_READ);
+
+  return count < ST_PTY_MAX_READ ? 0 : EWOULDBLOCK;
 }
 
 void st_PTY_write(st_PTY *self, const char *u8, size_t len) {
