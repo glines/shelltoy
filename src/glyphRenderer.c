@@ -22,6 +22,7 @@
  */
 
 #include <assert.h>
+#include <fontconfig/fontconfig.h>
 #include <math.h>
 
 #include "fonts.h"
@@ -34,9 +35,12 @@
     ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
 
 /* Private methods */
+void st_GlyphRenderer_buildFontPattern(
+    st_GlyphRenderer *self,
+    const char *fontFace,
+    float fontSize);
 void st_GlyphRenderer_updateCellSize(
     st_GlyphRenderer *self);
-
 void st_GlyphRenderer_calculateCellSize(
     const FT_Face face,
     int *width, int *height);
@@ -63,6 +67,9 @@ void st_GlyphRenderer_init(
   const char *fontPath = FONT_FACE_PATH;
 
   /* TODO: Determine the font path using fontconfig */
+  st_GlyphRenderer_buildFontPattern(self,
+      fontFace,
+      fontSize);
 
   ft = st_Fonts_getFreeTypeInstance();
 
@@ -106,6 +113,49 @@ void st_GlyphRenderer_init(
     /* TODO: Fail gracefully? */
   }
   st_GlyphRenderer_updateCellSize(self);
+}
+
+void st_GlyphRenderer_buildFontPattern(
+    st_GlyphRenderer *self,
+    const char *fontFace,
+    float fontSize)
+{
+  FcPattern *pattern;
+  FcFontSet *sourceFontSets[2];
+  FcFontSet *resultFontSet;
+  FcConfig *config;
+  FcBool result;
+
+  config = st_Fonts_getFontconfigInstance();
+
+  sourceFontSets[0] = FcConfigGetFonts(config, FcSetSystem);
+  sourceFontSets[1] = FcConfigGetFonts(config, FcSetApplication);
+
+  pattern = FcPatternBuild(
+      NULL,  /* pattern */
+      FC_SPACING, FcTypeInteger, FC_MONO,  /* Look for monospace fonts */
+      (char *) NULL  /* terminator */
+      );
+
+  /* Generate a list of all fonts matching our criteria */
+  resultFontSet = FcFontSetList(
+      config,  /* config */
+      sourceFontSets,  /* sets */
+      2,  /* nsets */
+      pattern,  /* pattern */
+      /* FIXME: Fontconfig documentation is not clear on the utility of
+       * object_set */
+      NULL  /* object_set */
+      );
+
+  /* XXX: Print out all of the matching fonts */
+  for (int i = 0; i < resultFontSet->nfont; ++i) {
+    FcPattern *font;
+    font = resultFontSet->fonts[i];
+    FcPatternPrint(font);
+  }
+
+  FcPatternDestroy(pattern);
 }
 
 void st_GlyphRenderer_updateCellSize(

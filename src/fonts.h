@@ -27,6 +27,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <fontconfig/fontconfig.h>
 #include <inttypes.h>
 
 typedef struct {
@@ -62,6 +63,7 @@ void st_Fonts_init();
 void st_Fonts_destroy();
 
 FT_Library st_Fonts_getFreeTypeInstance();
+FcConfig *st_Fonts_getFontconfigInstance();
 
 st_MonospaceFontFace *st_Fonts_loadMonospace(
     int width, int height,

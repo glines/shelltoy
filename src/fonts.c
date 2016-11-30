@@ -30,11 +30,14 @@
 /* Private methods */
 void st_Fonts_initFreetype();
 void st_Fonts_destroyFreetype();
+void st_Fonts_initFontconfig();
+void st_Fonts_destroyFontconfig();
 
 typedef struct st_Fonts_ {
   st_MonospaceFontFace *monospaceFonts;
   size_t numMonospaceFonts, sizeMonospaceFonts;
   FT_Library ft;
+  FcConfig *fcConfig;
 } st_Fonts;
 
 #define ST_FONTS_INIT_MONOSPACE_FONTS_SIZE 4
@@ -54,12 +57,13 @@ void st_Fonts_init() {
   self->numMonospaceFonts = 0;
 
   st_Fonts_initFreetype();
+  st_Fonts_initFontconfig();
 }
 
 void st_Fonts_destroy() {
   st_Fonts *self = st_Fonts_instance();
 
-  /* Close freetype */
+  st_Fonts_destroyFontconfig();
   st_Fonts_destroyFreetype();
 }
 
@@ -84,10 +88,29 @@ void st_Fonts_destroyFreetype() {
   }
 }
 
+void st_Fonts_initFontconfig() {
+  st_Fonts *self = st_Fonts_instance();
+
+  self->fcConfig = FcInitLoadConfigAndFonts();
+}
+
+void st_Fonts_destroyFontconfig() {
+  st_Fonts *self = st_Fonts_instance();
+
+  /* Finalize fontconfig library */
+  FcFini();
+}
+
 FT_Library st_Fonts_getFreeTypeInstance() {
   st_Fonts *self = st_Fonts_instance();
 
   return self->ft;
+}
+
+FcConfig *st_Fonts_getFontconfigInstance() {
+  st_Fonts *self = st_Fonts_instance();
+
+  return self->fcConfig;
 }
 
 void st_Fonts_calculateFacePixelBBox(
