@@ -124,7 +124,9 @@ void st_GlyphRenderer_buildFontPattern(
   FcFontSet *sourceFontSets[2];
   FcFontSet *resultFontSet;
   FcConfig *config;
-  FcBool result;
+  FcResult result;
+  FcValue value;
+  char *fontFilePath;
 
   config = st_Fonts_getFontconfigInstance();
 
@@ -154,6 +156,21 @@ void st_GlyphRenderer_buildFontPattern(
     font = resultFontSet->fonts[i];
     FcPatternPrint(font);
   }
+
+  if (resultFontSet->nfont <= 0) {
+    fprintf(stderr, "Error: Fontconfig could not find any suitable fonts.\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+
+  /* Get the file path of the matching font */
+  result = FcPatternGet(resultFontSet->fonts[0], FC_FILE, 0, &value);
+  assert(value.u.s != NULL);
+  fontFilePath = (char *)malloc(strlen(value.u.s) + 1);
+  strcpy(fontFilePath, value.u.s);
+  fprintf(stderr, "Fontconfig found suitable font: '%s'\n",
+      fontFilePath);
+  free(fontFilePath);
 
   FcPatternDestroy(pattern);
 }
