@@ -215,8 +215,17 @@ void st_Terminal_init(
   size_t len;
   int ptyWidth, ptyHeight;
   char **argv_nullTerminated;
-  assert(argc > 0);
-  /* TODO: Copy arguments into a null terminated array */
+  if (argc == 0) {
+    /* No shell was given; we check the SHELL environment variable */
+    char *shell = getenv("SHELL");
+    if (shell == NULL) {
+      /* TODO: Fail gracefully */
+      assert(0);
+    }
+    argv = &shell;
+    argc = 1;
+  }
+  /* Copy arguments into a null terminated array */
   argv_nullTerminated = (char**)malloc(sizeof(char*) * (argc + 1));
   for (int i = 0; i < argc; ++i) {
     len = strlen(argv[i]);
