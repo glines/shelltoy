@@ -39,7 +39,9 @@
 
 #define ST_ASSERT_ERROR_CODE(error) \
   do { \
-    ST_LOG_ERROR("%s", st_ErrorString(error)); \
+    if (error != ST_NO_ERROR) { \
+      ST_LOG_ERROR("%s", st_ErrorString(error)); \
+    } \
     assert(error == ST_NO_ERROR); \
   } while (0)
 

@@ -232,21 +232,20 @@ void st_PTY_prepareChild(st_PTY *self) {
   }
   /* Create a new process group session for the child */
   setsid();
-  /* Send the window size to the pty */
-  memset(&ws, 0, sizeof(ws));
-  ws.ws_col = self->width;
-  ws.ws_row = self->height;
-  result = ioctl(slave_fd, TIOCSWINSZ, &ws);
-  /* TODO: Check result for errors */
-  if (result != 0) {
-    ST_LOG_ERROR("Unable to set pseudo terminal window size: %s\n",
-        strerror(errno));
-  }
   /* Redirect stdin, stdout, and stderr to the pseudo terminal slave */
   /* TODO: Check for errors here */
   dup2(slave_fd, STDIN_FILENO);
   dup2(slave_fd, STDOUT_FILENO);
   dup2(slave_fd, STDERR_FILENO);
+  /* Send the window size to the pty */
+  memset(&ws, 0, sizeof(ws));
+  ws.ws_col = self->width;
+  ws.ws_row = self->height;
+  result = ioctl(slave_fd, TIOCSWINSZ, &ws);
+  if (result != 0) {
+    ST_LOG_ERROR("Unable to set pseudo terminal window size: %s\n",
+        strerror(errno));
+  }
 }
 
 void st_PTY_startChild(

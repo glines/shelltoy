@@ -55,7 +55,8 @@ st_ErrorCode st_Profile_setFont(
   pattern = FcPatternBuild(
       NULL,  /* pattern */
       FC_SPACING, FcTypeInteger, FC_MONO,  /* Look for monospace fonts... */
-      FC_PIXEL_SIZE, FcTypeDouble, fontSize,  /* ...with this pixel size... */
+//      FC_PIXEL_SIZE, FcTypeDouble, fontSize,  /* ...with this pixel size... */
+      FC_FULLNAME, FcTypeString, fontFace,  /* ...and with this font face. */
       (char *) NULL  /* terminator */
       );
 

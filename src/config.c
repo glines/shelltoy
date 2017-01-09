@@ -430,13 +430,13 @@ st_Config_getDefaultProfile(
   if (self->internal->defaultProfile == NULL) {
 #define DEFAULT_PROFILE_NAME "default"
 #define DEFAULT_FONT_FACE "DejaVu Sans Mono"
-#define DEFAULT_FONT_SIZE 14.0
+#define DEFAULT_FONT_SIZE 12.0
 #define DEFAULT_FLAGS ( \
     ST_PROFILE_ANTIALIAS_FONT \
     | ST_PROFILE_BRIGHT_IS_BOLD) 
     /* The default profile has not yet been set, so we use "default" */
     self->internal->defaultProfile = (char *)malloc(
-        strlen(DEFAULT_PROFILE_NAME) + 1);;
+        strlen(DEFAULT_PROFILE_NAME) + 1);
     strcpy(self->internal->defaultProfile, DEFAULT_PROFILE_NAME);
     /* Look for a pre-existing profile with the name "default" */
     error = st_Config_getProfile(self,
@@ -498,6 +498,12 @@ st_ErrorCode st_Config_insertNewProfile(
     self->internal->sizeProfiles *= 2;
   }
 
+  if (self->internal->numProfiles == 0) {
+    self->internal->profiles[0] = newProfile;
+    self->internal->numProfiles += 1;
+    return ST_NO_ERROR;
+  }
+
   /* Binary search for the sorted index of the new profile */
   int a = 0, b = self->internal->numProfiles, i;
   while (a < b) {
@@ -540,7 +546,8 @@ st_ErrorCode st_Config_insertNewProfile(
       &self->internal->profiles[i],
       sizeof(st_Profile *) * (self->internal->numProfiles - i));
   /* Insert the new profile */
-  memcpy(&self->internal->profiles[i], newProfile, sizeof(st_Profile *));
+  self->internal->profiles[i] = newProfile;
+  self->internal->numProfiles += 1;
 
   return ST_NO_ERROR;
 }
