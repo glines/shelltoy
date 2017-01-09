@@ -22,9 +22,11 @@
  */
 
 #include <assert.h>
+#include <fontconfig/fontconfig.h>
 #include <math.h>
 #include <stdlib.h>
 
+#include "error.h"
 #include "fonts.h"
 
 /* Private methods */
@@ -61,8 +63,6 @@ void st_Fonts_init() {
 }
 
 void st_Fonts_destroy() {
-  st_Fonts *self = st_Fonts_instance();
-
   st_Fonts_destroyFontconfig();
   st_Fonts_destroyFreetype();
 }
@@ -95,8 +95,6 @@ void st_Fonts_initFontconfig() {
 }
 
 void st_Fonts_destroyFontconfig() {
-  st_Fonts *self = st_Fonts_instance();
-
   /* Finalize fontconfig library */
   FcFini();
 }
@@ -128,91 +126,6 @@ void st_Fonts_calculateFacePixelBBox(
       (double)(face->bbox.xMax - face->bbox.xMin) * x_pixels_per_unit);
   *height = (int)ceil(
       (double)(face->bbox.yMax - face->bbox.yMin) * y_pixels_per_unit);
-}
-
-/* TODO: Support loading different faces from files that happen to have more
- * than one face */
-st_MonospaceFontFace *st_Fonts_loadMonospace(
-    int width, int height,
-    const char *fontPath)
-{
-  FT_Face face;
-  FT_Error error;
-  st_MonospaceFontFace *monospaceFont;
-//  st_GlyphAtlas atlas;
-  int bbox_width, bbox_height;
-
-  st_Fonts *self = st_Fonts_instance();
-
-  /* Attempt to load the font from file */
-  error = FT_New_Face(
-      self->ft,  /* library */
-      fontPath,  /* filepathname */
-      0,  /* face_index */
-      &face  /* aface */
-      );
-  if (error == FT_Err_Unknown_File_Format) {
-    fprintf(stderr, "Freetype encountered an unknown file format: %s\n",
-        fontPath);
-    /* TODO: Print the specific error message from Freetype */
-  } else if (error != FT_Err_Ok) {
-    fprintf(stderr, "Freetype encountered an error reading file: %s\n",
-        fontPath);
-    /* TODO: Print the specific error message from Freetype */
-  }
-  /* FIXME: Do we need to free this font at some point? */
-
-  /* Set the pixel dimensions of the font */
-//  error = FT_Set_Pixel_Sizes(
-//      face,  /* face */
-//      width,  /* pixel_width */
-//      height  /* pixel_height */
-//      );
-  error = FT_Set_Char_Size(
-      face,  /* face */
-      0,  /* char_width */
-      16*64,  /* char_height */
-      300,  /* horz_resolution */
-      300  /* vert_resolution */
-      );
-
-  /* Each font defines a "bounding box" that encloses all glyphs. The atlas
-   * does not use this information, since glyphs are packed as tightly as
-   * possible, but we do need to store it for the terminal. */
-  st_Fonts_calculateFacePixelBBox(face, &bbox_width, &bbox_height);
-  fprintf(stderr,
-      "Font bbox dimensions: %dx%d pixels\n",
-      bbox_width, bbox_height);
-
-  if (error != FT_Err_Ok) {
-    fprintf(stderr,
-        "Freetype failed to set dimensions %dx%d for font: %s\n",
-        width, height, fontPath);
-  }
-
-  /* NOTE: We need to generate an atlas of the glyphs representing printable
-   * ASCII characters in this font. Since it is relatively expensive to blit
-   * characters into our atlas, we want to determine the placement of glyphs
-   * in the atlas prior to blitting them.
-   *
-   * The heuristic used to efficiently arrange glyphs in the atlas comes from
-   * here: <http://gamedev.stackexchange.com/a/2839>
-   */
-
-  /* Create a glyph atlas in which to place the glyphs */
-//  st_GlyphAtlas_init(&atlas);
-
-  /* Make sure we have space in memory for another monospace font */
-  if (self->numMonospaceFonts + 1 > self->sizeMonospaceFonts) {
-    /* FIXME: Consider removing old fonts from memory... */
-    assert(0);
-  }
-
-  /* TODO: Initialize the monospace font with our atlas */
-  /*
-  monospaceFont = &self->monospaceFonts[self->numMonospaceFonts++];
-  st_MonospaceFontFace_init(monospaceFont);
-  */
 }
 
 #define ST_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS 256

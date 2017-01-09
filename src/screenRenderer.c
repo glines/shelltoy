@@ -196,8 +196,8 @@ void st_ScreenRenderer_initVAO(
 void st_ScreenRenderer_initGlyphInstanceVAO(
     st_ScreenRenderer *self)
 {
-  GLuint vertPosLocation, atlasIndexLocation, atlasPosLocation,
-         glyphSizeLocation, offsetLocation, cellLocation, fgColorLocation;
+  GLuint vertPosLocation, atlasPosLocation, glyphSizeLocation, offsetLocation,
+         cellLocation, fgColorLocation;
 
   glGenVertexArrays(1, &self->internal->glyphInstanceVAO);
   FORCE_ASSERT_GL_ERROR();
@@ -227,24 +227,6 @@ void st_ScreenRenderer_initGlyphInstanceVAO(
   /* Configure the vertex attributes from the glyph instance buffer */
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
   FORCE_ASSERT_GL_ERROR();
-  /* Configure atlasIndex */
-//  atlasIndexLocation = glGetAttribLocation(
-//      self->internal->glyphShader,
-//      "atlasIndex");
-//  FORCE_ASSERT_GL_ERROR();
-//  glEnableVertexAttribArray(atlasIndexLocation);
-//  FORCE_ASSERT_GL_ERROR();
-//  glVertexAttribPointer(
-//      atlasIndexLocation,  /* index */
-//      1,  /* size */
-//      GL_INT,  /* type */
-//      0,  /* normalized */
-//      sizeof(st_ScreenRenderer_GlyphInstance),  /* stride */
-//      &((st_ScreenRenderer_GlyphInstance*)0)->atlasIndex  /* pointer */
-//      );
-//  FORCE_ASSERT_GL_ERROR();
-//  glVertexAttribDivisor(atlasIndexLocation, 1);
-//  FORCE_ASSERT_GL_ERROR();
   /* Configure atlasPos */
   atlasPosLocation = glGetAttribLocation(
       self->internal->glyphShader,

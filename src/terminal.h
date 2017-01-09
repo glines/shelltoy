@@ -47,7 +47,7 @@ typedef struct {
 
 void st_Terminal_init(
     st_Terminal *self,
-    const st_Profile *profile,
+    st_Profile *profile,
     int argc,
     char **argv);
 void st_Terminal_destroy(st_Terminal *self);

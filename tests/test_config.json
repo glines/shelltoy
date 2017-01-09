@@ -4,7 +4,7 @@
     {
       "name": "dark",
       "fontFace": "DejaVu Sans Mono",
-      "fontSize": 13.0,
+      "fontSize": 14.0,
       "fallbackFontFaces": [
         "IPAGothic"
       ],
@@ -26,7 +26,7 @@
     {
       "name": "light",
       "fontFace": "DejaVu Sans Mono",
-      "fontSize": 13.0,
+      "fontSize": 14.0,
       "fallbackFontFaces": [
         "IPAGothic"
       ],

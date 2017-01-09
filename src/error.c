@@ -21,38 +21,27 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PROFILE_H_
-#define SHELLTOY_PROFILE_H_
-
-#include <inttypes.h>
-
 #include "error.h"
 
-typedef enum st_Profile_Flag_ {
-  ST_PROFILE_ANTIALIAS_FONT = 1 << 0,
-  ST_PROFILE_BRIGHT_IS_BOLD = 1 << 1,
-} st_Profile_Flag;
-
-typedef struct st_Profile_ {
-  char *name, *fontFace, *fontPath;
-  float fontSize;
-  uint32_t flags;
-} st_Profile;
-
-void st_Profile_init(
-    st_Profile *self,
-    const char *name);
-
-void st_Profile_destroy(
-    st_Profile *self);
-
-void st_Profile_setFlags(
-    st_Profile *self,
-    uint32_t flags);
-
-st_ErrorCode st_Profile_setFont(
-    st_Profile *self,
-    const char *fontFace,
-    float fontSize);
-
-#endif
+const char *st_ErrorString(
+    st_ErrorCode error)
+{
+  /* TODO: Add support for translations of these strings */
+  switch (error) {
+    case ST_NO_ERROR:
+      return "No error";
+    case ST_ERROR_CONFIG:
+      return "Unspecified configuration error";
+    case ST_ERROR_CONFIG_FILE_READ:
+      return "Error reading config file";
+    case ST_ERROR_CONFIG_FILE_FORMAT:
+      return "Invalid config file format";
+    case ST_ERROR_OUT_OF_MEMORY:
+      return "Out of memory";
+    case ST_ERROR_PROFILE_NOT_FOUND:
+      return "Profile not found";
+    default:
+      return "Unknown error";
+      break;
+  };
+}

@@ -36,6 +36,7 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "logging.h"
 #include "pty.h"
 
 int st_PTY_eventType() {
@@ -237,6 +238,10 @@ void st_PTY_prepareChild(st_PTY *self) {
   ws.ws_row = self->height;
   result = ioctl(slave_fd, TIOCSWINSZ, &ws);
   /* TODO: Check result for errors */
+  if (result != 0) {
+    ST_LOG_ERROR("Unable to set pseudo terminal window size: %s\n",
+        strerror(errno));
+  }
   /* Redirect stdin, stdout, and stderr to the pseudo terminal slave */
   /* TODO: Check for errors here */
   dup2(slave_fd, STDIN_FILENO);

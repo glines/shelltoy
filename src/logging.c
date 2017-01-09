@@ -21,38 +21,21 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PROFILE_H_
-#define SHELLTOY_PROFILE_H_
+#include <stdarg.h>
+#include <stdio.h>
 
-#include <inttypes.h>
-
-#include "error.h"
-
-typedef enum st_Profile_Flag_ {
-  ST_PROFILE_ANTIALIAS_FONT = 1 << 0,
-  ST_PROFILE_BRIGHT_IS_BOLD = 1 << 1,
-} st_Profile_Flag;
-
-typedef struct st_Profile_ {
-  char *name, *fontFace, *fontPath;
-  float fontSize;
-  uint32_t flags;
-} st_Profile;
-
-void st_Profile_init(
-    st_Profile *self,
-    const char *name);
-
-void st_Profile_destroy(
-    st_Profile *self);
-
-void st_Profile_setFlags(
-    st_Profile *self,
-    uint32_t flags);
-
-st_ErrorCode st_Profile_setFont(
-    st_Profile *self,
-    const char *fontFace,
-    float fontSize);
-
-#endif
+void st_logError(
+  const char *file,
+  int line,
+  const char *format,
+  ...)
+{
+  va_list args;
+  va_start(args, format);
+  fprintf(stderr, "Shelltoy ERROR <%s:%d>: ",
+      file,
+      line);
+  vfprintf(stderr, format, args);
+  fprintf(stderr, "\n");
+  va_end(args);
+}

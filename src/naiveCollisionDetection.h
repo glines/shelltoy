@@ -33,7 +33,7 @@ struct st_NaiveCollisionDetection_Internal;
 typedef struct st_NaiveCollisionDetection_ {
   st_CollisionDetection base;
   struct st_NaiveCollisionDetection_Internal *internal;
-} st_NaiveCollisionDetection;;
+} st_NaiveCollisionDetection;
 
 void st_NaiveCollisionDetection_init(
     st_NaiveCollisionDetection *self);

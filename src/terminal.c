@@ -34,7 +34,7 @@
 struct st_Terminal_Internal {
   st_ScreenRenderer screenRenderer;
   st_GlyphRenderer glyphRenderer;
-  st_Profile profile;
+  st_Profile *profile;
 };
 
 /* Private methods */
@@ -79,8 +79,6 @@ void st_Terminal_tsmWriteCallback(
     size_t len,
     st_Terminal *self)
 {
-  int result;
-
   /* Write to the pseudo terminal */
   st_PTY_write(&self->pty, u8, len);
 }
@@ -210,7 +208,7 @@ void st_Terminal_calculatePseudoTerminalSize(
 
 void st_Terminal_init(
     st_Terminal *self,
-    const st_Profile *profile,
+    st_Profile *profile,
     int argc,
     char **argv)
 {
@@ -229,12 +227,12 @@ void st_Terminal_init(
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
+  self->internal->profile = profile;
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
   /* Initialize the glyph renderer */
   st_GlyphRenderer_init(&self->internal->glyphRenderer,
-      profile->fontFace,  /* fontFace */
-      profile->fontSize  /* fontSize */
+      profile
       );
   /* Initialize the screen renderer */
   st_ScreenRenderer_init(&self->internal->screenRenderer,
@@ -522,4 +520,37 @@ void st_Terminal_keyInput(
      * tsm_screen_sb_reset() actually does. */
     tsm_screen_sb_reset(self->screen);
   }
+}
+
+st_ErrorCode
+st_Terminal_increaseFontSize(
+    st_Terminal *self)
+{
+#define MAX_INCREASE_FONT_SIZE_ATTEMPTS 32
+  float fontSize;  /* Font size in pixels */
+  st_ErrorCode error;
+
+  /* Look for the next largest available font for this face */
+  fontSize = ceil(self->internal->profile->fontSize) + 1.0f;
+  for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
+    error = st_Profile_setFont(self->internal->profile,
+        self->internal->profile->fontFace,
+        fontSize);
+    if (error == ST_NO_ERROR)
+      break;
+
+    fontSize += 1.0f;
+  }
+
+  if (error != ST_NO_ERROR) {
+    /* We were unable to find the font in a larger size */
+    return error;
+  }
+
+  /* Load the new font */
+  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
+      self->internal->profile->fontPath,
+      self->internal->profile->fontSize);
+
+  return error;
 }

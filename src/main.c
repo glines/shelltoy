@@ -28,9 +28,10 @@
 #include <libtsm.h>
 #include <stdlib.h>
 
-#include "terminal.h"
 #include "config.h"
 #include "fonts.h"
+#include "logging.h"
+#include "terminal.h"
 
 struct st_Shelltoy {
   st_Config config;
@@ -117,9 +118,11 @@ const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu
 int main(int argc, char** argv) {
   char *configFilePath, *profileName;
   size_t len;
-  const st_Profile *profile;
+  st_Profile *profile;
+  st_ErrorCode error;
 
   configFilePath = NULL;
+  profileName = NULL;
 
   /* Parse command line arguments */
   while (1) {
@@ -148,14 +151,46 @@ int main(int argc, char** argv) {
     }
   }
 
-  /* Read the configuration from file */
-  st_Config_init(&shelltoy.config, configFilePath);
+  st_Config_init(&shelltoy.config);
   atexit(st_destroyConfig);
+  if (configFilePath != NULL) {
+    /* Config file path was given; read the configuration from file */
+    error = st_Config_setConfigFilePath(&shelltoy.config, configFilePath);
+    if (error != ST_NO_ERROR) {
+      ST_LOG_ERROR_CODE(error);
+      exit(EXIT_FAILURE);
+    }
+  } else {
+    /* Config file path not given; look for the config file in the default
+     * locations */
+    error = st_Config_findConfigFile(&shelltoy.config);
+    if (error == ST_ERROR_CONFIG_FILE_NOT_FOUND) {
+      /* Could not find config file; we're using the default configuration */
+    } else if (error != ST_NO_ERROR) {
+      ST_LOG_ERROR_CODE(error);
+      exit(EXIT_FAILURE);
+    }
+  }
 
   /* Get the terminal profile from the configuration */
-  profile = st_Config_getProfile(&shelltoy.config,
-      profileName  /* name */
-      );
+  if (profileName != NULL) {
+    error = st_Config_getProfile(&shelltoy.config,
+        profileName,  /* name */
+        &profile  /* profile */
+        );
+    if (error != ST_NO_ERROR) {
+      ST_LOG_ERROR_CODE(error);
+      exit(EXIT_FAILURE);
+    }
+  } else {
+    error = st_Config_getDefaultProfile(&shelltoy.config,
+        &profile  /* profile */
+        );
+    if (error != ST_NO_ERROR) {
+      ST_LOG_ERROR_CODE(error);
+      exit(EXIT_FAILURE);
+    }
+  }
 
   st_initSDL();
   atexit(st_quitSDL);

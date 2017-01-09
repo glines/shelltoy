@@ -115,7 +115,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   st_NaiveCollisionDetection collisionDetection;
   st_GlyphAtlasEntry *currentGlyph, *collidingGlyph;
   FT_Bitmap *bitmap;
-  size_t numPendingGlyphs, numPlacedGlyphs;
+  size_t numPendingGlyphs;
   int done;
   uint8_t *atlasTexture;
   int textureSize;
@@ -363,9 +363,9 @@ int st_GlyphAtlas_getGlyph(
 {
   int a, b, i;
   st_GlyphAtlasEntry *currentGlyph;
-  assert(self->internal->numGlyphs > 0);  /* XXX */
   if (self->internal->numGlyphs == 0)
     return 1;
+  currentGlyph = &self->internal->glyphs[0];
   /* Binary search for the glyph corresponding to the given character */
   /* FIXME: Check the loop conditions and write some unit tests for this thing;
    * this binary search is probably broken */

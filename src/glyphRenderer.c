@@ -35,10 +35,6 @@
     ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
 
 /* Private methods */
-void st_GlyphRenderer_buildFontPattern(
-    st_GlyphRenderer *self,
-    const char *fontFace,
-    float fontSize);
 void st_GlyphRenderer_updateCellSize(
     st_GlyphRenderer *self);
 void st_GlyphRenderer_calculateCellSize(
@@ -52,33 +48,35 @@ struct st_GlyphRenderer_Internal {
    * objects around, but I don't know. */
   FT_Face face;
   int cellSize[2];
+  float fontSize;
 };
 
 void st_GlyphRenderer_init(
     st_GlyphRenderer *self,
-    const char *fontFace,
-    float fontSize)
+    st_Profile *profile)
 {
-  /* FIXME: Get rid of this path */
-#define FONT_FACE_PATH "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu-fonts-2.37/share/fonts/truetype/DejaVuSansMono.ttf"
-
-  FT_Error error;
-  FT_Library ft;
-  const char *fontPath = FONT_FACE_PATH;
-
-  /* TODO: Determine the font path using fontconfig */
-  st_GlyphRenderer_buildFontPattern(self,
-      fontFace,
-      fontSize);
-
-  ft = st_Fonts_getFreeTypeInstance();
-
   /* Allocate internal data structures */
   self->internal = (struct st_GlyphRenderer_Internal*)malloc(
       sizeof(struct st_GlyphRenderer_Internal));
 
-  /* TODO: Support configuration of the font face to load. This might require
-   * an st_GlyphRenderer_addFace() method. */
+  st_GlyphRenderer_loadFont(self,
+      profile->fontPath,
+      profile->fontSize);
+}
+
+/* FIXME: st_GlyphRenderer_loadFont() does not return any error codes. */
+st_ErrorCode
+st_GlyphRenderer_loadFont(
+    st_GlyphRenderer *self,
+    const char *fontPath,
+    float fontSize)
+{
+  FT_Error error;
+  FT_Library ft;
+
+  ft = st_Fonts_getFreeTypeInstance();
+  /* FIXME: This call that uses the Freetype library handle might be better as
+   * part of a helper method inside of fonts.c */
   error = FT_New_Face(
       ft,  /* library */
       fontPath,  /* filepathname */
@@ -113,66 +111,8 @@ void st_GlyphRenderer_init(
     /* TODO: Fail gracefully? */
   }
   st_GlyphRenderer_updateCellSize(self);
-}
 
-void st_GlyphRenderer_buildFontPattern(
-    st_GlyphRenderer *self,
-    const char *fontFace,
-    float fontSize)
-{
-  FcPattern *pattern;
-  FcFontSet *sourceFontSets[2];
-  FcFontSet *resultFontSet;
-  FcConfig *config;
-  FcResult result;
-  FcValue value;
-  char *fontFilePath;
-
-  config = st_Fonts_getFontconfigInstance();
-
-  sourceFontSets[0] = FcConfigGetFonts(config, FcSetSystem);
-  sourceFontSets[1] = FcConfigGetFonts(config, FcSetApplication);
-
-  pattern = FcPatternBuild(
-      NULL,  /* pattern */
-      FC_SPACING, FcTypeInteger, FC_MONO,  /* Look for monospace fonts */
-      (char *) NULL  /* terminator */
-      );
-
-  /* Generate a list of all fonts matching our criteria */
-  resultFontSet = FcFontSetList(
-      config,  /* config */
-      sourceFontSets,  /* sets */
-      2,  /* nsets */
-      pattern,  /* pattern */
-      /* FIXME: Fontconfig documentation is not clear on the utility of
-       * object_set */
-      NULL  /* object_set */
-      );
-
-  /* XXX: Print out all of the matching fonts */
-  for (int i = 0; i < resultFontSet->nfont; ++i) {
-    FcPattern *font;
-    font = resultFontSet->fonts[i];
-    FcPatternPrint(font);
-  }
-
-  if (resultFontSet->nfont <= 0) {
-    fprintf(stderr, "Error: Fontconfig could not find any suitable fonts.\n");
-    /* TODO: Fail gracefully */
-    assert(0);
-  }
-
-  /* Get the file path of the matching font */
-  result = FcPatternGet(resultFontSet->fonts[0], FC_FILE, 0, &value);
-  assert(value.u.s != NULL);
-  fontFilePath = (char *)malloc(strlen(value.u.s) + 1);
-  strcpy(fontFilePath, value.u.s);
-  fprintf(stderr, "Fontconfig found suitable font: '%s'\n",
-      fontFilePath);
-  free(fontFilePath);
-
-  FcPatternDestroy(pattern);
+  return ST_NO_ERROR;
 }
 
 void st_GlyphRenderer_updateCellSize(
@@ -198,7 +138,7 @@ void st_GlyphRenderer_calculateCellSize(
     const FT_Face face,
     int *width, int *height)
 {
-  double x_pixels_per_unit, y_pixels_per_unit, units_per_em;
+  double y_pixels_per_unit, units_per_em;
   FT_UInt glyph_index;
   FT_Error error;
 
@@ -206,7 +146,6 @@ void st_GlyphRenderer_calculateCellSize(
    * described in
    * <https://www.freetype.org/freetype2/docs/tutorial/step2.html> */
   units_per_em = (double)face->units_per_EM;
-  x_pixels_per_unit = face->size->metrics.x_ppem / units_per_em;
   y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
 
   /* Horizontal distance between glyphs is estimated by looking at the glyph
@@ -320,20 +259,11 @@ void st_GlyphRenderer_getGlyphOffset(
     uint32_t character,
     int *x, int *y)
 {
-  double x_pixels_per_unit, y_pixels_per_unit, units_per_em;
   FT_UInt glyph_index;
   FT_Face face;
   FT_Error error;
 
   face = self->internal->face;
-
-  /* Compute a scaling factor to convert from font units to pixels, as
-   * described in
-   * <https://www.freetype.org/freetype2/docs/tutorial/step2.html> */
-  /* TODO: Cache this result */
-  units_per_em = (double)face->units_per_EM;
-  x_pixels_per_unit = face->size->metrics.x_ppem / units_per_em;
-  y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
 
   /* TODO: Look for a face that provides this glyph (once we add support for
    * multiple faces) */
@@ -349,7 +279,7 @@ void st_GlyphRenderer_getGlyphOffset(
     fprintf(stderr,
         "Freetype error loading the glyph for ASCII character '%c'\n",
         (char)character);
-    /* TODO: Fail gracefully */
+    /* FIXME: Fail gracefully */
     assert(0);
   }
   /* Calculate the horizontal offset of this glyph */

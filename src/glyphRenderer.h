@@ -21,10 +21,15 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef ST_GLYPH_RENDERER_H_
+#define ST_GLYPH_RENDERER_H_
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 #include <inttypes.h>
+
+#include "profile.h"
 
 struct st_GlyphRenderer_Internal;
 
@@ -38,8 +43,7 @@ typedef struct st_GlyphRenderer_ {
 
 void st_GlyphRenderer_init(
     st_GlyphRenderer *self,
-    const char *fontFace,
-    float fontSize);
+    st_Profile *profile);
 
 void st_GlyphRenderer_destroy(
     st_GlyphRenderer *self);
@@ -61,3 +65,11 @@ void st_GlyphRenderer_getGlyphOffset(
     st_GlyphRenderer *self,
     uint32_t character,
     int *x, int *y);
+
+st_ErrorCode
+st_GlyphRenderer_loadFont(
+    st_GlyphRenderer *self,
+    const char *fontPath,
+    float fontSize);
+
+#endif

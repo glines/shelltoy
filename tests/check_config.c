@@ -21,38 +21,52 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PROFILE_H_
-#define SHELLTOY_PROFILE_H_
+#include <check.h>
+#include <stdlib.h>
 
-#include <inttypes.h>
+#include "../src/config.h"
 
-#include "error.h"
+START_TEST(test_Config_checkDefaultProfile)
+{
+  st_Config config;
+  st_Profile *defaultProfile;
 
-typedef enum st_Profile_Flag_ {
-  ST_PROFILE_ANTIALIAS_FONT = 1 << 0,
-  ST_PROFILE_BRIGHT_IS_BOLD = 1 << 1,
-} st_Profile_Flag;
+  st_Config_init(&config);
+  mark_point();
+  st_Config_getDefaultProfile(&config,
+      &defaultProfile);
 
-typedef struct st_Profile_ {
-  char *name, *fontFace, *fontPath;
-  float fontSize;
-  uint32_t flags;
-} st_Profile;
+  ck_assert(defaultProfile != NULL);
 
-void st_Profile_init(
-    st_Profile *self,
-    const char *name);
+  st_Config_destroy(&config);
+}
+END_TEST
 
-void st_Profile_destroy(
-    st_Profile *self);
+Suite *config_test_suite() {
+  Suite *s;
+  TCase *tc_profiles;
 
-void st_Profile_setFlags(
-    st_Profile *self,
-    uint32_t flags);
+  s = suite_create("Config");
 
-st_ErrorCode st_Profile_setFont(
-    st_Profile *self,
-    const char *fontFace,
-    float fontSize);
+  /* Profiles test case */
+  tc_profiles = tcase_create("Profiles");
 
-#endif
+  tcase_add_test(tc_profiles, test_Config_checkDefaultProfile);
+  suite_add_tcase(s, tc_profiles);
+
+  return s;
+}
+
+int main(int argc, char **argv) {
+  int number_failed;
+  Suite *s;
+  SRunner *sr;
+
+  s = config_test_suite();
+  sr = srunner_create(s);
+
+  srunner_run_all(sr, CK_NORMAL);
+  number_failed = srunner_ntests_failed(sr);
+  srunner_free(sr);
+  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
