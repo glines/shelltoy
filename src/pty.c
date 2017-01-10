@@ -243,7 +243,7 @@ void st_PTY_prepareChild(st_PTY *self) {
   ws.ws_row = self->height;
   result = ioctl(slave_fd, TIOCSWINSZ, &ws);
   if (result != 0) {
-    ST_LOG_ERROR("Unable to set pseudo terminal window size: %s\n",
+    ST_LOG_ERROR("Unable to set pseudo terminal window size: %s",
         strerror(errno));
   }
 }
@@ -327,8 +327,10 @@ void st_PTY_resize(st_PTY *self, int width, int height) {
   ws.ws_col = width;
   ws.ws_row = height;
   result = ioctl(self->master_fd, TIOCSWINSZ, &ws);
-  /* TODO: Check result for errors */
-  assert(result == 0);
+  if (result != 0) {
+    ST_LOG_ERROR("Failed to resize pseudo terminal: %s",
+        strerror(errno));
+  }
 
   /* Store the new width and height */
   self-> width = width;
