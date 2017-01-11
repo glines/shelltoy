@@ -2,12 +2,12 @@
 
 stdenv.mkDerivation rec {
   name = "shelltoy-${version}";
-  version = "0.0.4";
+  version = "0.0.5";
 
   src = fetchgit {
     url = "file:///home/auntieneo/code/shelltoy";
-    rev = "50b324f1e75f92b723f6f6babc335c7e4a320370";
-    sha256 = "0w3c53mwxkl7626iwwdzv4viyk4r1xfrqwycb0mmr4lkq33qw678";
+    rev = "02fbdac06f1b5ab3d58a83f14bd20c4700717c53";
+    sha256 = "15nv5x53rrc78hhwn9blwjs4s907cxs7h8wvsxmw1gq4anvwwb47";
   };
 
   buildInputs = [ cmake libtsm SDL2 glew freetype dejavu_fonts pkgconfig check

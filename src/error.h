@@ -34,6 +34,7 @@ typedef enum st_ErrorCode_ {
   ST_ERROR_FONT_NOT_FOUND,
   ST_ERROR_OUT_OF_MEMORY,
   ST_ERROR_PROFILE_NOT_FOUND,
+  ST_ERROR_UNKNOWN_COLOR_CODE,
 } st_ErrorCode;
 
 const char *st_ErrorString(

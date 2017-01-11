@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,43 +21,37 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_SCREEN_RENDERER_H_
-#define ST_SCREEN_RENDERER_H_
+#ifndef SHELLTOY_COLOR_H_
+#define SHELLTOY_COLOR_H_
 
-#include <libtsm.h>
+typedef struct st_Color_ {
+  uint8_t rgb[3];
+} st_Color;
 
-#include "glyphAtlas.h"
-#include "profile.h"
+typedef enum st_ColorEnum_ {
+  ST_COLOR_0 = 0,
+  ST_COLOR_1,
+  ST_COLOR_2,
+  ST_COLOR_3,
+  ST_COLOR_4,
+  ST_COLOR_5,
+  ST_COLOR_6,
+  ST_COLOR_7,
+  ST_COLOR_8,
+  ST_COLOR_9,
+  ST_COLOR_10,
+  ST_COLOR_11,
+  ST_COLOR_12,
+  ST_COLOR_13,
+  ST_COLOR_14,
+  ST_COLOR_15,
+  ST_COLOR_FOREGROUND,
+  ST_COLOR_BACKGROUND,
+  ST_NUM_COLORS,
+} st_ColorEnum;
 
-#define ST_SCREEN_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
-#define ST_SCREEN_RENDERER_INIT_SIZE_BACKGROUND_CELLS (80 * 24 * 2)
-
-struct st_ScreenRenderer_Internal;
-
-typedef struct st_ScreenRenderer_ {
-  /* FIXME: Probably move atlas and glyphRenderer to an internal data
-   * structure */
-  st_GlyphAtlas atlas;
-
-  struct st_ScreenRenderer_Internal *internal;
-} st_ScreenRenderer;
-
-void st_ScreenRenderer_init(
-    st_ScreenRenderer *self,
-    st_GlyphRenderer *glyphRenderer,
-    st_Profile *profile);
-
-void st_ScreenRenderer_destroy(
-    st_ScreenRenderer *self);
-
-void st_ScreenRenderer_updateScreen(
-    st_ScreenRenderer *self,
-    struct tsm_screen *screen,
-    st_GlyphRenderer *glyphRenderer);
-void st_ScreenRenderer_draw(
-    const st_ScreenRenderer *self,
-    const st_GlyphRenderer *glyphRenderer,
-    int viewportWidth,
-    int viewportHeight);
+typedef struct st_ColorScheme_ {
+  st_Color colors[ST_NUM_COLORS];
+} st_ColorScheme;
 
 #endif

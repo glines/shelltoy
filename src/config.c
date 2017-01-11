@@ -46,6 +46,10 @@ st_ErrorCode st_Config_buildProfile(
     st_Config *self,
     st_Profile *profile,
     json_t *profile_json);
+st_ErrorCode st_Config_buildColorScheme(
+    st_Config *self,
+    st_Profile *profile,
+    json_t *colorScheme_json);
 st_ErrorCode st_Config_readConfigFile(
     st_Config *self);
 st_ErrorCode st_Config_insertNewProfile(
@@ -260,6 +264,7 @@ int st_Config_buildConfig(
   self->internal->profiles = (st_Profile **)malloc(
       sizeof(st_Profile *) * self->internal->sizeProfiles);
   /* Iterate to add each profile */
+  assert(self->internal->numProfiles == 0);
   for (size_t i = 0; i < json_array_size(profiles); ++i) {
     json_t *profile_json;
     st_Profile *profile;
@@ -303,7 +308,7 @@ st_Config_buildProfile(
     st_Profile *profile,
     json_t *profile_json)
 {
-  json_t *name, *fontFace, *fontSize, *antialiasFont, *brightIsBold;
+  json_t *name, *fontFace, *fontSize, *antialiasFont, *brightIsBold, *colors;
   uint32_t flags;
   st_ErrorCode error;
 
@@ -364,7 +369,15 @@ st_Config_buildProfile(
   GET_PROFILE_FLAG(brightIsBold, BRIGHT_IS_BOLD);
   st_Profile_setFlags(profile, flags);
 
-  /* TODO: Get the profile colors */
+  /* Get the profile colors */
+  colors = json_object_get(profile_json, "colors");
+  error = st_Config_buildColorScheme(self,
+      profile,
+      colors);
+  if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR("%s", "Error reading profile colors");
+    return error;
+  }
 
   /* Set the font used by the profile. Note that failure to find the font is
    * not a fatal error, since we might not even use this profile. */
@@ -381,6 +394,88 @@ st_Config_buildProfile(
 
   return ST_NO_ERROR;
 }
+
+
+st_ErrorCode st_Config_buildColorScheme(
+    st_Config *self,
+    st_Profile *profile,
+    json_t *colorScheme_json)
+{
+  json_t *color_json;
+
+  if (!json_is_object(colorScheme_json)) {
+    ST_LOG_ERROR("%s", "Config error: colors is not an object");
+    return ST_ERROR_CONFIG_FILE_FORMAT;
+  }
+
+#define GET_COLOR(NAME,CODE) \
+  color_json = json_object_get(colorScheme_json, #NAME); \
+  /* Parse the color as it is represented in JSON */ \
+  if (json_is_array(color_json)) { \
+    if (json_array_size(color_json) != 3) { \
+      ST_LOG_ERROR("Color '%s' in profile '%s' should have 3 components", \
+          #NAME, \
+          profile->name); \
+      return ST_ERROR_CONFIG_FILE_FORMAT; \
+    } \
+    for (size_t i = 0; i < json_array_size(color_json); ++i) { \
+      json_t *channel_json; \
+      json_int_t channel; \
+      channel_json = json_array_get(color_json, i); \
+      if (!json_is_integer(channel_json)) { \
+        ST_LOG_ERROR("Color '%s' in profile '%s' contains colors that are not integers", \
+            #NAME, \
+            profile->name); \
+        return ST_ERROR_CONFIG_FILE_FORMAT; \
+      } \
+      channel = json_integer_value(channel_json); \
+      if ((channel < 0) || (255 < channel)) { \
+        ST_LOG_ERROR("Color '%s' in profile '%s': color values must be between 0 and 255", \
+            #NAME, \
+            profile->name); \
+        return ST_ERROR_CONFIG_FILE_FORMAT; \
+      } \
+      profile->colorScheme.colors[ST_COLOR_ ## CODE].rgb[i] = (uint8_t)channel; \
+    } \
+  } else if (json_is_string(color_json)) { \
+    /* TODO: Parse CSS-style color strings */ \
+    assert(0); \
+  } else { \
+    ST_LOG_ERROR("Could not parse color '%s' in profile '%s'", \
+        #NAME, \
+        profile->name); \
+    return ST_ERROR_CONFIG_FILE_FORMAT; \
+  }
+  GET_COLOR(color0,0)
+  GET_COLOR(color1,1)
+  GET_COLOR(color2,2)
+  GET_COLOR(color3,3)
+  GET_COLOR(color4,4)
+  GET_COLOR(color5,5)
+  GET_COLOR(color6,6)
+  GET_COLOR(color7,7)
+  GET_COLOR(color8,8)
+  GET_COLOR(color9,9)
+  GET_COLOR(color10,10)
+  GET_COLOR(color11,11)
+  GET_COLOR(color12,12)
+  GET_COLOR(color13,13)
+  GET_COLOR(color14,14)
+  GET_COLOR(color15,15)
+  GET_COLOR(background,BACKGROUND)
+  GET_COLOR(foreground,FOREGROUND)
+
+  return ST_NO_ERROR;
+}
+
+/*
+st_ErrorCode st_Config_BuildColor(
+    st_Config *self,
+    uint8_t *color,
+    json_t *color_json)
+{
+}
+*/
 
 st_ErrorCode
 st_Config_getProfile(
@@ -449,6 +544,28 @@ st_Config_getDefaultProfile(
       newProfile = (st_Profile *)malloc(sizeof(st_Profile));
       st_Profile_init(newProfile, DEFAULT_PROFILE_NAME);
       st_Profile_setFlags(newProfile, DEFAULT_FLAGS);
+#define SET_COLOR(NAME,R,G,B) \
+      newProfile->colorScheme.colors[ST_COLOR_ ## NAME].rgb[0] = R; \
+      newProfile->colorScheme.colors[ST_COLOR_ ## NAME].rgb[1] = G; \
+      newProfile->colorScheme.colors[ST_COLOR_ ## NAME].rgb[2] = B;
+      SET_COLOR(0,0,0,0)  /* black */
+      SET_COLOR(1,255,0,0)  /* light red */
+      SET_COLOR(2,0,255,0)  /* light green */
+      SET_COLOR(3,255,255,0)  /* yellow */
+      SET_COLOR(4,0,0,255)  /* light blue */
+      SET_COLOR(5,255,0,255)  /* light magenta */
+      SET_COLOR(6,0,255,255)  /* light cyan */
+      SET_COLOR(7,255,255,255)  /* high white */
+      SET_COLOR(8,128,128,128)  /* gray */
+      SET_COLOR(9,128,0,0)  /* red */
+      SET_COLOR(10,0,128,0)  /* green */
+      SET_COLOR(11,128,128,0)  /* brown */
+      SET_COLOR(12,0,0,128)  /* blue */
+      SET_COLOR(13,128,0,128)  /* magenta */
+      SET_COLOR(14,0,128,128)  /* cyan */
+      SET_COLOR(15,192,192,192)  /* white */
+      SET_COLOR(FOREGROUND,255,255,255)  /* white */
+      SET_COLOR(BACKGROUND,0,0,0)  /* black */
       error = st_Profile_setFont(newProfile,
           DEFAULT_FONT_FACE,
           DEFAULT_FONT_SIZE);

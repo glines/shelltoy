@@ -24,6 +24,7 @@
 #include "boundingBox.h"
 #include "common/glError.h"
 #include "common/shaders.h"
+#include "logging.h"
 
 #include "screenRenderer.h"
 
@@ -51,6 +52,7 @@ typedef struct st_ScreenRenderer_ScreenDrawCallbackData_ {
 } st_ScreenRenderer_ScreenDrawCallbackData;
 
 struct st_ScreenRenderer_Internal {
+  st_Profile *profile;
   st_ScreenRenderer_GlyphInstance *glyphs;
   size_t numGlyphs, sizeGlyphs;
   st_ScreenRenderer_BackgroundInstance *backgroundCells;
@@ -95,7 +97,8 @@ void st_ScreenRenderer_addGlyphInstance(
     int posx,
     int posy,
     const struct tsm_screen_attr *attr);
-int st_ScreenRenderer_colorCodeToRGB(
+st_ErrorCode
+st_ScreenRenderer_colorCodeToRGB(
     const st_ScreenRenderer *self,
     int8_t code,
     uint8_t *rgb);
@@ -106,7 +109,8 @@ void st_ScreenRenderer_drawBackgroundCells(
 
 void st_ScreenRenderer_init(
     st_ScreenRenderer *self,
-    st_GlyphRenderer *glyphRenderer)
+    st_GlyphRenderer *glyphRenderer,
+    st_Profile *profile)
 {
   /* Allocate memory for internal data structures */
   self->internal = (struct st_ScreenRenderer_Internal*)malloc(
@@ -122,6 +126,9 @@ void st_ScreenRenderer_init(
       sizeof(st_ScreenRenderer_BackgroundInstance)
       * self->internal->sizeBackgroundCells);
   self->internal->numBackgroundCells = 0;
+  /* Store a pointer to the profile */
+  self->internal->profile = profile;
+  /* Initialize our GL resources */
   st_ScreenRenderer_initShaders(self);
   st_ScreenRenderer_initBuffers(self);
   st_ScreenRenderer_initVAO(self);
@@ -529,7 +536,7 @@ void st_ScreenRenderer_addBackgroundCellInstance(
     const struct tsm_screen_attr *attr)
 {
   st_ScreenRenderer_BackgroundInstance backgroundInstance;
-  int result;
+  st_ErrorCode result;
 
   /* Set up the background instance data structure */
   backgroundInstance.cell[0] = posx;
@@ -547,10 +554,8 @@ void st_ScreenRenderer_addBackgroundCellInstance(
         attr->bccode,  /* code */
         backgroundInstance.bgColor  /* rgb */
         );
-    if (!result) {
-      /* Use the default background color */
-      // assert(0);  /* XXX: We should never actually reach here */
-      /* Set the color to magenta for easier debugging */
+    if (result != ST_NO_ERROR) {
+      /* Set the color to magenta for debugging */
       backgroundInstance.bgColor[0] = 255;
       backgroundInstance.bgColor[1] = 0;
       backgroundInstance.bgColor[2] = 255;
@@ -618,9 +623,6 @@ void st_ScreenRenderer_addGlyphInstance(
   glyphInstance.cell[1] = posy;
   glyphInstance.offset[0] = (float)xOffset;
   glyphInstance.offset[1] = (float)yOffset;
-  /* FIXME: We need to determine which samplers are assigned for which atlas
-   * textures */
-//  glyphInstance.atlasIndex = 0;
 
   /* Determine the foreground color */
   if (attr->fccode < 0) {
@@ -633,10 +635,9 @@ void st_ScreenRenderer_addGlyphInstance(
         attr->fccode,  /* code */
         glyphInstance.fgColor  /* rgb */
         );
-    if (!result) {
-      /* Use the default foreground color */
-      /* TODO: Allow the user to configure the default foreground color */
-      glyphInstance.fgColor[0] = 255;
+    if (result != ST_NO_ERROR) {
+      /* Set the color to cyan for debugging */
+      glyphInstance.fgColor[0] = 0;
       glyphInstance.fgColor[1] = 255;
       glyphInstance.fgColor[2] = 255;
     }
@@ -664,33 +665,41 @@ void st_ScreenRenderer_addGlyphInstance(
       sizeof(st_ScreenRenderer_GlyphInstance));
 }
 
-int st_ScreenRenderer_colorCodeToRGB(
+st_ErrorCode
+st_ScreenRenderer_colorCodeToRGB(
     const st_ScreenRenderer *self,
     int8_t code,
     uint8_t *rgb)
 {
-  /* TODO: Allow the user to configure the color scheme */
+  /* Retrieve the RGB color from our color scheme */
   switch (code) {
-#define CODE_RGB(code,r,g,b) \
-    case code: \
-      rgb[0] = r; \
-      rgb[1] = g; \
-      rgb[2] = b; \
-      return 1;
-    CODE_RGB(0, 0, 0, 0)  /* black */
-    CODE_RGB(1, 255, 0, 0)  /* red */
-    CODE_RGB(2, 0, 255, 0)  /* green */
-    CODE_RGB(3, 255, 255, 0)  /* yellow */
-    CODE_RGB(4, 0, 0, 255)  /* blue */
-    CODE_RGB(5, 255, 0, 255)  /* magenta */
-    CODE_RGB(6, 0, 255, 255)  /* cyan */
-    CODE_RGB(7, 255, 255, 255)  /* white */
+    case ST_COLOR_0:
+    case ST_COLOR_1:
+    case ST_COLOR_2:
+    case ST_COLOR_3:
+    case ST_COLOR_4:
+    case ST_COLOR_5:
+    case ST_COLOR_6:
+    case ST_COLOR_7:
+    case ST_COLOR_8:
+    case ST_COLOR_9:
+    case ST_COLOR_10:
+    case ST_COLOR_11:
+    case ST_COLOR_12:
+    case ST_COLOR_13:
+    case ST_COLOR_14:
+    case ST_COLOR_15:
+    case ST_COLOR_FOREGROUND:
+    case ST_COLOR_BACKGROUND:
+      memcpy(
+          rgb,
+          &self->internal->profile->colorScheme.colors[code],
+          sizeof(st_Color));
+      return ST_NO_ERROR;
     default:
-      /* TODO: Fail gracefully */
-      /* FIXME: What are color codes 16 and 17? */
-      fprintf(stderr, "Unknown color code: '%d'\n", code);
+      ST_LOG_ERROR("Unknown color code: '%d'\n", code);
   }
-  return 0;
+  return ST_ERROR_UNKNOWN_COLOR_CODE;
 }
 
 void st_ScreenRenderer_drawBackgroundCells(

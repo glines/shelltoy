@@ -26,6 +26,7 @@
 #include "../extern/xkbcommon-keysyms.h"
 
 #include "common/glError.h"
+#include "logging.h"
 #include "profile.h"
 
 #include "terminal.h"
@@ -206,6 +207,11 @@ void st_Terminal_calculatePseudoTerminalSize(
 #define ENV_PATH "/usr/bin/env"
 #define SHELL "bash"
 
+static char *bash_argv[] = {
+  "/usr/bin/env",
+  "bash",
+};
+
 void st_Terminal_init(
     st_Terminal *self,
     st_Profile *profile,
@@ -219,11 +225,14 @@ void st_Terminal_init(
     /* No shell was given; we check the SHELL environment variable */
     char *shell = getenv("SHELL");
     if (shell == NULL) {
-      /* TODO: Fail gracefully */
-      assert(0);
+      ST_LOG_ERROR("%s", "SHELL environment variable not set");
+      /* TODO: Try our best to invoke bash */
+      argv = bash_argv;
+      argc = sizeof(bash_argv) / sizeof(bash_argv[0]);
+    } else {
+      argv = &shell;
+      argc = 1;
     }
-    argv = &shell;
-    argc = 1;
   }
   /* Copy arguments into a null terminated array */
   argv_nullTerminated = (char**)malloc(sizeof(char*) * (argc + 1));
@@ -245,7 +254,8 @@ void st_Terminal_init(
       );
   /* Initialize the screen renderer */
   st_ScreenRenderer_init(&self->internal->screenRenderer,
-      &self->internal->glyphRenderer  /* glyphRenderer */
+      &self->internal->glyphRenderer,  /* glyphRenderer */
+      profile  /* profile */
       );
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);

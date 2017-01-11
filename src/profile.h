@@ -26,6 +26,7 @@
 
 #include <inttypes.h>
 
+#include "color.h"
 #include "error.h"
 
 typedef enum st_Profile_Flag_ {
@@ -37,6 +38,7 @@ typedef struct st_Profile_ {
   char *name, *fontFace, *fontPath;
   float fontSize;
   uint32_t flags;
+  st_ColorScheme colorScheme;
 } st_Profile;
 
 void st_Profile_init(
