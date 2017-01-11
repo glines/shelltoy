@@ -537,21 +537,23 @@ void st_ScreenRenderer_addBackgroundCellInstance(
 {
   st_ScreenRenderer_BackgroundInstance backgroundInstance;
   st_ErrorCode result;
+  int8_t code;
 
   /* Set up the background instance data structure */
   backgroundInstance.cell[0] = posx;
   backgroundInstance.cell[1] = posy;
 
   /* Determine the background color */
+  code = attr->inverse ? attr->fccode : attr->bccode;
   backgroundInstance.bgColor[3] = 255;  /* Assume background alpha of one */
-  if (attr->bccode < 0) {
+  if (code < 0) {
     /* Use RGB for the background color */
-    backgroundInstance.bgColor[0] = attr->br;
-    backgroundInstance.bgColor[1] = attr->bg;
-    backgroundInstance.bgColor[2] = attr->bb;
+    backgroundInstance.bgColor[0] = attr->inverse ? attr->fr : attr->br;
+    backgroundInstance.bgColor[1] = attr->inverse ? attr->fg : attr->bg;
+    backgroundInstance.bgColor[2] = attr->inverse ? attr->fb : attr->bb;
   } else {
     result = st_ScreenRenderer_colorCodeToRGB(self,
-        attr->bccode,  /* code */
+        code,  /* code */
         backgroundInstance.bgColor  /* rgb */
         );
     if (result != ST_NO_ERROR) {
@@ -598,6 +600,7 @@ void st_ScreenRenderer_addGlyphInstance(
   st_BoundingBox bbox;
   int atlasIndex, xOffset, yOffset;
   int error, result;
+  int8_t code;
 
   /* Look for this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(&self->atlas,
@@ -625,14 +628,15 @@ void st_ScreenRenderer_addGlyphInstance(
   glyphInstance.offset[1] = (float)yOffset;
 
   /* Determine the foreground color */
-  if (attr->fccode < 0) {
+  code = attr->inverse ? attr->bccode : attr->fccode;
+  if (code < 0) {
     /* Use RGB for the foreground color */
-    glyphInstance.fgColor[0] = attr->fr;
-    glyphInstance.fgColor[1] = attr->fg;
-    glyphInstance.fgColor[2] = attr->fb;
+    glyphInstance.fgColor[0] = attr->inverse ? attr->br : attr->fr;
+    glyphInstance.fgColor[1] = attr->inverse ? attr->bg : attr->fg;
+    glyphInstance.fgColor[2] = attr->inverse ? attr->bb : attr->fb;
   } else {
     result = st_ScreenRenderer_colorCodeToRGB(self,
-        attr->fccode,  /* code */
+        code,  /* code */
         glyphInstance.fgColor  /* rgb */
         );
     if (result != ST_NO_ERROR) {
