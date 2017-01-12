@@ -129,6 +129,7 @@ int main(int argc, char** argv) {
     int c;
     static struct option long_options[] = {
       {"config", required_argument,    0, 'c' },
+      {"profile", required_argument,   0, 'p' },
       {    NULL,                 0, NULL,   0 },
     };
 
@@ -143,10 +144,24 @@ int main(int argc, char** argv) {
 
     switch (c) {
       case 'c':
+        if (configFilePath != NULL) {
+          ST_LOG_ERROR("%s", "More than one config file specified; ignoring");
+          break;
+        }
         fprintf(stderr, "Using config file path: %s\n", optarg);
         len = strlen(optarg);
         configFilePath = (char *)malloc(len + 1);
         strcpy(configFilePath, optarg);
+        break;
+      case 'p':
+        if (profileName != NULL) {
+          ST_LOG_ERROR("%s", "More than one profile specified; ignoring");
+          break;
+        }
+        fprintf(stderr, "Using profile: '%s'\n", optarg);
+        len = strlen(optarg);
+        profileName = (char *)malloc(len + 1);
+        strcpy(profileName, optarg);
         break;
     }
   }
