@@ -151,7 +151,13 @@ void st_Terminal_initWindow(st_Terminal *self) {
   FORCE_CHECK_GL_ERROR();
 
   /* Configure the GL */
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  st_Color *bgColor =
+    &self->internal->profile->colorScheme.colors[ST_COLOR_BACKGROUND];
+  glClearColor(
+      (float)bgColor->rgb[0] / 255.0f,
+      (float)bgColor->rgb[1] / 255.0f,
+      (float)bgColor->rgb[2] / 255.0f,
+      0.0f);
   FORCE_ASSERT_GL_ERROR();
   glClearDepth(1.0);
   FORCE_ASSERT_GL_ERROR();

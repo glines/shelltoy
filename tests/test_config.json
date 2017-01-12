@@ -1,5 +1,5 @@
 {
-  "defaultProfile": "tango-dark",
+  "defaultProfile": "dark",
   "profiles": [
     {
       "name": "dark",
@@ -11,8 +11,6 @@
       "antialiasFont": true,
       "brightIsBold": true,
       "colors": {
-        "foreground": [ 192, 192, 192 ],
-        "background": [ 0, 0, 0 ],
         "color0": [ 0, 0, 0 ],
         "color1": [ 255, 0, 0 ],
         "color2": [ 0, 255, 0 ],
@@ -28,7 +26,9 @@
         "color12": [ 0, 0, 128 ],
         "color13": [ 128, 0, 128 ],
         "color14": [ 0, 128, 128 ],
-        "color15": [ 192, 192, 192 ]
+        "color15": [ 192, 192, 192 ],
+        "foreground": [ 192, 192, 192 ],
+        "background": [ 0, 0, 0 ]
       }
     },
     {
@@ -41,8 +41,6 @@
       "antialiasFont": true,
       "brightIsBold": true,
       "colors": {
-        "foreground": [ 0, 0, 0 ],
-        "background": [ 255, 255, 255 ],
         "color0": [ 0, 0, 0 ],
         "color1": [ 255, 0, 0 ],
         "color2": [ 0, 255, 0 ],
@@ -58,7 +56,9 @@
         "color12": [ 0, 0, 128 ],
         "color13": [ 128, 0, 128 ],
         "color14": [ 0, 128, 128 ],
-        "color15": [ 192, 192, 192 ]
+        "color15": [ 192, 192, 192 ],
+        "foreground": [ 0, 0, 0 ],
+        "background": [ 255, 255, 255 ]
       }
     },
     {
