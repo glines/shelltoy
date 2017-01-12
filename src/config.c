@@ -236,6 +236,13 @@ void st_Config_parseConfig(
   }
 }
 
+int comp_profiles(
+    const st_Profile **a,
+    const st_Profile **b)
+{
+  return strcmp((*a)->name, (*b)->name);
+}
+
 int st_Config_buildConfig(
     st_Config *self,
     json_t *root)
@@ -260,7 +267,6 @@ int st_Config_buildConfig(
 
   /* Allocate memory for storing our profiles */
   self->internal->sizeProfiles = json_array_size(profiles);
-  assert(self->internal->profiles == NULL);
   self->internal->profiles = (st_Profile **)malloc(
       sizeof(st_Profile *) * self->internal->sizeProfiles);
   /* Iterate to add each profile */
@@ -279,7 +285,13 @@ int st_Config_buildConfig(
     if (error != ST_NO_ERROR)
       return error;
   }
-  /* TODO: Sort the profiles by name */
+  /* Sort the profiles by name */
+  qsort(
+      self->internal->profiles,  /* ptr */
+      self->internal->numProfiles,  /* count */
+      sizeof(st_Profile *),  /* size */
+      (int (*)(const void *, const void *))comp_profiles  /* comp */
+      );
 
   /* Retrieve the default profile */
   defaultProfile_json = json_object_get(root, "defaultProfile");
@@ -408,6 +420,8 @@ st_ErrorCode st_Config_buildColorScheme(
     return ST_ERROR_CONFIG_FILE_FORMAT;
   }
 
+  /* TODO: Get rid of this huge macro and make an st_Config_buildColor()
+   * subroutine */
 #define GET_COLOR(NAME,CODE) \
   color_json = json_object_get(colorScheme_json, #NAME); \
   /* Parse the color as it is represented in JSON */ \
@@ -440,7 +454,15 @@ st_ErrorCode st_Config_buildColorScheme(
   } else if (json_is_string(color_json)) { \
     /* TODO: Parse CSS-style color strings */ \
     assert(0); \
-  } else { \
+  } else if (json_is_null(color_json)) { \
+    /* TODO: Change this error to a warning and load the default color for any
+     * missing colors */ \
+    ST_LOG_ERROR("Missing color '%s' in profile '%s'", \
+        #NAME, \
+        profile->name); \
+    return ST_ERROR_CONFIG_FILE_FORMAT; \
+  } \
+  else { \
     ST_LOG_ERROR("Could not parse color '%s' in profile '%s'", \
         #NAME, \
         profile->name); \

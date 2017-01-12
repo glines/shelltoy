@@ -1,5 +1,5 @@
 {
-  "defaultProfile": "dark",
+  "defaultProfile": "tango-dark",
   "profiles": [
     {
       "name": "dark",
@@ -11,7 +11,7 @@
       "antialiasFont": true,
       "brightIsBold": true,
       "colors": {
-        "foreground": [ 255, 255, 255 ],
+        "foreground": [ 192, 192, 192 ],
         "background": [ 0, 0, 0 ],
         "color0": [ 0, 0, 0 ],
         "color1": [ 255, 0, 0 ],
@@ -20,7 +20,15 @@
         "color4": [ 0, 0, 255 ],
         "color5": [ 255, 0, 255 ],
         "color6": [ 0, 255, 255 ],
-        "color7": [ 255, 255, 255 ]
+        "color7": [ 255, 255, 255 ],
+        "color8": [ 128, 128, 128 ],
+        "color9": [ 128, 0, 0 ],
+        "color10": [ 0, 128, 0 ],
+        "color11": [ 128, 128, 0 ],
+        "color12": [ 0, 0, 128 ],
+        "color13": [ 128, 0, 128 ],
+        "color14": [ 0, 128, 128 ],
+        "color15": [ 192, 192, 192 ]
       }
     },
     {
@@ -42,7 +50,15 @@
         "color4": [ 0, 0, 255 ],
         "color5": [ 255, 0, 255 ],
         "color6": [ 0, 255, 255 ],
-        "color7": [ 255, 255, 255 ]
+        "color7": [ 255, 255, 255 ],
+        "color8": [ 128, 128, 128 ],
+        "color9": [ 128, 0, 0 ],
+        "color10": [ 0, 128, 0 ],
+        "color11": [ 128, 128, 0 ],
+        "color12": [ 0, 0, 128 ],
+        "color13": [ 128, 0, 128 ],
+        "color14": [ 0, 128, 128 ],
+        "color15": [ 192, 192, 192 ]
       }
     },
     {
@@ -55,8 +71,6 @@
       "antialiasFont": true,
       "brightIsBold": true,
       "colors": {
-        "foreground": [ 255, 255, 255 ],
-        "background": [ 0, 0, 0 ],
         "color0": [ 46, 52, 54 ],
         "color1": [ 164, 0, 0 ],
         "color2": [ 78, 154, 6 ],
@@ -72,7 +86,9 @@
         "color12": [ 114, 159, 207 ],
         "color13": [ 173, 127, 168 ],
         "color14": [ 252, 175, 62 ],
-        "color15": [ 238, 238, 236 ]
+        "color15": [ 238, 238, 236 ],
+        "foreground": [ 238, 238, 236 ],
+        "background": [ 0, 0, 0 ]
       }
     }
   ]
