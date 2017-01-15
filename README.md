@@ -17,12 +17,12 @@ Contrary to the existing web-based GLSL Sandbox, this environment should be
 comforting to graphics programmers inclined to programming with command-line
 editors such as Vim, Emacs, or Nano.
 
-Shelltoy comes with toys compatible with GLSL shaders created with Shadertoy.
-Shelltoy is not, however, limited to just GLSL fragment shaders rendered to a
-single quad. In theory, Shelltoy should be able to support any graphical
-application that can link with the Shelltoy C API and render with OpenGL (even
-the requirement for OpenGL is not set in stone; support for Vulkan and/or
-Direct3D is being considered as well.)
+Shelltoy will eventually include toys compatible with GLSL shaders created with
+Shadertoy.  Shelltoy is not, however, limited to just GLSL fragment shaders
+rendered to a single quad. In theory, Shelltoy should be able to support any
+graphical application that can link with the Shelltoy C API and render with
+OpenGL (even the requirement for OpenGL is not set in stone; support for Vulkan
+and/or Direct3D is being considered as well.)
 
 It is hoped that Shelltoy will also be useful as a general purpose terminal
 emulator. Many of the toys written for Shelltoy, especially those that are
