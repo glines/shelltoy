@@ -1,5 +1,21 @@
 {
   "defaultProfile": "dark",
+  "plugins": [
+    {
+      "name": "glsltoy",
+      "file": "libglsltoy.so"
+    }
+  ],
+  "toys": [
+    {
+      "name": "glsltoy-background",
+      "plugin": "glsltoy",
+      "type": "background",
+      "config": {
+        "shaderPath": "./shader.glsl"
+      }
+    }
+  ],
   "profiles": [
     {
       "name": "dark",
@@ -29,6 +45,10 @@
         "color15": [ 192, 192, 192 ],
         "foreground": [ 192, 192, 192 ],
         "background": [ 0, 0, 0 ]
+      },
+      "background": {
+        "type": "toy",
+        "name": "glsltoy-background"
       }
     },
     {

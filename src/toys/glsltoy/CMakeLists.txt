@@ -1,3 +1,3 @@
-add_library(glsltoy STATIC
-    glsltoy.c
-    )
+#add_library(glsltoy SHARED
+#    glsltoy.c
+#    )

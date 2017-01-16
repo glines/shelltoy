@@ -83,7 +83,6 @@ void st_dispatchEvents() {
       default:
         if (event.type == st_PTY_eventType()) {
           int error;
-          fprintf(stderr, "Recieved PTY event\n");
           /* Instruct the pty to read from the pseudo terminal */
           st_PTY *pty = (st_PTY *)event.user.data1;
           error = st_PTY_read(pty);
@@ -116,28 +115,30 @@ const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu
 /* TODO: We might even want to read a small font into memory */
 
 int main(int argc, char** argv) {
-  char *configFilePath, *profileName;
+  char *configFilePath, *profileName, *pluginPath;
   size_t len;
   st_Profile *profile;
   st_ErrorCode error;
 
   configFilePath = NULL;
   profileName = NULL;
+  pluginPath = NULL;
 
   /* Parse command line arguments */
   while (1) {
-    int c;
+    int c, longindex;
     static struct option long_options[] = {
-      {"config", required_argument,    0, 'c' },
-      {"profile", required_argument,   0, 'p' },
-      {    NULL,                 0, NULL,   0 },
+      { "config",      required_argument,    0, 'c' },
+      { "profile",     required_argument,    0, 'p' },
+      { "plugin-path", required_argument,    0, 0 },
+      { NULL,          0,                 NULL, 0 },
     };
 
     c = getopt_long(
         argc, argv,
         "",  /* optstring */
         long_options,  /* longopts */
-        NULL  /* longindex */
+        &longindex  /* longindex */
         );
     if (c == -1)
       break;
@@ -163,11 +164,27 @@ int main(int argc, char** argv) {
         profileName = (char *)malloc(len + 1);
         strcpy(profileName, optarg);
         break;
+      default:
+        assert(longindex >= 0);  /* FIXME: I'm not sure what longindex is set
+                                    to in case the option does not exist */
+        if (strcmp(long_options[longindex].name, "plugin-path") == 0) {
+          if (pluginPath != NULL) {
+            ST_LOG_ERROR("%s", "More than one plugin path specified; ignoring");
+            break;
+          }
+          fprintf(stderr, "Using plugin path: '%s'\n", optarg);
+          len = strlen(optarg);
+          pluginPath = (char *)malloc(len + 1);
+          strcpy(pluginPath, optarg);
+        }
     }
   }
 
   st_Config_init(&shelltoy.config);
   atexit(st_destroyConfig);
+  if (pluginPath != NULL) {
+    st_Config_setPluginPath(&shelltoy.config, pluginPath);
+  }
   if (configFilePath != NULL) {
     /* Config file path was given; read the configuration from file */
     error = st_Config_setConfigFilePath(&shelltoy.config, configFilePath);

@@ -25,6 +25,7 @@
 
 #include "../extern/xkbcommon-keysyms.h"
 
+#include "backgroundRenderer.h"
 #include "common/glError.h"
 #include "logging.h"
 #include "profile.h"
@@ -34,6 +35,7 @@
 /* Internal data structure */
 struct st_Terminal_Internal {
   st_ScreenRenderer screenRenderer;
+  st_BackgroundRenderer *backgroundRenderer;
   st_GlyphRenderer glyphRenderer;
   st_Profile *profile;
 };
@@ -263,6 +265,9 @@ void st_Terminal_init(
       &self->internal->glyphRenderer,  /* glyphRenderer */
       profile  /* profile */
       );
+  /* TODO: Initialize the background renderer (somehow by calling the plugin) */
+  self->internal->backgroundRenderer =
+    st_Profile_getBackgroundRenderer(profile);
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
@@ -369,7 +374,11 @@ void st_Terminal_draw(st_Terminal *self) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   FORCE_ASSERT_GL_ERROR();
 
-  /* TODO: Draw the background */
+  /* Draw the background */
+  st_BackgroundRenderer_draw(self->internal->backgroundRenderer,
+      self->width,  /* viewportWidth */
+      self->height  /* viewportHeight */
+      );
 
   /* Draw the glyphs on the screen */
   st_ScreenRenderer_draw(&self->internal->screenRenderer,
@@ -387,8 +396,6 @@ void st_Terminal_textInput(
 {
   uint32_t character;
   int result;
-
-  fprintf(stderr, "SDL text input: '%s'\n", text);
 
   /* FIXME: Convert the text from UTF-8 to UTF-32 (properly) */
 

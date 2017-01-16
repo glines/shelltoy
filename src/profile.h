@@ -26,8 +26,12 @@
 
 #include <inttypes.h>
 
+#include "backgroundRenderer.h"
 #include "color.h"
 #include "error.h"
+
+struct st_Profile_Internal_;
+typedef struct st_Profile_Internal_ st_Profile_Internal;
 
 typedef enum st_Profile_Flag_ {
   ST_PROFILE_ANTIALIAS_FONT = 1 << 0,
@@ -39,6 +43,7 @@ typedef struct st_Profile_ {
   float fontSize;
   uint32_t flags;
   st_ColorScheme colorScheme;
+  st_Profile_Internal *internal;
 } st_Profile;
 
 void st_Profile_init(
@@ -56,5 +61,14 @@ st_ErrorCode st_Profile_setFont(
     st_Profile *self,
     const char *fontFace,
     float fontSize);
+
+void st_Profile_setBackgroundRenderer(
+    st_Profile *self,
+    st_BackgroundRenderer *backgroundRenderer);
+
+st_BackgroundRenderer *
+st_Profile_getBackgroundRenderer(
+    st_Profile *self);
+
 
 #endif

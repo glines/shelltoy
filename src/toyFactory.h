@@ -21,36 +21,41 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#ifndef SHELLTOY_TOY_FACTORY_H_
+#define SHELLTOY_TOY_FACTORY_H_
 
-#include "glsltoy.h"
+#include <jansson.h>
 
-int shelltoyVersion = ST_VERSION;
+#include "error.h"
+#include "toy.h"
 
-void st_GlslToy_init(
-    st_GlslToy *self)
-{
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
-}
+struct st_ToyFactory_Internal;
+
+typedef struct st_ToyFactory_ {
+  struct st_ToyFactory_Internal *internal;
+} st_ToyFactory;
+
+void st_ToyFactory_init(
+    st_ToyFactory *self,
+    const char *pluginPath);
+void st_ToyFactory_destroy(
+    st_ToyFactory *self);
+
+void st_ToyFactory_setPluginPath(
+    st_ToyFactory *self,
+    const char *path);
 
 st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
-{
-  return ST_NO_ERROR;
-}
+st_ToyFactory_registerPlugin(
+    st_ToyFactory *self,
+    const char *name,
+    const char *dlPath);
 
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
-{
-  /* TODO: Draw something pretty */
-}
+st_ErrorCode
+st_ToyFactory_buildToy(
+    st_ToyFactory *self,
+    const char *pluginName,
+    json_t *config,
+    st_Toy *toy);
+
+#endif

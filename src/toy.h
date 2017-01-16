@@ -21,36 +21,29 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#ifndef SHELLTOY_TOY_H_
+#define SHELLTOY_TOY_H_
 
-#include "glsltoy.h"
+#include <jansson.h>
 
-int shelltoyVersion = ST_VERSION;
+#include "backgroundRenderer.h"
+#include "error.h"
 
-void st_GlslToy_init(
-    st_GlslToy *self)
-{
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
-}
+struct st_Toy_;
+typedef struct st_Toy_ st_Toy;
 
-st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
-{
-  return ST_NO_ERROR;
-}
+struct st_Toy_ {
+  const char *name;
 
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
-{
-  /* TODO: Draw something pretty */
-}
+  st_ErrorCode (*buildFromJson)(st_Toy *, json_t *);
+  void (*drawBackground)(const st_Toy *, int, int);
+  st_BackgroundRenderer *(*getBackgroundRenderer)(void);
+};
+
+void st_Toy_init(
+    st_Toy *self);
+
+void st_Toy_destroy(
+    st_Toy *self);
+
+#endif

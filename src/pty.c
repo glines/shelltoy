@@ -66,7 +66,6 @@ void st_PTY_pushEvent(st_PTY *self) {
     /* TODO: Fail gracefully */
     assert(0);
   }
-  fprintf(stderr, "Pushed PTY event to SDL\n");  /* XXX */
 }
 
 /* TODO: Have st_PTY_watchPTY() opperate in a singleton capacity, since epoll
@@ -74,7 +73,6 @@ void st_PTY_pushEvent(st_PTY *self) {
 void *st_PTY_watchPTY(st_PTY *self) {
   struct epoll_event ev;
   /* Thread routine for watching for input from the pseudo terminal master */
-  fprintf(stderr, "Output from st_PTY_watchPTY()\n");
 
   while (1) {
     /* TODO: Check for signal to join main thread */
@@ -89,8 +87,6 @@ void *st_PTY_watchPTY(st_PTY *self) {
         1,  /* maxevents */
         -1  /* timeout */
         );
-
-    fprintf(stderr, "Got an epoll event in st_PTY_watchPTY()\n");
 
     /* Notify the main thread with an SDL event */
     st_PTY_pushEvent(self);

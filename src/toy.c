@@ -21,36 +21,16 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#include "toy.h"
 
-#include "glsltoy.h"
-
-int shelltoyVersion = ST_VERSION;
-
-void st_GlslToy_init(
-    st_GlslToy *self)
+void st_Toy_init(
+    st_Toy *self)
 {
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
+  /* Initialize virtual method pointers */
+  self->drawBackground = NULL;
 }
 
-st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
+void st_Toy_destroy(
+    st_Toy *self)
 {
-  return ST_NO_ERROR;
-}
-
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
-{
-  /* TODO: Draw something pretty */
 }

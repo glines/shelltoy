@@ -21,36 +21,25 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#ifndef ST_BACKGROUND_RENDERER_H_
+#define ST_BACKGROUND_RENDERER_H_
 
-#include "glsltoy.h"
+struct st_BackgroundRenderer_Internal_;
+typedef struct st_BackgroundRenderer_Internal_ st_BackgroundRenderer_Internal;
 
-int shelltoyVersion = ST_VERSION;
+typedef struct st_BackgroundRenderer_ {
+  st_BackgroundRenderer_Internal *internal;
+} st_BackgroundRenderer;
 
-void st_GlslToy_init(
-    st_GlslToy *self)
-{
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
-}
+void st_BackgroundRenderer_init(
+    st_BackgroundRenderer *self);
 
-st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
-{
-  return ST_NO_ERROR;
-}
+void st_BackgroundRenderer_destroy(
+    st_BackgroundRenderer *self);
 
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
-{
-  /* TODO: Draw something pretty */
-}
+void st_BackgroundRenderer_draw(
+    const st_BackgroundRenderer *self,
+    int viewportWidth,
+    int viewportHeight);
+
+#endif

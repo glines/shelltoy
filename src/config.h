@@ -37,6 +37,10 @@ void st_Config_init(
 void st_Config_destroy(
     st_Config *self);
 
+void st_Config_setPluginPath(
+    st_Config *self,
+    const char *pluginPath);
+
 /**
  * This routine looks for a config file in the default locations, and stores
  * that path in the config object.

@@ -12,7 +12,9 @@ add_executable(check_config
     ../src/error.c
     ../src/fonts.c
     ../src/logging.c
+    ../src/plugin.c
     ../src/profile.c
+    ../src/toyFactory.c
     check_config.c
     )
 target_link_libraries(check_config
@@ -20,5 +22,6 @@ target_link_libraries(check_config
     ${FONTCONFIG_LIBRARIES}
     ${FREETYPE_LIBRARIES}
     ${JANSSON_LIBRARIES}
+    dl
     )
 add_test(check_config_test check_config)

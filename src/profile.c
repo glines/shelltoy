@@ -6,20 +6,31 @@
 #include "fonts.h"
 #include "profile.h"
 
+struct st_Profile_Internal_ {
+  st_BackgroundRenderer *backgroundRenderer;
+};
+
 void st_Profile_init(
     st_Profile *self,
     const char *name)
 {
-  self->name = (char *)malloc(strlen(name) + 1);
-  strcpy(self->name, name);
   self->fontFace = NULL;
   self->fontPath = NULL;
   self->fontSize = 0.0f;
+  /* Allocate memory for internal structures */
+  self->internal = (st_Profile_Internal *)malloc(sizeof(st_Profile_Internal));
+  /* Copy the name string */
+  self->name = (char *)malloc(strlen(name) + 1);
+  strcpy(self->name, name);
 }
 
 void st_Profile_destroy(
     st_Profile *self)
 {
+  /* Free memory from internal structures */
+  /* FIXME: We probably need to destroy the background renderer somewhere. The
+   * ownership is not well established. */
+  free(self->internal);
   free(self->name);
   free(self->fontFace);
   free(self->fontPath);
@@ -107,4 +118,18 @@ st_ErrorCode st_Profile_setFont(
   FcPatternDestroy(pattern);
 
   return ST_NO_ERROR;
+}
+
+void st_Profile_setBackgroundRenderer(
+    st_Profile *self,
+    st_BackgroundRenderer *backgroundRenderer)
+{
+  self->internal->backgroundRenderer = backgroundRenderer;
+}
+
+st_BackgroundRenderer *
+st_Profile_getBackgroundRenderer(
+    st_Profile *self)
+{
+  return self->internal->backgroundRenderer;
 }

@@ -21,36 +21,32 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#include <stdlib.h>
 
-#include "glsltoy.h"
+#include "backgroundRenderer.h"
 
-int shelltoyVersion = ST_VERSION;
+struct st_BackgroundRenderer_Internal_ {
+  int foo;
+};
 
-void st_GlslToy_init(
-    st_GlslToy *self)
+void st_BackgroundRenderer_init(
+    st_BackgroundRenderer *self)
 {
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
+  /* Allocate memory for internal data structures */
+  self->internal = (st_BackgroundRenderer_Internal *)malloc(
+      sizeof(st_BackgroundRenderer_Internal));
 }
 
-st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
+void st_BackgroundRenderer_destroy(
+    st_BackgroundRenderer *self)
 {
-  return ST_NO_ERROR;
+  free(self->internal);
 }
 
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
+void st_BackgroundRenderer_draw(
+    const st_BackgroundRenderer *self,
+    int viewportWidth,
+    int viewportHeight)
 {
-  /* TODO: Draw something pretty */
+  /* TODO: Replace this with a virtual call to draw? */
 }

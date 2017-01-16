@@ -21,36 +21,42 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#include <GL/glew.h>
 
+#include "../../common/glError.h"
 #include "glsltoy.h"
 
-int shelltoyVersion = ST_VERSION;
+ST_DEFINE_PLUGIN(
+    st_Glsltoy,  /* PLUGIN_STRUCT */
+    ST_GRAPHICS_API_OPENGL,  /* GRAPHICS_APIS */
+    ST_TOY_TYPE_BACKGROUND,  /* TOY_TYPES */
+    (st_Plugin_Init)st_Glsltoy_init,  /* INIT_CB */
+    (st_Plugin_Destroy)st_Glsltoy_destroy,  /* DESTROY_CB */
+    (st_Plugin_BuildToy)st_Glsltoy_buildToy  /* BUILD_TOY_CB */
+    )
 
-void st_GlslToy_init(
-    st_GlslToy *self)
+void st_Glsltoy_init(
+    st_Glsltoy *self,
+    const char *name)
 {
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
+  /* TODO */
+  /* XXX: Test OpenGL */
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  FORCE_ASSERT_GL_ERROR();
+}
+
+void st_Glsltoy_destroy(
+    st_Glsltoy *self)
+{
 }
 
 st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
+st_Glsltoy_buildToy(
+    st_Glsltoy *self,
+    const char *name,
+    json_t *config,
+    st_Toy *toy)
 {
+  /* TODO */
   return ST_NO_ERROR;
-}
-
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
-{
-  /* TODO: Draw something pretty */
 }

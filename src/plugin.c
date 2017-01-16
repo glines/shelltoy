@@ -21,36 +21,33 @@
  * IN THE SOFTWARE.
  */
 
-#include "../../common/version.h"
+#include <stdlib.h>
+#include <string.h>
 
-#include "glsltoy.h"
+#include "plugin.h"
 
-int shelltoyVersion = ST_VERSION;
+struct st_Plugin_Internal_ {
+  int foo;
+};
 
-void st_GlslToy_init(
-    st_GlslToy *self)
+void
+st_Plugin_init(
+    st_Plugin *self,
+    const char *name)
 {
-  /* FIXME: These symbols can never be resolved */
-/*  st_Toy_init(&self->base); */
-  /* Register all of the implemented virtual methods */
-  self->base.buildFromJson =
-    (st_ErrorCode (*)(st_Toy *, json_t *))st_GlslToy_buildFromJson;
-  self->base.drawBackground =
-    (void (*)(const st_Toy *, int, int))st_GlslToy_drawBackground;
+  /* Allocate memory for internal structures */
+  self->internal = (st_Plugin_Internal *)malloc(
+      sizeof(st_Plugin_Internal));
+  /* Copy the name string */
+  self->name = (const char *)malloc(strlen(name) + 1);
+  strcpy((char *)self->name, name);
 }
 
-st_ErrorCode
-st_GlslToy_buildFromJson(
-    st_GlslToy *self,
-    json_t *config)
+void
+st_Plugin_destroy(
+    st_Plugin *self)
 {
-  return ST_NO_ERROR;
-}
-
-void st_GlslToy_drawBackground(
-    const st_GlslToy *self,
-    int width,
-    int height)
-{
-  /* TODO: Draw something pretty */
+  /* Free memory from internal structures */
+  free(self->internal);
+  free((char *)self->name);
 }

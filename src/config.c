@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2016-2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -34,6 +34,8 @@
 #include "config.h"
 #include "fonts.h"
 #include "logging.h"
+#include "toy.h"
+#include "toyFactory.h"
 
 void st_Config_parseConfig(
     st_Config *self,
@@ -62,9 +64,13 @@ struct st_Config_Internal {
   st_Profile **profiles;
   char *defaultProfile, *fontFilePath;
   size_t sizeProfiles, numProfiles;
+  st_Toy **toys;
+  size_t sizeToys, numToys;
+  st_ToyFactory toyFactory;
 };
 
 #define INIT_SIZE_PROFILES 4
+#define INIT_SIZE_TOYS 4
 
 void st_Config_init(
     st_Config *self)
@@ -79,6 +85,11 @@ void st_Config_init(
   self->internal->defaultProfile = NULL;
   self->internal->numProfiles = 0;
   self->internal->fontFilePath = NULL;
+  /* Initialize the toy factory */
+#define DEFAULT_PLUGIN_PATH "/usr/lib/shelltoy/plugins/"
+  st_ToyFactory_init(
+      &self->internal->toyFactory,
+      DEFAULT_PLUGIN_PATH);
 }
 
 void st_Config_destroy(
@@ -94,6 +105,15 @@ void st_Config_destroy(
   free(self->internal->defaultProfile);
   free(self->internal);
   free(self->configFilePath);
+}
+
+void st_Config_setPluginPath(
+    st_Config *self,
+    const char *pluginPath)
+{
+  st_ToyFactory_setPluginPath(
+      &self->internal->toyFactory,
+      pluginPath);
 }
 
 st_ErrorCode st_Config_findConfigFile(
@@ -243,11 +263,18 @@ int comp_profiles(
   return strcmp((*a)->name, (*b)->name);
 }
 
+int comp_toys(
+    const st_Toy **a,
+    const st_Toy **b)
+{
+  return strcmp((*a)->name, (*b)->name);
+}
+
 int st_Config_buildConfig(
     st_Config *self,
     json_t *root)
 {
-  json_t *defaultProfile_json, *profiles;
+  json_t *defaultProfile_json, *profiles, *plugins, *toys;
   st_ErrorCode error;
 
   if (!json_is_object(root)) {
@@ -291,6 +318,89 @@ int st_Config_buildConfig(
       self->internal->numProfiles,  /* count */
       sizeof(st_Profile *),  /* size */
       (int (*)(const void *, const void *))comp_profiles  /* comp */
+      );
+
+  /* Retrieve the array of plugins */
+  plugins = json_object_get(root, "plugins");
+  if (!json_is_array(plugins)) {
+    ST_LOG_ERROR("%s", "Config error: plugins is not an array");
+    return ST_ERROR_CONFIG_FILE_FORMAT;
+  }
+  /* Iterate to register each plugin with the toy factory */
+  for (size_t i = 0; i < json_array_size(plugins); ++i) {
+    json_t *plugin_json, *name_json, *file_json;
+    plugin_json = json_array_get(plugins, i);
+    if(!json_is_object(plugin_json)) {
+      ST_LOG_ERROR("%s", "Config error: each plugin must be a JSON object");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    name_json = json_object_get(plugin_json, "name");
+    if (json_is_null(name_json)) {
+      ST_LOG_ERROR("%s", "Config error: each plugin must have a name");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    } else if (!json_is_string(name_json)) {
+      ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    file_json = json_object_get(plugin_json, "file");
+    if (json_is_null(file_json)) {
+      ST_LOG_ERROR("%s", "Config error: each plugin must have a file");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    } else if (!json_is_string(file_json)) {
+      ST_LOG_ERROR("%s", "Config error: plugin file must be given as a string");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    st_ToyFactory_registerPlugin(
+        &self->internal->toyFactory,
+        json_string_value(name_json),  /* name */
+        json_string_value(file_json)  /* dlPath */
+        );
+  }
+
+  /* Retrieve the array of toys */
+  toys = json_object_get(root, "toys");
+  if (!json_is_array(toys)) {
+    ST_LOG_ERROR("%s", "Config error: toys is not an array");
+    return ST_ERROR_CONFIG_FILE_FORMAT;
+  }
+  /* Allocate memory for storing our toys */
+  self->internal->sizeToys = json_array_size(toys);
+  self->internal->toys = (st_Toy **)malloc(
+      sizeof(st_Toy *) * self->internal->sizeToys);
+  /* Iterate to build each toy with the toy factory */
+  for (size_t i = 0; i < json_array_size(toys); ++i) {
+    json_t *toy_json, *pluginName_json, *toyConfig_json;
+    st_Toy *toy;
+
+    toy_json = json_array_get(toys, i);
+    if (!json_is_object(toy_json)) {
+      ST_LOG_ERROR("%s", "Config error: each toy must be a JSON object");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    pluginName_json = json_object_get(toy_json, "plugin");
+    if (!json_is_string(pluginName_json)) {
+      ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    toyConfig_json = json_object_get(toy_json, "config");
+    toy = self->internal->toys[self->internal->numToys++];
+    error = st_ToyFactory_buildToy(
+      &self->internal->toyFactory,
+      json_string_value(pluginName_json),  /* pluginName */
+      toyConfig_json,  /* config */
+      toy  /* toy */
+      );
+    if (error != ST_NO_ERROR) {
+      ST_LOG_ERROR_CODE(error);
+      return error;
+    }
+  }
+  /* Sort the toys by name */
+  qsort(
+      self->internal->toys,  /* ptr */
+      self->internal->numToys,  /* count */
+      sizeof(st_Toy *),  /* size */
+      (int (*)(const void *, const void *))comp_toys  /* comp */
       );
 
   /* Retrieve the default profile */
@@ -340,7 +450,8 @@ st_Config_buildProfile(
     return ST_ERROR_CONFIG_FILE_FORMAT;
   }
   st_Profile_init(profile,
-      json_string_value(name));
+      json_string_value(name)  /* name */
+      );
 
   /* Check for profile strings */
 #define CHECK_PROFILE_STRING(key) \

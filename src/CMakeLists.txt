@@ -1,4 +1,5 @@
 add_executable(shelltoy
+    backgroundRenderer.c
     boundingBox.c
     collisionDetection.c
     config.c
@@ -9,10 +10,13 @@ add_executable(shelltoy
     logging.c
     main.c
     naiveCollisionDetection.c
+    plugin.c
     profile.c
     pty.c
     screenRenderer.c
     terminal.c
+    toy.c
+    toyFactory.c
     )
 target_link_libraries(shelltoy
     common
@@ -28,4 +32,4 @@ install(TARGETS shelltoy
     RUNTIME DESTINATION bin)
 
 add_subdirectory("./common")
-add_subdirectory("./toys")
+add_subdirectory("./plugins")
