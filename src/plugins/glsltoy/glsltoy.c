@@ -26,15 +26,13 @@
 #include "../../common/glError.h"
 #include "glsltoy.h"
 
-SHELLTOY_DEFINE_PLUGIN(
+SHELLTOY_PLUGIN_DISPATCH(
     st_Glsltoy,  /* PLUGIN_STRUCT */
     ST_GRAPHICS_API_OPENGL,  /* GRAPHICS_APIS */
     ST_TOY_TYPE_BACKGROUND,  /* TOY_TYPES */
     (st_Plugin_Init)st_Glsltoy_init,  /* INIT_CB */
     (st_Plugin_Destroy)st_Glsltoy_destroy,  /* DESTROY_CB */
-    (st_Plugin_BuildToy)st_Glsltoy_buildToy,  /* BUILD_TOY_CB */
-    (st_Plugin_Toy_Init)st_Glsltoy_Toy_init,  /* TOY_INIT_CB */
-    (st_Plugin_Toy_Init)st_Glsltoy_Toy_init,  /* TOY_INIT_CB */
+    (st_Plugin_BuildToy)st_Glsltoy_buildToy  /* BUILD_TOY_CB */
     )
 
 void st_Glsltoy_init(

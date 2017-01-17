@@ -24,6 +24,8 @@
 #ifndef SHELLTOY_PLUGINS_GLSLTOY_TOY_H_
 #define SHELLTOY_PLUGINS_GLSLTOY_TOY_H_
 
+#include "../../toy.h"
+
 struct st_Glsltoy_Toy_Internal_;
 typedef struct st_Glsltoy_Toy_Internal_ st_Glsltoy_Toy_Internal;
 

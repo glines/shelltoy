@@ -55,7 +55,8 @@ st_ErrorCode
 st_ToyFactory_buildToy(
     st_ToyFactory *self,
     const char *pluginName,
+    const char *toyName,
     json_t *config,
-    st_Toy *toy);
+    st_Toy **toy);
 
 #endif

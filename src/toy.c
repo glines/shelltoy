@@ -21,17 +21,24 @@
  * IN THE SOFTWARE.
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "plugin.h"
 #include "toy.h"
 
 struct st_Toy_Internal_ {
-  const st_Plugin_ToyDispatch *dispatch;
+  const st_Toy_Dispatch *dispatch;
 };
 
 void st_Toy_init(
     st_Toy *self,
-    const st_Plugin_ToyDispatch *dispatch)
+    const char *name,
+    const st_Toy_Dispatch *dispatch)
 {
+  /* Copy the name string of this toy */
+  self->name = (const char *)malloc(strlen(name) + 1);
+  strcpy((char *)self->name, name);
   /* Initialize memory for internal data structures */
   self->internal = (st_Toy_Internal *)malloc(sizeof(st_Toy_Internal));
   /* Store pointer to the dispatch table */
@@ -43,6 +50,8 @@ void st_Toy_destroy(
 {
   /* Free memory for internal data structures */
   free(self->internal);
+  /* Free memory for the name that we copied */
+  free((char *)self->name);
 }
 
 st_BackgroundRenderer *

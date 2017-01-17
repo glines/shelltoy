@@ -244,15 +244,15 @@ void st_Config_parseConfig(
         "Config error on line %d: %s\n"
         "Failed to parse JSON config.\n",
         error_json.line, error_json.text);
-    assert(0);
-    /* FIXME: Fail gracefully */
+    /* Fail gracefully */
+    exit(EXIT_FAILURE);
   }
 
   error = st_Config_buildConfig(self, root);
   json_decref(root);
   if (error) {
-    assert(0);
-    /* FIXME: Fail gracefully */
+    /* Fail gracefully */
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -333,8 +333,8 @@ int st_Config_buildConfig(
       sizeof(st_Toy *) * self->internal->sizeToys);
   /* Iterate to build each toy with the toy factory */
   for (size_t i = 0; i < json_array_size(toys); ++i) {
-    json_t *toy_json, *pluginName_json, *toyConfig_json;
-    st_Toy *toy;
+    json_t *toy_json, *pluginName_json, *toyName_json, *toyConfig_json;
+    st_Toy **toy;
 
     toy_json = json_array_get(toys, i);
     if (!json_is_object(toy_json)) {
@@ -346,11 +346,17 @@ int st_Config_buildConfig(
       ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
       return ST_ERROR_CONFIG_FILE_FORMAT;
     }
+    toyName_json = json_object_get(toy_json, "name");
+    if (!json_is_string(toyName_json)) {
+      ST_LOG_ERROR("%s", "Config error: toy name must be a string");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
     toyConfig_json = json_object_get(toy_json, "config");
-    toy = self->internal->toys[self->internal->numToys++];
+    toy = &self->internal->toys[self->internal->numToys++];
     error = st_ToyFactory_buildToy(
       &self->internal->toyFactory,
       json_string_value(pluginName_json),  /* pluginName */
+      json_string_value(toyName_json),  /* toyName */
       toyConfig_json,  /* config */
       toy  /* toy */
       );

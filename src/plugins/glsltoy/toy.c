@@ -23,7 +23,8 @@
 
 #include "toy.h"
 
-SHELLTOY_DEFINE_PLUGIN_TOY(
+SHELLTOY_TOY_DISPATCH(
+    st_Glsltoy_Toy,  /* TOY_STRUCT */
     (st_Plugin_Toy_Init)st_Glsltoy_Toy_init,  /* TOY_INIT_CB */
     (st_Plugin_Toy_Destroy)st_Glsltoy_Toy_destroy,  /* TOY_DESTROY_CB */
     (st_Plugin_Toy_GetBackgroundRenderer)

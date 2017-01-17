@@ -28,7 +28,8 @@
 
 struct st_Plugin_Internal_ {
   const st_Plugin_Dispatch *dispatch;
-  const st_Plugin_ToyDispatch *toyDispatch;
+  const st_Toy_Attributes *toyAttributes;
+  const st_Toy_Dispatch *toyDispatch;
 };
 
 void
@@ -36,7 +37,8 @@ st_Plugin_init(
     st_Plugin *self,
     const char *name,
     const st_Plugin_Dispatch *dispatch,
-    const st_Plugin_ToyDispatch *toyDispatch)
+    const st_Toy_Attributes *toyAttributes,
+    const st_Toy_Dispatch *toyDispatch)
 {
   /* Allocate memory for internal structures */
   self->internal = (st_Plugin_Internal *)malloc(
@@ -47,6 +49,8 @@ st_Plugin_init(
   /* Store pointers to the dispatch tables */
   self->internal->dispatch = dispatch;
   self->internal->toyDispatch = toyDispatch;
+  /* Store pointer to the toy attributes */
+  self->internal->toyAttributes = toyAttributes;
 }
 
 void
@@ -58,7 +62,14 @@ st_Plugin_destroy(
   free((char *)self->name);
 }
 
-st_Plugin_ToyDispatch *
+const st_Toy_Attributes *
+st_Plugin_getToyAttributes(
+    st_Plugin *self)
+{
+  return self->internal->toyAttributes;
+}
+
+const st_Toy_Dispatch *
 st_Plugin_getToyDispatch(
     st_Plugin *self)
 {

@@ -147,20 +147,25 @@ st_ToyFactory_registerPlugin(
     return ST_ERROR_PLUGIN_VERSION_MISMATCH;
   }
 
-  const st_Plugin_Attributes *attributes;
+  const st_Plugin_Attributes *pluginAttributes;
   GET_REQUIRED_SYMBOL(
       SHELLTOY_PLUGIN_ATTRIBUTES,
       const st_Plugin_Attributes,
-      attributes);
-  const st_Plugin_Dispatch *dispatch;
+      pluginAttributes);
+  const st_Plugin_Dispatch *pluginDispatch;
   GET_REQUIRED_SYMBOL(
       SHELLTOY_PLUGIN_DISPATCH,
       const st_Plugin_Dispatch,
-      dispatch);
-  const st_Plugin_ToyDispatch *toyDispatch;
+      pluginDispatch);
+  const st_Toy_Attributes *toyAttributes;
   GET_REQUIRED_SYMBOL(
-      SHELLTOY_PLUGIN_TOY_DISPATCH,
-      const st_Plugin_ToyDispatch,
+      SHELLTOY_TOY_ATTRIBUTES,
+      const st_Toy_Attributes,
+      toyAttributes);
+  const st_Toy_Dispatch *toyDispatch;
+  GET_REQUIRED_SYMBOL(
+      SHELLTOY_TOY_DISPATCH,
+      const st_Toy_Dispatch,
       toyDispatch);
 
   /* Ensure we have memory allocated to store a pointer to this plugin */
@@ -178,13 +183,14 @@ st_ToyFactory_registerPlugin(
   }
 
   /* Initialize and insert the new plugin */
-  plugin = (st_Plugin *)malloc(attributes->pluginSize);
+  plugin = (st_Plugin *)malloc(pluginAttributes->size);
   st_Plugin_init(plugin,
       name,  /* name */
-      dispatch,  /* dispatch */
+      pluginDispatch,  /* dispatch */
+      toyAttributes,  /* toyAttributes */
       toyDispatch  /* toyDispatch */
       );
-  dispatch->init(plugin, name);
+  pluginDispatch->init(plugin, name);
   self->internal->plugins[self->internal->numPlugins++] = plugin;
 
   /* Sort the plugins by name */
@@ -235,10 +241,13 @@ st_ErrorCode
 st_ToyFactory_buildToy(
     st_ToyFactory *self,
     const char *pluginName,
+    const char *toyName,
     json_t *config,
-    st_Toy *toy)
+    st_Toy **toy)
 {
   st_Plugin *plugin;
+  const st_Toy_Dispatch *toyDispatch;
+  const st_Toy_Attributes *toyAttributes;
 
   /* Find the plugin with the given name */
   plugin = st_ToyFactory_getPlugin(self,
@@ -246,14 +255,20 @@ st_ToyFactory_buildToy(
   if (plugin == NULL) {
     return ST_ERROR_PLUGIN_NOT_FOUND;
   }
+  toyDispatch = st_Plugin_getToyDispatch(plugin);
+  toyAttributes = st_Plugin_getToyAttributes(plugin);
 
+  /* Allocate memory for the toy */
+  *toy = (st_Toy *)malloc(toyAttributes->size);
   /* Initialize the toy */
-  st_Toy_init(toy,
-      json_string_value(name),  /* name */
-      st_Plugin_getToyDispatch(plugin)  /* dispatch */
+  st_Toy_init(*toy,
+      toyName,  /* name */
+      toyDispatch  /* dispatch */
       );
-  /* FIXME: Actually call the virtual init method? Depends on how dynamic
-   * linking works. */
+  /* Call the virtual init method */
+  toyDispatch->init(*toy,
+      toyName  /* name */
+      );
 
   return ST_NO_ERROR;
 }
