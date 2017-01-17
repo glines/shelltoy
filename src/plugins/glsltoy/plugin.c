@@ -21,29 +21,42 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PLUGINS_GLSLTOY_GLSLTOY_H_
-#define SHELLTOY_PLUGINS_GLSLTOY_GLSLTOY_H_
+#include <GL/glew.h>
 
-#include <jansson.h>
+#include "../../common/glError.h"
+#include "plugin.h"
 
-#include "../../error.h"
-#include "../../plugin.h"
+SHELLTOY_PLUGIN_DISPATCH(
+    st_Glsltoy_Plugin,  /* PLUGIN_STRUCT */
+    ST_GRAPHICS_API_OPENGL,  /* GRAPHICS_APIS */
+    ST_TOY_TYPE_BACKGROUND,  /* TOY_TYPES */
+    (st_Plugin_Init)st_Glsltoy_Plugin_init,  /* INIT_CB */
+    (st_Plugin_Destroy)st_Glsltoy_Plugin_destroy,  /* DESTROY_CB */
+    (st_Plugin_BuildToy)st_Glsltoy_Plugin_buildToy  /* BUILD_TOY_CB */
+    )
 
-typedef struct st_Glsltoy_ {
-  st_Plugin base;
-} st_Glsltoy;
+void st_Glsltoy_Plugin_init(
+    st_Glsltoy_Plugin *self,
+    const char *name)
+{
+  /* TODO */
+  /* XXX: Test OpenGL */
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  FORCE_ASSERT_GL_ERROR();
+}
 
-void st_Glsltoy_init(
-    st_Glsltoy *self,
-    const char *name);
-void st_Glsltoy_destroy(
-    st_Glsltoy *self);
+void st_Glsltoy_Plugin_destroy(
+    st_Glsltoy_Plugin *self)
+{
+}
 
 st_ErrorCode
-st_Glsltoy_buildToy(
-    st_Glsltoy *self,
+st_Glsltoy_Plugin_buildToy(
+    st_Glsltoy_Plugin *self,
     const char *name,
     json_t *config,
-    st_Toy *toy);
-
-#endif
+    st_Toy *toy)
+{
+  /* TODO */
+  return ST_NO_ERROR;
+}

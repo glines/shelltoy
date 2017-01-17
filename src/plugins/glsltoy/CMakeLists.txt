@@ -1,5 +1,5 @@
 add_library(glsltoy SHARED
-    glsltoy.c
+    plugin.c
     toy.c
     )
 target_link_libraries(glsltoy

@@ -252,6 +252,7 @@ void st_Config_parseConfig(
   json_decref(root);
   if (error) {
     /* Fail gracefully */
+    ST_LOG_ERROR_CODE(error);
     exit(EXIT_FAILURE);
   }
 }
