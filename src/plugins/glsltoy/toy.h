@@ -21,36 +21,29 @@
  * IN THE SOFTWARE.
  */
 
-#include "plugin.h"
-#include "toy.h"
+#ifndef SHELLTOY_PLUGINS_GLSLTOY_TOY_H_
+#define SHELLTOY_PLUGINS_GLSLTOY_TOY_H_
 
-struct st_Toy_Internal_ {
-  const st_Plugin_ToyDispatch *dispatch;
-};
+struct st_Glsltoy_Toy_Internal_;
+typedef struct st_Glsltoy_Toy_Internal_ st_Glsltoy_Toy_Internal;
 
-void st_Toy_init(
-    st_Toy *self,
-    const st_Plugin_ToyDispatch *dispatch)
-{
-  /* Initialize memory for internal data structures */
-  self->internal = (st_Toy_Internal *)malloc(sizeof(st_Toy_Internal));
-  /* Store pointer to the dispatch table */
-  self->internal->dispatch = dispatch;
-}
+typedef struct st_Glsltoy_Toy_ {
+  st_Glsltoy_Toy_Internal *internal;
+} st_Glsltoy_Toy;
 
-void st_Toy_destroy(
-    st_Toy *self)
-{
-  /* Free memory for internal data structures */
-  free(self->internal);
-}
+void st_Glsltoy_Toy_init(
+    st_Glsltoy_Toy *self,
+    const char *name);
+
+void st_Glsltoy_Toy_destroy(
+    st_Glsltoy_Toy *self);
 
 st_BackgroundRenderer *
-st_Toy_getBackgroundRenderer(
-    st_Toy *self)
-{
-  if (self->internal->dispatch->getBackgroundRenderer == NULL) {
-    return NULL;
-  }
-  return self->internal->dispatch->getBackgroundRenderer(self);
-}
+st_Glsltoy_Toy_getBackgroundRenderer(
+    st_Glsltoy_Toy *self);
+
+st_TextRenderer *
+st_Glsltoy_Toy_getTextRenderer(
+    st_Glsltoy_Toy *self);
+
+#endif

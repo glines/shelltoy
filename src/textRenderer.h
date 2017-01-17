@@ -21,36 +21,14 @@
  * IN THE SOFTWARE.
  */
 
-#include "plugin.h"
-#include "toy.h"
+#ifndef SHELLTOY_TEXT_RENDERER_H_
+#define SHELLTOY_TEXT_RENDERER_H_
 
-struct st_Toy_Internal_ {
-  const st_Plugin_ToyDispatch *dispatch;
-};
+struct st_TextRenderer_Internal_;
+typedef struct st_TextRenderer_Internal_ st_TextRenderer_Internal;
 
-void st_Toy_init(
-    st_Toy *self,
-    const st_Plugin_ToyDispatch *dispatch)
-{
-  /* Initialize memory for internal data structures */
-  self->internal = (st_Toy_Internal *)malloc(sizeof(st_Toy_Internal));
-  /* Store pointer to the dispatch table */
-  self->internal->dispatch = dispatch;
-}
+typedef struct st_TextRenderer_ {
+  st_TextRenderer_Internal *internal;
+} st_TextRenderer;
 
-void st_Toy_destroy(
-    st_Toy *self)
-{
-  /* Free memory for internal data structures */
-  free(self->internal);
-}
-
-st_BackgroundRenderer *
-st_Toy_getBackgroundRenderer(
-    st_Toy *self)
-{
-  if (self->internal->dispatch->getBackgroundRenderer == NULL) {
-    return NULL;
-  }
-  return self->internal->dispatch->getBackgroundRenderer(self);
-}
+#endif

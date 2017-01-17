@@ -23,6 +23,7 @@
 
 #include "error.h"
 #include "profile.h"
+#include "toy.h"
 
 struct st_Config_Internal;
 
@@ -88,3 +89,8 @@ st_ErrorCode
 st_Config_getDefaultProfile(
     st_Config *self,
     st_Profile **profile);
+
+st_Toy *
+st_Config_getToy(
+    st_Config *self,
+    const char *name);

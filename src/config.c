@@ -284,42 +284,6 @@ int st_Config_buildConfig(
 
   /* Traverse the root JSON object to set values in our config */
 
-  /* Retrieve the array of profiles */
-  profiles = json_object_get(root, "profiles");
-  if (!json_is_array(profiles)) {
-    /* TODO: Add an error message for when profiles is missing */
-    fprintf(stderr, "Config error: profiles is not an array\n");
-    return 1;
-  }
-
-  /* Allocate memory for storing our profiles */
-  self->internal->sizeProfiles = json_array_size(profiles);
-  self->internal->profiles = (st_Profile **)malloc(
-      sizeof(st_Profile *) * self->internal->sizeProfiles);
-  /* Iterate to add each profile */
-  assert(self->internal->numProfiles == 0);
-  for (size_t i = 0; i < json_array_size(profiles); ++i) {
-    json_t *profile_json;
-    st_Profile *profile;
-
-    /* Build the profile from its JSON representation */
-    profile_json = json_array_get(profiles, i);
-    profile = (st_Profile *)malloc(sizeof(st_Profile));
-    self->internal->profiles[self->internal->numProfiles++] = profile;
-    error = st_Config_buildProfile(self,
-        profile,
-        profile_json);
-    if (error != ST_NO_ERROR)
-      return error;
-  }
-  /* Sort the profiles by name */
-  qsort(
-      self->internal->profiles,  /* ptr */
-      self->internal->numProfiles,  /* count */
-      sizeof(st_Profile *),  /* size */
-      (int (*)(const void *, const void *))comp_profiles  /* comp */
-      );
-
   /* Retrieve the array of plugins */
   plugins = json_object_get(root, "plugins");
   if (!json_is_array(plugins)) {
@@ -403,6 +367,40 @@ int st_Config_buildConfig(
       (int (*)(const void *, const void *))comp_toys  /* comp */
       );
 
+  /* Retrieve the array of profiles */
+  profiles = json_object_get(root, "profiles");
+  if (!json_is_array(profiles)) {
+    ST_LOG_ERROR("%s", "Config error: profiles is not an array\n");
+    return ST_ERROR_CONFIG_FILE_FORMAT;
+  }
+  /* Allocate memory for storing our profiles */
+  self->internal->sizeProfiles = json_array_size(profiles);
+  self->internal->profiles = (st_Profile **)malloc(
+      sizeof(st_Profile *) * self->internal->sizeProfiles);
+  /* Iterate to add each profile */
+  assert(self->internal->numProfiles == 0);
+  for (size_t i = 0; i < json_array_size(profiles); ++i) {
+    json_t *profile_json;
+    st_Profile *profile;
+
+    /* Build the profile from its JSON representation */
+    profile_json = json_array_get(profiles, i);
+    profile = (st_Profile *)malloc(sizeof(st_Profile));
+    self->internal->profiles[self->internal->numProfiles++] = profile;
+    error = st_Config_buildProfile(self,
+        profile,
+        profile_json);
+    if (error != ST_NO_ERROR)
+      return error;
+  }
+  /* Sort the profiles by name */
+  qsort(
+      self->internal->profiles,  /* ptr */
+      self->internal->numProfiles,  /* count */
+      sizeof(st_Profile *),  /* size */
+      (int (*)(const void *, const void *))comp_profiles  /* comp */
+      );
+
   /* Retrieve the default profile */
   defaultProfile_json = json_object_get(root, "defaultProfile");
   if (json_is_null(defaultProfile_json)) {
@@ -430,7 +428,8 @@ st_Config_buildProfile(
     st_Profile *profile,
     json_t *profile_json)
 {
-  json_t *name, *fontFace, *fontSize, *antialiasFont, *brightIsBold, *colors;
+  json_t *name, *fontFace, *fontSize, *antialiasFont, *brightIsBold, *colors,
+      *background;
   uint32_t flags;
   st_ErrorCode error;
 
@@ -515,9 +514,45 @@ st_Config_buildProfile(
     ST_LOG_ERROR_CODE(error);
   }
 
+  /* Get the background toy used by this profile */
+  background = json_object_get(profile_json, "background");
+  if (json_is_object(background)) {
+    json_t *toyName;
+    st_Toy *toy;
+    st_BackgroundRenderer *backgroundRenderer;
+    toyName = json_object_get(background, "toy");
+    if (!json_is_string(toyName)) {
+      ST_LOG_ERROR("Toy must be a json object in background of profile '%s'",
+          json_string_value(name));
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    toy = st_Config_getToy(self,
+        json_string_value(toyName)  /* name */
+        );
+    if (toy == NULL) {
+      ST_LOG_ERROR(
+          "Toy '%s' referenced in background of profile '%s' does not exist",
+          json_string_value(toyName),
+          json_string_value(name));
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    backgroundRenderer = st_Toy_getBackgroundRenderer(toy);
+    if (backgroundRenderer == NULL) {
+      ST_LOG_ERROR(
+          "Toy '%s' referenced in background of profile '%s' does not support background rendering",
+          json_string_value(toyName),
+          json_string_value(name));
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
+    st_Profile_setBackgroundRenderer(profile, backgroundRenderer);
+  } else if (!json_is_null(background)) {
+    ST_LOG_ERROR("Background must be a JSON object in profile '%s'",
+        json_string_value(name));
+    return ST_ERROR_CONFIG_FILE_FORMAT;
+  }
+
   return ST_NO_ERROR;
 }
-
 
 st_ErrorCode st_Config_buildColorScheme(
     st_Config *self,
@@ -800,4 +835,40 @@ st_ErrorCode st_Config_insertNewProfile(
   self->internal->numProfiles += 1;
 
   return ST_NO_ERROR;
+}
+
+st_Toy *
+st_Config_getToy(
+    st_Config *self,
+    const char *name)
+{
+  int a, b, i;
+  if (self->internal->numToys == 0) {
+    return NULL;
+  }
+  /* Look for the toy with the given name using a binary search */
+  a = 0; b = self->internal->numToys;
+  while (b - a > 0) {
+    int result;
+    i = (b - a) / 2 + a;
+    result = strcmp(name, self->internal->toys[i]->name);
+    if (result < 0) {
+      b = i;
+    } else if (result > 0) {
+      a = i + 1;
+    } else { 
+      /* result == 0 */
+      return self->internal->toys[i];
+    }
+  }
+  /* Scan for the toy with the given name */
+  for (i = a; i < b; ++i) {
+    int result;
+    result = strcmp(name, self->internal->toys[i]->name);
+    if (result == 0) {
+      return self->internal->toys[i];
+    }
+  }
+  /* Could not find a toy with the given name */
+  return NULL;
 }

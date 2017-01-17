@@ -27,13 +27,16 @@
 #include "plugin.h"
 
 struct st_Plugin_Internal_ {
-  int foo;
+  const st_Plugin_Dispatch *dispatch;
+  const st_Plugin_ToyDispatch *toyDispatch;
 };
 
 void
 st_Plugin_init(
     st_Plugin *self,
-    const char *name)
+    const char *name,
+    const st_Plugin_Dispatch *dispatch,
+    const st_Plugin_ToyDispatch *toyDispatch)
 {
   /* Allocate memory for internal structures */
   self->internal = (st_Plugin_Internal *)malloc(
@@ -41,6 +44,9 @@ st_Plugin_init(
   /* Copy the name string */
   self->name = (const char *)malloc(strlen(name) + 1);
   strcpy((char *)self->name, name);
+  /* Store pointers to the dispatch tables */
+  self->internal->dispatch = dispatch;
+  self->internal->toyDispatch = toyDispatch;
 }
 
 void
@@ -50,4 +56,11 @@ st_Plugin_destroy(
   /* Free memory from internal structures */
   free(self->internal);
   free((char *)self->name);
+}
+
+st_Plugin_ToyDispatch *
+st_Plugin_getToyDispatch(
+    st_Plugin *self)
+{
+  return self->internal->toyDispatch;
 }

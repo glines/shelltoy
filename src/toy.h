@@ -29,21 +29,26 @@
 #include "backgroundRenderer.h"
 #include "error.h"
 
+struct st_Toy_Internal_;
+typedef struct st_Toy_Internal_ st_Toy_Internal;
+
 struct st_Toy_;
 typedef struct st_Toy_ st_Toy;
-
 struct st_Toy_ {
   const char *name;
 
-  st_ErrorCode (*buildFromJson)(st_Toy *, json_t *);
-  void (*drawBackground)(const st_Toy *, int, int);
-  st_BackgroundRenderer *(*getBackgroundRenderer)(void);
+  st_Toy_Internal *internal;
 };
 
 void st_Toy_init(
-    st_Toy *self);
+    st_Toy *self,
+    const st_Toy_Dispatch *dispatch);
 
 void st_Toy_destroy(
+    st_Toy *self);
+
+st_BackgroundRenderer *
+st_Toy_getBackgroundRenderer(
     st_Toy *self);
 
 #endif

@@ -28,26 +28,28 @@
 #include <jansson.h>
 
 #include "./common/version.h"
+#include "backgroundRenderer.h"
 #include "error.h"
+#include "textRenderer.h"
 #include "toy.h"
 
 typedef enum {
   ST_TOY_TYPE_BACKGROUND = 0x01,
   ST_TOY_TYPE_TEXT = 0x02,
-} st_PluginToyTypeMask;
+} st_ToyTypeMask;
 
 typedef enum {
   ST_GRAPHICS_API_OPENGL = 0x01,
   ST_GRAPHICS_API_VULKAN = 0x02,
   ST_GRAPHICS_API_DX11 = 0x04,
   ST_GRAPHICS_API_DX12 = 0x08,
-} st_PluginGraphicsApiMask;
+} st_GraphicsApiMask;
 
-typedef struct st_PluginAttributes_ {
+typedef struct st_Plugin_Attributes_ {
   size_t pluginSize, toySize;
-  st_PluginToyTypeMask toyTypes;
-  st_PluginGraphicsApiMask graphicsApis;
-} st_PluginAttributes;
+  st_ToyTypeMask toyTypes;
+  st_GraphicsApiMask graphicsApis;
+} st_Plugin_Attributes;
 
 struct st_Plugin_Internal_;
 typedef struct st_Plugin_Internal_ st_Plugin_Internal;
@@ -72,22 +74,51 @@ typedef st_ErrorCode (*st_Plugin_BuildToy)(
     st_Toy *  /* toy */
     );
 
-typedef struct st_PluginDispatch_ {
+typedef struct st_Plugin_Dispatch_ {
   st_Plugin_Init init;
   st_Plugin_Destroy destroy;
   st_Plugin_BuildToy buildToy;
-} st_PluginDispatch;
+} st_Plugin_Dispatch;
+
+typedef void (*st_Plugin_Toy_Init)(
+    st_Toy *,  /* self */
+    const char *  /* name */
+    );
+typedef void (*st_Plugin_Toy_Destroy)(
+    st_Toy *  /* self */
+    );
+typedef st_BackgroundRenderer *
+(*st_Plugin_Toy_GetBackgroundRenderer)(
+    st_Toy *  /* self */
+    );
+typedef st_TextRenderer *
+(*st_Plugin_Toy_GetTextRenderer)(
+    st_Toy *  /* self */
+    );
+
+typedef struct st_Plugin_ToyDispatch_ {
+  st_Plugin_Toy_Init init;
+  st_Plugin_Toy_Destroy destroy;
+  st_Plugin_Toy_GetBackgroundRenderer getBackgroundRenderer;
+  st_Plugin_Toy_GetTextRenderer getTextRenderer;
+} st_Plugin_ToyDispatch;
 
 void
 st_Plugin_init(
     st_Plugin *self,
-    const char *name);
+    const char *name,
+    const st_Plugin_Dispatch *dispatch,
+    const st_Plugin_ToyDispatch *toyDispatch);
 
 void
 st_Plugin_destroy(
     st_Plugin *self);
 
-#define ST_DEFINE_PLUGIN( \
+st_Plugin_ToyDispatch *
+st_Plugin_getToyDispatch(
+    st_Plugin *self);
+
+#define SHELLTOY_DEFINE_PLUGIN( \
     PLUGIN_STRUCT, \
     GRAPHICS_APIS, \
     TOY_TYPES, \
@@ -96,15 +127,27 @@ st_Plugin_destroy(
     BUILD_TOY_CB \
     ) \
   const uint32_t SHELLTOY_VERSION = ST_VERSION; \
-  const st_PluginAttributes SHELLTOY_PLUGIN_ATTRIBUTES = { \
+  const st_Plugin_Attributes SHELLTOY_PLUGIN_ATTRIBUTES = { \
     .pluginSize = sizeof(PLUGIN_STRUCT), \
     .graphicsApis = GRAPHICS_APIS, \
     .toyTypes = TOY_TYPES, \
   }; \
-  const st_PluginDispatch SHELLTOY_PLUGIN_DISPATCH = { \
+  const st_Plugin_Dispatch SHELLTOY_PLUGIN_DISPATCH = { \
     .init = INIT_CB, \
     .destroy = DESTROY_CB, \
     .buildToy = BUILD_TOY_CB, \
+  };
+#define SHELLTOY_DEFINE_PLUGIN_TOY( \
+    TOY_INIT_CB, \
+    TOY_DESTROY_CB, \
+    TOY_GET_BACKGROUND_RENDERER_CB, \
+    TOY_GET_TEXT_RENDERER_CB \
+    ) \
+  const st_Plugin_ToyDispatch SHELLTOY_PLUGIN_TOY_DISPATCH = { \
+    .init = TOY_INIT_CB, \
+    .destroy = TOY_DESTROY_CB, \
+    .getBackgroundRenderer = TOY_GET_BACKGROUND_RENDERER_CB, \
+    .getTextRenderer = TOY_GET_TEXT_RENDERER_CB, \
   };
 
 #endif

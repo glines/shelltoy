@@ -21,36 +21,46 @@
  * IN THE SOFTWARE.
  */
 
-#include "plugin.h"
 #include "toy.h"
 
-struct st_Toy_Internal_ {
-  const st_Plugin_ToyDispatch *dispatch;
-};
+SHELLTOY_DEFINE_PLUGIN_TOY(
+    (st_Plugin_Toy_Init)st_Glsltoy_Toy_init,  /* TOY_INIT_CB */
+    (st_Plugin_Toy_Destroy)st_Glsltoy_Toy_destroy,  /* TOY_DESTROY_CB */
+    (st_Plugin_Toy_GetBackgroundRenderer)
+    st_Glsltoy_Toy_getBackgroundRenderer,  /* TOY_GET_BACKGROUNDR_RENDERER_CB */
+    (st_Plugin_Toy_GetTextRenderer)
+    st_Glsltoy_Toy_getTextRenderer  /* TOY_GET_TEXT_RENDERER_CB */
+    )
 
-void st_Toy_init(
-    st_Toy *self,
-    const st_Plugin_ToyDispatch *dispatch)
+void st_Glsltoy_Toy_init(
+    st_Glsltoy_Toy *self,
+    const char *name)
 {
-  /* Initialize memory for internal data structures */
-  self->internal = (st_Toy_Internal *)malloc(sizeof(st_Toy_Internal));
-  /* Store pointer to the dispatch table */
-  self->internal->dispatch = dispatch;
+  /* TODO */
+  fprintf(stderr, "st_Glsltoy_Toy_init() called\n");
 }
 
-void st_Toy_destroy(
-    st_Toy *self)
+void st_Glsltoy_Toy_destroy(
+    st_Glsltoy_Toy *self)
 {
-  /* Free memory for internal data structures */
-  free(self->internal);
+  /* TODO */
+  fprintf(stderr, "st_Glsltoy_Toy_destroy() called\n");
 }
 
 st_BackgroundRenderer *
-st_Toy_getBackgroundRenderer(
-    st_Toy *self)
+st_Glsltoy_Toy_getBackgroundRenderer(
+    st_Glsltoy_Toy *self)
 {
-  if (self->internal->dispatch->getBackgroundRenderer == NULL) {
-    return NULL;
-  }
-  return self->internal->dispatch->getBackgroundRenderer(self);
+  /* TODO */
+  fprintf(stderr, "st_Glsltoy_Toy_getBackgroundRenderer() called\n");
+  return NULL;
+}
+
+st_TextRenderer *
+st_Glsltoy_Toy_getTextRenderer(
+    st_Glsltoy_Toy *self)
+{
+  /* TODO */
+  fprintf(stderr, "st_Glsltoy_Toy_getTextRenderer() called\n");
+  return NULL;
 }

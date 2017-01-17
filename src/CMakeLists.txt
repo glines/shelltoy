@@ -15,6 +15,7 @@ add_executable(shelltoy
     pty.c
     screenRenderer.c
     terminal.c
+    textRenderer.c
     toy.c
     toyFactory.c
     )

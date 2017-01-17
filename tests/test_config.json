@@ -12,7 +12,7 @@
       "plugin": "glsltoy",
       "type": "background",
       "config": {
-        "shaderPath": "./shader.glsl"
+        "shaderPath": "./background.glsl"
       }
     }
   ],
@@ -47,8 +47,10 @@
         "background": [ 0, 0, 0 ]
       },
       "background": {
-        "type": "toy",
-        "name": "glsltoy-background"
+        "toy": "glsltoy-background"
+      },
+      "text": {
+        "toy": "glsltoy-text"
       }
     },
     {

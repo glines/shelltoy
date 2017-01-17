@@ -147,16 +147,21 @@ st_ToyFactory_registerPlugin(
     return ST_ERROR_PLUGIN_VERSION_MISMATCH;
   }
 
-  const st_PluginAttributes *attributes;
+  const st_Plugin_Attributes *attributes;
   GET_REQUIRED_SYMBOL(
       SHELLTOY_PLUGIN_ATTRIBUTES,
-      const st_PluginAttributes,
+      const st_Plugin_Attributes,
       attributes);
-  const st_PluginDispatch *dispatch;
+  const st_Plugin_Dispatch *dispatch;
   GET_REQUIRED_SYMBOL(
       SHELLTOY_PLUGIN_DISPATCH,
-      const st_PluginDispatch,
+      const st_Plugin_Dispatch,
       dispatch);
+  const st_Plugin_ToyDispatch *toyDispatch;
+  GET_REQUIRED_SYMBOL(
+      SHELLTOY_PLUGIN_TOY_DISPATCH,
+      const st_Plugin_ToyDispatch,
+      toyDispatch);
 
   /* Ensure we have memory allocated to store a pointer to this plugin */
   if (self->internal->numPlugins + 1 > self->internal->sizePlugins) {
@@ -174,7 +179,11 @@ st_ToyFactory_registerPlugin(
 
   /* Initialize and insert the new plugin */
   plugin = (st_Plugin *)malloc(attributes->pluginSize);
-  st_Plugin_init(plugin, name);
+  st_Plugin_init(plugin,
+      name,  /* name */
+      dispatch,  /* dispatch */
+      toyDispatch  /* toyDispatch */
+      );
   dispatch->init(plugin, name);
   self->internal->plugins[self->internal->numPlugins++] = plugin;
 
@@ -237,6 +246,14 @@ st_ToyFactory_buildToy(
   if (plugin == NULL) {
     return ST_ERROR_PLUGIN_NOT_FOUND;
   }
+
+  /* Initialize the toy */
+  st_Toy_init(toy,
+      json_string_value(name),  /* name */
+      st_Plugin_getToyDispatch(plugin)  /* dispatch */
+      );
+  /* FIXME: Actually call the virtual init method? Depends on how dynamic
+   * linking works. */
 
   return ST_NO_ERROR;
 }

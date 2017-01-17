@@ -21,36 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#include "plugin.h"
-#include "toy.h"
+#include "textRenderer.h"
 
-struct st_Toy_Internal_ {
-  const st_Plugin_ToyDispatch *dispatch;
+struct st_TextRender_Internal_ {
+  int foo;
 };
-
-void st_Toy_init(
-    st_Toy *self,
-    const st_Plugin_ToyDispatch *dispatch)
-{
-  /* Initialize memory for internal data structures */
-  self->internal = (st_Toy_Internal *)malloc(sizeof(st_Toy_Internal));
-  /* Store pointer to the dispatch table */
-  self->internal->dispatch = dispatch;
-}
-
-void st_Toy_destroy(
-    st_Toy *self)
-{
-  /* Free memory for internal data structures */
-  free(self->internal);
-}
-
-st_BackgroundRenderer *
-st_Toy_getBackgroundRenderer(
-    st_Toy *self)
-{
-  if (self->internal->dispatch->getBackgroundRenderer == NULL) {
-    return NULL;
-  }
-  return self->internal->dispatch->getBackgroundRenderer(self);
-}
