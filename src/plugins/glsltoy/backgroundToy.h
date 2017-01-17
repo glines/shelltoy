@@ -21,47 +21,32 @@
  * IN THE SOFTWARE.
  */
 
-#include "toy.h"
+#ifndef SHELLTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
+#define SHELLTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
 
-SHELLTOY_TOY_DISPATCH(
-    st_Glsltoy_Toy,  /* TOY_STRUCT */
-    (st_Plugin_Toy_Init)st_Glsltoy_Toy_init,  /* TOY_INIT_CB */
-    (st_Plugin_Toy_Destroy)st_Glsltoy_Toy_destroy,  /* TOY_DESTROY_CB */
-    (st_Plugin_Toy_GetBackgroundRenderer)
-    st_Glsltoy_Toy_getBackgroundRenderer,  /* TOY_GET_BACKGROUNDR_RENDERER_CB */
-    (st_Plugin_Toy_GetTextRenderer)
-    st_Glsltoy_Toy_getTextRenderer  /* TOY_GET_TEXT_RENDERER_CB */
-    )
+#include "../../backgroundToy.h"
 
-void st_Glsltoy_Toy_init(
-    st_Glsltoy_Toy *self,
-    const char *name)
-{
-  /* TODO */
-  fprintf(stderr, "st_Glsltoy_Toy_init() called\n");
-}
+struct st_Glsltoy_BackgroundToy_Internal_;
+typedef struct st_Glsltoy_BackgroundToy_Internal_
+st_Glsltoy_BackgroundToy_Internal;
 
-void st_Glsltoy_Toy_destroy(
-    st_Glsltoy_Toy *self)
-{
-  /* TODO */
-  fprintf(stderr, "st_Glsltoy_Toy_destroy() called\n");
-}
+typedef struct st_Glsltoy_BackgroundToy_ {
+  st_BackgroundToy base;
 
-st_BackgroundRenderer *
-st_Glsltoy_Toy_getBackgroundRenderer(
-    st_Glsltoy_Toy *self)
-{
-  /* TODO */
-  fprintf(stderr, "st_Glsltoy_Toy_getBackgroundRenderer() called\n");
-  return NULL;
-}
+  st_Glsltoy_BackgroundToy_Internal *internal;
+} st_Glsltoy_BackgroundToy;
 
-st_TextRenderer *
-st_Glsltoy_Toy_getTextRenderer(
-    st_Glsltoy_Toy *self)
-{
-  /* TODO */
-  fprintf(stderr, "st_Glsltoy_Toy_getTextRenderer() called\n");
-  return NULL;
-}
+void st_Glsltoy_BackgroundToy_init(
+    st_Glsltoy_BackgroundToy *self,
+    const char *name,
+    json_t *config);
+
+void st_Glsltoy_BackgroundToy_destroy(
+    st_Glsltoy_BackgroundToy *self);
+
+void st_Glsltoy_BackgroundToy_draw(
+    st_Glsltoy_BackgroundToy *self,
+    int viewportWidth,
+    int viewportHeight);
+
+#endif

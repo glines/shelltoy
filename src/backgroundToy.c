@@ -22,39 +22,49 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
-#include "backgroundRenderer.h"
+#include "backgroundToy.h"
 
-struct st_BackgroundRenderer_Internal_ {
-  st_BackgroundToy *backgroundToy;
+struct st_BackgroundToy_Internal_ {
+  const st_BackgroundToy_Dispatch *dispatch;
 };
 
-void st_BackgroundRenderer_init(
-    st_BackgroundRenderer *self,
-    st_Profile *profile)
+void st_BackgroundToy_init(
+    st_BackgroundToy *self,
+    const char *name,
+    const st_BackgroundToy_Dispatch *dispatch)
 {
-  /* Allocate memory for internal data structures */
-  self->internal = (st_BackgroundRenderer_Internal *)malloc(
-      sizeof(st_BackgroundRenderer_Internal));
-  /* Store a pointer to the background toy */
-  self->internal->backgroundToy = st_Profile_getBackgroundToy(profile);
+  /* NOTE: This is the only method that is not virtual, i.e. we are not
+   * responsible for calling into the dispatch table here. FIXME: Clarify why
+   * this is the case. We could probably actually pull this off... */
+  /* Allocate memory for internal structures */
+  self->internal = (st_BackgroundToy_Internal *)malloc(
+      sizeof(st_BackgroundToy_Internal));
+  /* Copy the name string */
+  self->name = (const char *)malloc(strlen(name) + 1);
+  strcpy((char *)self->name, name);
+  /* Store pointer to the method dispatch table */
+  self->internal->dispatch = dispatch;
 }
 
-void st_BackgroundRenderer_destroy(
-    st_BackgroundRenderer *self)
+void st_BackgroundToy_destroy(
+    st_BackgroundToy *self)
 {
+  /* Call destroy for derived class through dispatch table */
+  self->internal->dispatch->destroy(self);
+  /* Free allocated memory */
+  free((char *)self->name);
   free(self->internal);
 }
 
-void st_BackgroundRenderer_draw(
-    const st_BackgroundRenderer *self,
+void st_BackgroundToy_draw(
+    st_BackgroundToy *self,
     int viewportWidth,
     int viewportHeight)
 {
-  if (self->internal->backgroundToy != NULL) {
-    st_BackgroundToy_draw(self->internal->backgroundToy,
-        viewportWidth,  /* viewportWidth */
-        viewportHeight  /* viewportHeight */
-        );
-  }
+  /* Call draw for derived class through dispatch table */
+  self->internal->dispatch->draw(self,
+      viewportWidth,
+      viewportHeight);
 }

@@ -26,8 +26,9 @@
 
 #include <jansson.h>
 
+#include "backgroundToy.h"
 #include "error.h"
-#include "toy.h"
+#include "textToy.h"
 
 struct st_ToyFactory_Internal;
 
@@ -52,11 +53,19 @@ st_ToyFactory_registerPlugin(
     const char *dlPath);
 
 st_ErrorCode
-st_ToyFactory_buildToy(
+st_ToyFactory_buildBackgroundToy(
     st_ToyFactory *self,
     const char *pluginName,
     const char *toyName,
     json_t *config,
-    st_Toy **toy);
+    st_BackgroundToy **toy);
+
+st_ErrorCode
+st_ToyFactory_buildTextToy(
+    st_ToyFactory *self,
+    const char *pluginName,
+    const char *toyName,
+    json_t *config,
+    st_TextToy **toy);
 
 #endif

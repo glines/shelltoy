@@ -8,13 +8,13 @@ target_link_libraries(check_boundingBox
 add_test(check_boundingBox_test check_boundingBox)
 
 add_executable(check_config
+    ../src/backgroundToy.c
     ../src/config.c
     ../src/error.c
     ../src/fonts.c
     ../src/logging.c
     ../src/plugin.c
     ../src/profile.c
-    ../src/toy.c
     ../src/toyFactory.c
     check_config.c
     )

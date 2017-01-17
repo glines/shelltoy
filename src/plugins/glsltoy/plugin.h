@@ -36,14 +36,8 @@ typedef struct st_Glsltoy_Plugin_ {
 void st_Glsltoy_Plugin_init(
     st_Glsltoy_Plugin *self,
     const char *name);
+
 void st_Glsltoy_Plugin_destroy(
     st_Glsltoy_Plugin *self);
-
-st_ErrorCode
-st_Glsltoy_Plugin_buildToy(
-    st_Glsltoy_Plugin *self,
-    const char *name,
-    json_t *config,
-    st_Toy *toy);
 
 #endif

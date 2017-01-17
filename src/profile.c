@@ -7,7 +7,7 @@
 #include "profile.h"
 
 struct st_Profile_Internal_ {
-  st_BackgroundRenderer *backgroundRenderer;
+  st_BackgroundToy *backgroundToy;
 };
 
 void st_Profile_init(
@@ -19,6 +19,7 @@ void st_Profile_init(
   self->fontSize = 0.0f;
   /* Allocate memory for internal structures */
   self->internal = (st_Profile_Internal *)malloc(sizeof(st_Profile_Internal));
+  self->internal->backgroundToy = NULL;
   /* Copy the name string */
   self->name = (char *)malloc(strlen(name) + 1);
   strcpy(self->name, name);
@@ -28,8 +29,7 @@ void st_Profile_destroy(
     st_Profile *self)
 {
   /* Free memory from internal structures */
-  /* FIXME: We probably need to destroy the background renderer somewhere. The
-   * ownership is not well established. */
+  /* NOTE: Ownership of the toys is held by the st_Config object */
   free(self->internal);
   free(self->name);
   free(self->fontFace);
@@ -120,16 +120,16 @@ st_ErrorCode st_Profile_setFont(
   return ST_NO_ERROR;
 }
 
-void st_Profile_setBackgroundRenderer(
+void st_Profile_setBackgroundToy(
     st_Profile *self,
-    st_BackgroundRenderer *backgroundRenderer)
+    st_BackgroundToy *backgroundToy)
 {
-  self->internal->backgroundRenderer = backgroundRenderer;
+  self->internal->backgroundToy = backgroundToy;
 }
 
-st_BackgroundRenderer *
-st_Profile_getBackgroundRenderer(
+st_BackgroundToy *
+st_Profile_getBackgroundToy(
     st_Profile *self)
 {
-  return self->internal->backgroundRenderer;
+  return self->internal->backgroundToy;
 }

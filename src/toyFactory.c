@@ -157,16 +157,16 @@ st_ToyFactory_registerPlugin(
       SHELLTOY_PLUGIN_DISPATCH,
       const st_Plugin_Dispatch,
       pluginDispatch);
-  const st_Toy_Attributes *toyAttributes;
+  const st_BackgroundToy_Attributes *backgroundToyAttributes;
   GET_REQUIRED_SYMBOL(
-      SHELLTOY_TOY_ATTRIBUTES,
-      const st_Toy_Attributes,
-      toyAttributes);
-  const st_Toy_Dispatch *toyDispatch;
+      SHELLTOY_BACKGROUND_TOY_ATTRIBUTES,
+      const st_BackgroundToy_Attributes,
+      backgroundToyAttributes);
+  const st_BackgroundToy_Dispatch *backgroundToyDispatch;
   GET_REQUIRED_SYMBOL(
-      SHELLTOY_TOY_DISPATCH,
-      const st_Toy_Dispatch,
-      toyDispatch);
+      SHELLTOY_BACKGROUND_TOY_DISPATCH,
+      const st_BackgroundToy_Dispatch,
+      backgroundToyDispatch);
 
   /* Ensure we have memory allocated to store a pointer to this plugin */
   if (self->internal->numPlugins + 1 > self->internal->sizePlugins) {
@@ -187,8 +187,8 @@ st_ToyFactory_registerPlugin(
   st_Plugin_init(plugin,
       name,  /* name */
       pluginDispatch,  /* dispatch */
-      toyAttributes,  /* toyAttributes */
-      toyDispatch  /* toyDispatch */
+      backgroundToyAttributes,  /* backgroundToyAttributes */
+      backgroundToyDispatch  /* backgroundToyDispatch */
       );
   pluginDispatch->init(plugin, name);
   self->internal->plugins[self->internal->numPlugins++] = plugin;
@@ -238,16 +238,16 @@ st_ToyFactory_getPlugin(
 }
 
 st_ErrorCode
-st_ToyFactory_buildToy(
+st_ToyFactory_buildBackgroundToy(
     st_ToyFactory *self,
     const char *pluginName,
     const char *toyName,
     json_t *config,
-    st_Toy **toy)
+    st_BackgroundToy **toy)
 {
   st_Plugin *plugin;
-  const st_Toy_Dispatch *toyDispatch;
-  const st_Toy_Attributes *toyAttributes;
+  const st_BackgroundToy_Attributes *toyAttributes;
+  const st_BackgroundToy_Dispatch *toyDispatch;
 
   /* Find the plugin with the given name */
   plugin = st_ToyFactory_getPlugin(self,
@@ -255,19 +255,20 @@ st_ToyFactory_buildToy(
   if (plugin == NULL) {
     return ST_ERROR_PLUGIN_NOT_FOUND;
   }
-  toyDispatch = st_Plugin_getToyDispatch(plugin);
-  toyAttributes = st_Plugin_getToyAttributes(plugin);
+  toyAttributes = st_Plugin_getBackgroundToyAttributes(plugin);
+  toyDispatch = st_Plugin_getBackgroundToyDispatch(plugin);
 
   /* Allocate memory for the toy */
-  *toy = (st_Toy *)malloc(toyAttributes->size);
+  *toy = (st_BackgroundToy *)malloc(toyAttributes->size);
   /* Initialize the toy */
-  st_Toy_init(*toy,
+  st_BackgroundToy_init(*toy,
       toyName,  /* name */
       toyDispatch  /* dispatch */
       );
   /* Call the virtual init method */
   toyDispatch->init(*toy,
-      toyName  /* name */
+      toyName,  /* name */
+      config  /* config */
       );
 
   return ST_NO_ERROR;

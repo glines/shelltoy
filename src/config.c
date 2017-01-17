@@ -34,7 +34,6 @@
 #include "config.h"
 #include "fonts.h"
 #include "logging.h"
-#include "toy.h"
 #include "toyFactory.h"
 
 void st_Config_parseConfig(
@@ -64,8 +63,10 @@ struct st_Config_Internal {
   st_Profile **profiles;
   char *defaultProfile, *fontFilePath;
   size_t sizeProfiles, numProfiles;
-  st_Toy **toys;
-  size_t sizeToys, numToys;
+  st_BackgroundToy **backgroundToys;
+  size_t sizeBackgroundToys, numBackgroundToys;
+  st_TextToy **textToys;
+  size_t sizeTexttoys, numTextToys;
   st_ToyFactory toyFactory;
 };
 
@@ -90,6 +91,7 @@ void st_Config_init(
   st_ToyFactory_init(
       &self->internal->toyFactory,
       DEFAULT_PLUGIN_PATH);
+  /* FIXME: We should initialize our toy arrays, even if they are empty */
 }
 
 void st_Config_destroy(
@@ -100,6 +102,7 @@ void st_Config_destroy(
     st_Profile_destroy(self->internal->profiles[i]);
   }
   /* Free memory allocated for internal data structures */
+  /* FIXME: We never free memory allocated for toys */
   free(self->internal->fontFilePath);
   free(self->internal->profiles);
   free(self->internal->defaultProfile);
@@ -238,6 +241,10 @@ void st_Config_parseConfig(
   json_t *root;
   json_error_t error_json;
 
+  /* FIXME: Many of the calls to json_is_null() within st_Config_parseConfig
+   * should actually be checks for null json_t pointers. Null is not the same
+   * as non-existent in jansson. */
+
   root = json_loads(config, 0, &error_json);
   if (root == NULL) {
     fprintf(stderr,
@@ -264,9 +271,9 @@ int comp_profiles(
   return strcmp((*a)->name, (*b)->name);
 }
 
-int comp_toys(
-    const st_Toy **a,
-    const st_Toy **b)
+int comp_backgroundToys(
+    const st_BackgroundToy **a,
+    const st_BackgroundToy **b)
 {
   return strcmp((*a)->name, (*b)->name);
 }
@@ -329,13 +336,17 @@ int st_Config_buildConfig(
     return ST_ERROR_CONFIG_FILE_FORMAT;
   }
   /* Allocate memory for storing our toys */
-  self->internal->sizeToys = json_array_size(toys);
-  self->internal->toys = (st_Toy **)malloc(
-      sizeof(st_Toy *) * self->internal->sizeToys);
+  /* FIXME: This should really be replaced with a ready-made map class that can
+   * allocate memory on-the-fly. We do not really know how many of each toy
+   * type we will need. */
+  self->internal->sizeBackgroundToys = json_array_size(toys);
+  self->internal->backgroundToys = (st_BackgroundToy **)malloc(
+      sizeof(st_BackgroundToy *) * self->internal->sizeBackgroundToys);
+  /* TODO: Allocate memory for the text toys */
   /* Iterate to build each toy with the toy factory */
   for (size_t i = 0; i < json_array_size(toys); ++i) {
-    json_t *toy_json, *pluginName_json, *toyName_json, *toyConfig_json;
-    st_Toy **toy;
+    json_t *toy_json, *pluginName_json, *toyName_json, *toyType_json,
+           *toyConfig_json;
 
     toy_json = json_array_get(toys, i);
     if (!json_is_object(toy_json)) {
@@ -352,27 +363,57 @@ int st_Config_buildConfig(
       ST_LOG_ERROR("%s", "Config error: toy name must be a string");
       return ST_ERROR_CONFIG_FILE_FORMAT;
     }
+    toyType_json = json_object_get(toy_json, "type");
+    if (!json_is_string(toyType_json)) {
+      ST_LOG_ERROR("%s", "Config error: toy type must be a string");
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
     toyConfig_json = json_object_get(toy_json, "config");
-    toy = &self->internal->toys[self->internal->numToys++];
-    error = st_ToyFactory_buildToy(
-      &self->internal->toyFactory,
-      json_string_value(pluginName_json),  /* pluginName */
-      json_string_value(toyName_json),  /* toyName */
-      toyConfig_json,  /* config */
-      toy  /* toy */
-      );
+    if (strcmp(json_string_value(toyType_json), "background") == 0) {
+      st_BackgroundToy **toy;
+      /* This is a background toy */
+      toy = &self->internal->backgroundToys[self->internal->numBackgroundToys++];
+      error = st_ToyFactory_buildBackgroundToy(
+          &self->internal->toyFactory,
+          json_string_value(pluginName_json),  /* pluginName */
+          json_string_value(toyName_json),  /* toyName */
+          toyConfig_json,  /* config */
+          toy  /* toy */
+          );
+    } else if (strcmp(json_string_value(toyType_json), "text") == 0) {
+      st_TextToy **toy;
+      /* This is a text toy */
+      assert(0);  /* FIXME: Text toys are not supported yet. We need to
+                     refactor add replace self->internal->textToys with some
+                     sort of map class */
+      toy = &self->internal->textToys[self->internal->numTextToys++];
+      error = st_ToyFactory_buildTextToy(
+          &self->internal->toyFactory,
+          json_string_value(pluginName_json),  /* pluginName */
+          json_string_value(toyName_json),  /* toyName */
+          toyConfig_json,  /* config */
+          toy  /* toy */
+          );
+    } else {
+      ST_LOG_ERROR("Config error: Unknown toy type '%s'",
+          json_string_value(toyType_json));
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+    }
     if (error != ST_NO_ERROR) {
       ST_LOG_ERROR_CODE(error);
       return error;
     }
   }
-  /* Sort the toys by name */
+  /* Sort the background toys by name */
   qsort(
-      self->internal->toys,  /* ptr */
-      self->internal->numToys,  /* count */
-      sizeof(st_Toy *),  /* size */
-      (int (*)(const void *, const void *))comp_toys  /* comp */
+      self->internal->backgroundToys,  /* ptr */
+      self->internal->numBackgroundToys,  /* count */
+      sizeof(st_BackgroundToy *),  /* size */
+      (int (*)(const void *, const void *))comp_backgroundToys  /* comp */
       );
+  /* TODO: Sort the text toys by name */
+  /* TODO: Should we prohibit background toys with the same names as text
+   * toys? */
 
   /* Retrieve the array of profiles */
   profiles = json_object_get(root, "profiles");
@@ -523,36 +564,29 @@ st_Config_buildProfile(
 
   /* Get the background toy used by this profile */
   background = json_object_get(profile_json, "background");
-  if (json_is_object(background)) {
+  if (background == NULL || json_is_null(background)) {
+    /* The background was not specified; this is okay */
+  } else if (json_is_object(background)) {
     json_t *toyName;
-    st_Toy *toy;
-    st_BackgroundRenderer *backgroundRenderer;
+    st_BackgroundToy *backgroundToy;
     toyName = json_object_get(background, "toy");
     if (!json_is_string(toyName)) {
-      ST_LOG_ERROR("Toy must be a json object in background of profile '%s'",
+      ST_LOG_ERROR("Toy name must be a string in background of profile '%s'",
           json_string_value(name));
       return ST_ERROR_CONFIG_FILE_FORMAT;
     }
-    toy = st_Config_getToy(self,
+    backgroundToy = st_Config_getBackgroundToy(self,
         json_string_value(toyName)  /* name */
         );
-    if (toy == NULL) {
+    if (backgroundToy == NULL) {
       ST_LOG_ERROR(
           "Toy '%s' referenced in background of profile '%s' does not exist",
           json_string_value(toyName),
           json_string_value(name));
       return ST_ERROR_CONFIG_FILE_FORMAT;
     }
-    backgroundRenderer = st_Toy_getBackgroundRenderer(toy);
-    if (backgroundRenderer == NULL) {
-      ST_LOG_ERROR(
-          "Toy '%s' referenced in background of profile '%s' does not support background rendering",
-          json_string_value(toyName),
-          json_string_value(name));
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    st_Profile_setBackgroundRenderer(profile, backgroundRenderer);
-  } else if (!json_is_null(background)) {
+    st_Profile_setBackgroundToy(profile, backgroundToy);
+  } else {
     ST_LOG_ERROR("Background must be a JSON object in profile '%s'",
         json_string_value(name));
     return ST_ERROR_CONFIG_FILE_FORMAT;
@@ -844,36 +878,36 @@ st_ErrorCode st_Config_insertNewProfile(
   return ST_NO_ERROR;
 }
 
-st_Toy *
-st_Config_getToy(
+st_BackgroundToy *
+st_Config_getBackgroundToy(
     st_Config *self,
     const char *name)
 {
   int a, b, i;
-  if (self->internal->numToys == 0) {
+  if (self->internal->numBackgroundToys == 0) {
     return NULL;
   }
   /* Look for the toy with the given name using a binary search */
-  a = 0; b = self->internal->numToys;
+  a = 0; b = self->internal->numBackgroundToys;
   while (b - a > 0) {
     int result;
     i = (b - a) / 2 + a;
-    result = strcmp(name, self->internal->toys[i]->name);
+    result = strcmp(name, self->internal->backgroundToys[i]->name);
     if (result < 0) {
       b = i;
     } else if (result > 0) {
       a = i + 1;
     } else { 
       /* result == 0 */
-      return self->internal->toys[i];
+      return self->internal->backgroundToys[i];
     }
   }
   /* Scan for the toy with the given name */
   for (i = a; i < b; ++i) {
     int result;
-    result = strcmp(name, self->internal->toys[i]->name);
+    result = strcmp(name, self->internal->backgroundToys[i]->name);
     if (result == 0) {
-      return self->internal->toys[i];
+      return self->internal->backgroundToys[i];
     }
   }
   /* Could not find a toy with the given name */

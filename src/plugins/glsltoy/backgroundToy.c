@@ -21,45 +21,52 @@
  * IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <GL/glew.h>
 
-#include "plugin.h"
-#include "toy.h"
+#include "../../common/glError.h"
 
-struct st_Toy_Internal_ {
-  const st_Toy_Dispatch *dispatch;
+#include "backgroundToy.h"
+
+SHELLTOY_BACKGROUND_TOY_DISPATCH(
+    st_Glsltoy_BackgroundToy,  /* BACKGROUND_TOY_STRUCT */
+    (st_BackgroundToy_Init)
+    st_Glsltoy_BackgroundToy_init,  /* INIT_CB */
+    (st_BackgroundToy_Destroy)
+    st_Glsltoy_BackgroundToy_destroy,  /* DESTROY_CB */
+    (st_BackgroundToy_Draw)
+    st_Glsltoy_BackgroundToy_draw  /* DRAW_CB */
+    )
+
+struct st_Glsltoy_BackgroundToy_Internal_ {
+  int foo;
 };
 
-void st_Toy_init(
-    st_Toy *self,
+void st_Glsltoy_BackgroundToy_init(
+    st_Glsltoy_BackgroundToy *self,
     const char *name,
-    const st_Toy_Dispatch *dispatch)
+    json_t *config)
 {
-  /* Copy the name string of this toy */
-  self->name = (const char *)malloc(strlen(name) + 1);
-  strcpy((char *)self->name, name);
-  /* Initialize memory for internal data structures */
-  self->internal = (st_Toy_Internal *)malloc(sizeof(st_Toy_Internal));
-  /* Store pointer to the dispatch table */
-  self->internal->dispatch = dispatch;
+  /* Allocate memory for internal structures */
+  self->internal = (st_Glsltoy_BackgroundToy_Internal *)malloc(
+      sizeof(st_Glsltoy_BackgroundToy_Internal));
 }
 
-void st_Toy_destroy(
-    st_Toy *self)
+void st_Glsltoy_BackgroundToy_destroy(
+    st_Glsltoy_BackgroundToy *self)
 {
-  /* Free memory for internal data structures */
+  /* Free allocated memory */
   free(self->internal);
-  /* Free memory for the name that we copied */
-  free((char *)self->name);
 }
 
-st_BackgroundRenderer *
-st_Toy_getBackgroundRenderer(
-    st_Toy *self)
+void st_Glsltoy_BackgroundToy_draw(
+    st_Glsltoy_BackgroundToy *self,
+    int viewportWidth,
+    int viewportHeight)
 {
-  if (self->internal->dispatch->getBackgroundRenderer == NULL) {
-    return NULL;
-  }
-  return self->internal->dispatch->getBackgroundRenderer(self);
+  /* TODO */
+  fprintf(stderr, "inside st_Glsltoy_BackgroundToy_draw()\n");
+  glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
+  FORCE_ASSERT_GL_ERROR();
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  FORCE_ASSERT_GL_ERROR();
 }

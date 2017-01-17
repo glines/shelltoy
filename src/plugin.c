@@ -28,8 +28,8 @@
 
 struct st_Plugin_Internal_ {
   const st_Plugin_Dispatch *dispatch;
-  const st_Toy_Attributes *toyAttributes;
-  const st_Toy_Dispatch *toyDispatch;
+  const st_BackgroundToy_Attributes *backgroundToyAttributes;
+  const st_BackgroundToy_Dispatch *backgroundToyDispatch;
 };
 
 void
@@ -37,8 +37,8 @@ st_Plugin_init(
     st_Plugin *self,
     const char *name,
     const st_Plugin_Dispatch *dispatch,
-    const st_Toy_Attributes *toyAttributes,
-    const st_Toy_Dispatch *toyDispatch)
+    const st_BackgroundToy_Attributes *backgroundToyAttributes,
+    const st_BackgroundToy_Dispatch *backgroundToyDispatch)
 {
   /* Allocate memory for internal structures */
   self->internal = (st_Plugin_Internal *)malloc(
@@ -48,9 +48,9 @@ st_Plugin_init(
   strcpy((char *)self->name, name);
   /* Store pointers to the dispatch tables */
   self->internal->dispatch = dispatch;
-  self->internal->toyDispatch = toyDispatch;
+  self->internal->backgroundToyDispatch = backgroundToyDispatch;
   /* Store pointer to the toy attributes */
-  self->internal->toyAttributes = toyAttributes;
+  self->internal->backgroundToyAttributes = backgroundToyAttributes;
 }
 
 void
@@ -62,16 +62,16 @@ st_Plugin_destroy(
   free((char *)self->name);
 }
 
-const st_Toy_Attributes *
-st_Plugin_getToyAttributes(
+const st_BackgroundToy_Attributes *
+st_Plugin_getBackgroundToyAttributes(
     st_Plugin *self)
 {
-  return self->internal->toyAttributes;
+  return self->internal->backgroundToyAttributes;
 }
 
-const st_Toy_Dispatch *
-st_Plugin_getToyDispatch(
+const st_BackgroundToy_Dispatch *
+st_Plugin_getBackgroundToyDispatch(
     st_Plugin *self)
 {
-  return self->internal->toyDispatch;
+  return self->internal->backgroundToyDispatch;
 }

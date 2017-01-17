@@ -31,8 +31,7 @@ SHELLTOY_PLUGIN_DISPATCH(
     ST_GRAPHICS_API_OPENGL,  /* GRAPHICS_APIS */
     ST_TOY_TYPE_BACKGROUND,  /* TOY_TYPES */
     (st_Plugin_Init)st_Glsltoy_Plugin_init,  /* INIT_CB */
-    (st_Plugin_Destroy)st_Glsltoy_Plugin_destroy,  /* DESTROY_CB */
-    (st_Plugin_BuildToy)st_Glsltoy_Plugin_buildToy  /* BUILD_TOY_CB */
+    (st_Plugin_Destroy)st_Glsltoy_Plugin_destroy  /* DESTROY_CB */
     )
 
 void st_Glsltoy_Plugin_init(
@@ -48,15 +47,4 @@ void st_Glsltoy_Plugin_init(
 void st_Glsltoy_Plugin_destroy(
     st_Glsltoy_Plugin *self)
 {
-}
-
-st_ErrorCode
-st_Glsltoy_Plugin_buildToy(
-    st_Glsltoy_Plugin *self,
-    const char *name,
-    json_t *config,
-    st_Toy *toy)
-{
-  /* TODO */
-  return ST_NO_ERROR;
 }

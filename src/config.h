@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2016-2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,7 +23,7 @@
 
 #include "error.h"
 #include "profile.h"
-#include "toy.h"
+#include "backgroundToy.h"
 
 struct st_Config_Internal;
 
@@ -90,7 +90,7 @@ st_Config_getDefaultProfile(
     st_Config *self,
     st_Profile **profile);
 
-st_Toy *
-st_Config_getToy(
+st_BackgroundToy *
+st_Config_getBackgroundToy(
     st_Config *self,
     const char *name);

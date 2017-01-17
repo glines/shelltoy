@@ -1,5 +1,6 @@
 add_executable(shelltoy
     backgroundRenderer.c
+    backgroundToy.c
     boundingBox.c
     collisionDetection.c
     config.c
@@ -16,7 +17,7 @@ add_executable(shelltoy
     screenRenderer.c
     terminal.c
     textRenderer.c
-    toy.c
+    textToy.c
     toyFactory.c
     )
 target_link_libraries(shelltoy

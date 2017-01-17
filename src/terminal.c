@@ -35,7 +35,7 @@
 /* Internal data structure */
 struct st_Terminal_Internal {
   st_ScreenRenderer screenRenderer;
-  st_BackgroundRenderer *backgroundRenderer;
+  st_BackgroundRenderer backgroundRenderer;
   st_GlyphRenderer glyphRenderer;
   st_Profile *profile;
 };
@@ -258,16 +258,18 @@ void st_Terminal_init(
   st_Terminal_initWindow(self);
   /* Initialize the glyph renderer */
   st_GlyphRenderer_init(&self->internal->glyphRenderer,
-      profile
+      profile  /* profile */
       );
   /* Initialize the screen renderer */
   st_ScreenRenderer_init(&self->internal->screenRenderer,
       &self->internal->glyphRenderer,  /* glyphRenderer */
       profile  /* profile */
       );
-  /* TODO: Initialize the background renderer (somehow by calling the plugin) */
-  self->internal->backgroundRenderer =
-    st_Profile_getBackgroundRenderer(profile);
+  /* Initialize the background renderer */
+  st_BackgroundRenderer_init(
+      &self->internal->backgroundRenderer,
+      profile  /* profile */
+      );
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
@@ -298,7 +300,10 @@ void st_Terminal_init(
 }
 
 void st_Terminal_destroy(st_Terminal *self) {
+  /* Destroy all of the objects that we initialized */
+  st_BackgroundRenderer_destroy(&self->internal->backgroundRenderer);
   st_ScreenRenderer_destroy(&self->internal->screenRenderer);
+  st_GlyphRenderer_destroy(&self->internal->glyphRenderer);
   /* FIXME: Destroy the libtsm state machine */
   /* FIXME: Destroy the libtsm screen */
   st_PTY_destroy(&self->pty);
@@ -375,7 +380,7 @@ void st_Terminal_draw(st_Terminal *self) {
   FORCE_ASSERT_GL_ERROR();
 
   /* Draw the background */
-  st_BackgroundRenderer_draw(self->internal->backgroundRenderer,
+  st_BackgroundRenderer_draw(&self->internal->backgroundRenderer,
       self->width,  /* viewportWidth */
       self->height  /* viewportHeight */
       );

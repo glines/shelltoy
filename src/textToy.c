@@ -21,31 +21,47 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PLUGINS_GLSLTOY_TOY_H_
-#define SHELLTOY_PLUGINS_GLSLTOY_TOY_H_
+#include <stdlib.h>
+#include <string.h>
 
-#include "../../toy.h"
+#include "textToy.h"
 
-struct st_Glsltoy_Toy_Internal_;
-typedef struct st_Glsltoy_Toy_Internal_ st_Glsltoy_Toy_Internal;
+struct st_TextToy_Internal_ {
+  const st_TextToy_Dispatch *dispatch;
+};
 
-typedef struct st_Glsltoy_Toy_ {
-  st_Glsltoy_Toy_Internal *internal;
-} st_Glsltoy_Toy;
+void st_TextToy_init(
+    st_TextToy *self,
+    const char *name,
+    const st_TextToy_Dispatch *dispatch)
+{
+  /* FIXME: Change this to call the derived init method? */
+  /* Allocate memory for internal structures */
+  self->internal = (st_TextToy_Internal *)malloc(
+      sizeof(st_TextToy_Internal));
+  /* Copy the name string */
+  self->name = (const char *)malloc(strlen(name) + 1);
+  strcpy((char *)self->name, name);
+}
 
-void st_Glsltoy_Toy_init(
-    st_Glsltoy_Toy *self,
-    const char *name);
+void st_TextToy_destroy(
+    st_TextToy *self)
+{
+  /* Call the derived destructor */
+  self->internal->dispatch->destroy(self);
+  /* Free allocated memory */
+  free((char *)self->name);
+  free(self->internal);
+}
 
-void st_Glsltoy_Toy_destroy(
-    st_Glsltoy_Toy *self);
-
-st_BackgroundRenderer *
-st_Glsltoy_Toy_getBackgroundRenderer(
-    st_Glsltoy_Toy *self);
-
-st_TextRenderer *
-st_Glsltoy_Toy_getTextRenderer(
-    st_Glsltoy_Toy *self);
-
-#endif
+void st_TextToy_draw(
+    st_TextToy *self,
+    int viewportWidth,
+    int viewportHeight)
+{
+  /* Call the derived draw method */
+  self->internal->dispatch->draw(self,
+      viewportWidth,  /* viewportWidth */
+      viewportHeight  /* viewportHeight */
+      );
+}

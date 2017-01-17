@@ -21,8 +21,10 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_BACKGROUND_RENDERER_H_
-#define ST_BACKGROUND_RENDERER_H_
+#ifndef SHELLTOY_BACKGROUND_RENDERER_H_
+#define SHELLTOY_BACKGROUND_RENDERER_H_
+
+#include "profile.h"
 
 struct st_BackgroundRenderer_Internal_;
 typedef struct st_BackgroundRenderer_Internal_ st_BackgroundRenderer_Internal;
@@ -32,7 +34,8 @@ typedef struct st_BackgroundRenderer_ {
 } st_BackgroundRenderer;
 
 void st_BackgroundRenderer_init(
-    st_BackgroundRenderer *self);
+    st_BackgroundRenderer *self,
+    st_Profile *profile);
 
 void st_BackgroundRenderer_destroy(
     st_BackgroundRenderer *self);

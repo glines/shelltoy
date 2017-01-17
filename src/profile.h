@@ -26,7 +26,7 @@
 
 #include <inttypes.h>
 
-#include "backgroundRenderer.h"
+#include "backgroundToy.h"
 #include "color.h"
 #include "error.h"
 
@@ -62,12 +62,12 @@ st_ErrorCode st_Profile_setFont(
     const char *fontFace,
     float fontSize);
 
-void st_Profile_setBackgroundRenderer(
+void st_Profile_setBackgroundToy(
     st_Profile *self,
-    st_BackgroundRenderer *backgroundRenderer);
+    st_BackgroundToy *backgroundToy);
 
-st_BackgroundRenderer *
-st_Profile_getBackgroundRenderer(
+st_BackgroundToy *
+st_Profile_getBackgroundToy(
     st_Profile *self);
 
 

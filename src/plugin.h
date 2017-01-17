@@ -28,10 +28,9 @@
 #include <jansson.h>
 
 #include "./common/version.h"
-#include "backgroundRenderer.h"
+#include "backgroundToy.h"
 #include "error.h"
-#include "textRenderer.h"
-#include "toy.h"
+#include "textToy.h"
 
 typedef enum {
   ST_TOY_TYPE_BACKGROUND = 0x01,
@@ -67,17 +66,10 @@ typedef void (*st_Plugin_Init)(
 typedef void (*st_Plugin_Destroy)(
     st_Plugin *  /* self */
     );
-typedef st_ErrorCode (*st_Plugin_BuildToy)(
-    st_Plugin *,  /* self */
-    const char *,  /* name */
-    json_t *,  /* config */
-    st_Toy *  /* toy */
-    );
 
 typedef struct st_Plugin_Dispatch_ {
   st_Plugin_Init init;
   st_Plugin_Destroy destroy;
-  st_Plugin_BuildToy buildToy;
 } st_Plugin_Dispatch;
 
 void
@@ -85,19 +77,19 @@ st_Plugin_init(
     st_Plugin *self,
     const char *name,
     const st_Plugin_Dispatch *dispatch,
-    const st_Toy_Attributes *toyAttributes,
-    const st_Toy_Dispatch *toyDispatch);
+    const st_BackgroundToy_Attributes *backgroundToyAttributes,
+    const st_BackgroundToy_Dispatch *backgroundToyDispatch);
 
 void
 st_Plugin_destroy(
     st_Plugin *self);
 
-const st_Toy_Attributes *
-st_Plugin_getToyAttributes(
+const st_BackgroundToy_Attributes *
+st_Plugin_getBackgroundToyAttributes(
     st_Plugin *self);
 
-const st_Toy_Dispatch *
-st_Plugin_getToyDispatch(
+const st_BackgroundToy_Dispatch *
+st_Plugin_getBackgroundToyDispatch(
     st_Plugin *self);
 
 #define SHELLTOY_PLUGIN_DISPATCH( \
@@ -105,8 +97,7 @@ st_Plugin_getToyDispatch(
     GRAPHICS_APIS, \
     TOY_TYPES, \
     INIT_CB, \
-    DESTROY_CB, \
-    BUILD_TOY_CB \
+    DESTROY_CB \
     ) \
   const uint32_t SHELLTOY_VERSION = ST_VERSION; \
   const st_Plugin_Attributes SHELLTOY_PLUGIN_ATTRIBUTES = { \
@@ -117,7 +108,6 @@ st_Plugin_getToyDispatch(
   const st_Plugin_Dispatch SHELLTOY_PLUGIN_DISPATCH = { \
     .init = INIT_CB, \
     .destroy = DESTROY_CB, \
-    .buildToy = BUILD_TOY_CB, \
   };
 
 #endif
