@@ -1,6 +1,7 @@
 add_executable(shelltoy
     backgroundRenderer.c
     backgroundToy.c
+    backgroundToyDictionary.c
     boundingBox.c
     collisionDetection.c
     config.c

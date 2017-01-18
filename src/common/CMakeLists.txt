@@ -1,4 +1,5 @@
 add_library(common
+    dictionary.c
     glError.c
     shader.c
     shaders.c

@@ -21,11 +21,12 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_VERSION_H_
-#define SHELLTOY_VERSION_H_
+#ifndef SHELLTOY_BACKGROUND_TOY_DICTIONARY_H_
+#define SHELLTOY_BACKGROUND_TOY_DICTIONARY_H_
 
-#define ST_MAJOR_VERSION 0
-#define ST_MINOR_VERSION 0
-#define ST_VERSION ((ST_MAJOR_VERSION << 8) + ST_MINOR_VERSION)
+#include "./common/dictionary.h"
+#include "backgroundToy.h"
+
+ST_DECLARE_DICTIONARY(st_BackgroundToy)
 
 #endif

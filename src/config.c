@@ -31,6 +31,7 @@
 #include <fontconfig/fontconfig.h>
 #include <unistd.h>
 
+#include "backgroundToyDictionary.h"
 #include "config.h"
 #include "fonts.h"
 #include "logging.h"
@@ -63,8 +64,7 @@ struct st_Config_Internal {
   st_Profile **profiles;
   char *defaultProfile, *fontFilePath;
   size_t sizeProfiles, numProfiles;
-  st_BackgroundToy **backgroundToys;
-  size_t sizeBackgroundToys, numBackgroundToys;
+  st_BackgroundToyDictionary backgroundToys;
   st_TextToy **textToys;
   size_t sizeTexttoys, numTextToys;
   st_ToyFactory toyFactory;
@@ -91,12 +91,26 @@ void st_Config_init(
   st_ToyFactory_init(
       &self->internal->toyFactory,
       DEFAULT_PLUGIN_PATH);
-  /* FIXME: We should initialize our toy arrays, even if they are empty */
+  /* Initialize our toy dictionaries */
+  st_BackgroundToyDictionary_init(&self->internal->backgroundToys);
 }
 
 void st_Config_destroy(
     st_Config *self)
 {
+  /* Destroy all of the toys in our toy dictionaries */
+  for (size_t i = 0;
+      i < st_BackgroundToyDictionary_size(&self->internal->backgroundToys);
+      ++i)
+  {
+    st_BackgroundToy *backgroundToy;
+    backgroundToy = st_BackgroundToyDictionary_getValueAtIndex(
+        &self->internal->backgroundToys,
+        i);
+    st_BackgroundToy_destroy(backgroundToy);
+  }
+  /* Destroy all of our toy dictionaries */
+  st_BackgroundToyDictionary_destroy(&self->internal->backgroundToys);
   /* Destroy each of the held profiles */
   for (size_t i = 0; i < self->internal->numProfiles; ++i) {
     st_Profile_destroy(self->internal->profiles[i]);
@@ -335,14 +349,6 @@ int st_Config_buildConfig(
     ST_LOG_ERROR("%s", "Config error: toys is not an array");
     return ST_ERROR_CONFIG_FILE_FORMAT;
   }
-  /* Allocate memory for storing our toys */
-  /* FIXME: This should really be replaced with a ready-made map class that can
-   * allocate memory on-the-fly. We do not really know how many of each toy
-   * type we will need. */
-  self->internal->sizeBackgroundToys = json_array_size(toys);
-  self->internal->backgroundToys = (st_BackgroundToy **)malloc(
-      sizeof(st_BackgroundToy *) * self->internal->sizeBackgroundToys);
-  /* TODO: Allocate memory for the text toys */
   /* Iterate to build each toy with the toy factory */
   for (size_t i = 0; i < json_array_size(toys); ++i) {
     json_t *toy_json, *pluginName_json, *toyName_json, *toyType_json,
@@ -370,15 +376,20 @@ int st_Config_buildConfig(
     }
     toyConfig_json = json_object_get(toy_json, "config");
     if (strcmp(json_string_value(toyType_json), "background") == 0) {
-      st_BackgroundToy **toy;
+      st_BackgroundToy *toy;
       /* This is a background toy */
-      toy = &self->internal->backgroundToys[self->internal->numBackgroundToys++];
       error = st_ToyFactory_buildBackgroundToy(
           &self->internal->toyFactory,
           json_string_value(pluginName_json),  /* pluginName */
           json_string_value(toyName_json),  /* toyName */
           toyConfig_json,  /* config */
-          toy  /* toy */
+          &toy  /* toy */
+          );
+      /* Insert this toy into our background toy dictionary */
+      st_BackgroundToyDictionary_insert(
+          &self->internal->backgroundToys,
+          json_string_value(toyName_json),  /* key */
+          toy  /* value */
           );
     } else if (strcmp(json_string_value(toyType_json), "text") == 0) {
       st_TextToy **toy;
@@ -404,14 +415,6 @@ int st_Config_buildConfig(
       return error;
     }
   }
-  /* Sort the background toys by name */
-  qsort(
-      self->internal->backgroundToys,  /* ptr */
-      self->internal->numBackgroundToys,  /* count */
-      sizeof(st_BackgroundToy *),  /* size */
-      (int (*)(const void *, const void *))comp_backgroundToys  /* comp */
-      );
-  /* TODO: Sort the text toys by name */
   /* TODO: Should we prohibit background toys with the same names as text
    * toys? */
 
@@ -575,8 +578,9 @@ st_Config_buildProfile(
           json_string_value(name));
       return ST_ERROR_CONFIG_FILE_FORMAT;
     }
-    backgroundToy = st_Config_getBackgroundToy(self,
-        json_string_value(toyName)  /* name */
+    backgroundToy = st_BackgroundToyDictionary_getValue(
+        &self->internal->backgroundToys,
+        json_string_value(toyName)  /* key */
         );
     if (backgroundToy == NULL) {
       ST_LOG_ERROR(
@@ -876,40 +880,4 @@ st_ErrorCode st_Config_insertNewProfile(
   self->internal->numProfiles += 1;
 
   return ST_NO_ERROR;
-}
-
-st_BackgroundToy *
-st_Config_getBackgroundToy(
-    st_Config *self,
-    const char *name)
-{
-  int a, b, i;
-  if (self->internal->numBackgroundToys == 0) {
-    return NULL;
-  }
-  /* Look for the toy with the given name using a binary search */
-  a = 0; b = self->internal->numBackgroundToys;
-  while (b - a > 0) {
-    int result;
-    i = (b - a) / 2 + a;
-    result = strcmp(name, self->internal->backgroundToys[i]->name);
-    if (result < 0) {
-      b = i;
-    } else if (result > 0) {
-      a = i + 1;
-    } else { 
-      /* result == 0 */
-      return self->internal->backgroundToys[i];
-    }
-  }
-  /* Scan for the toy with the given name */
-  for (i = a; i < b; ++i) {
-    int result;
-    result = strcmp(name, self->internal->backgroundToys[i]->name);
-    if (result == 0) {
-      return self->internal->backgroundToys[i];
-    }
-  }
-  /* Could not find a toy with the given name */
-  return NULL;
 }

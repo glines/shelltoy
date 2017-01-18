@@ -9,6 +9,7 @@ add_test(check_boundingBox_test check_boundingBox)
 
 add_executable(check_config
     ../src/backgroundToy.c
+    ../src/backgroundToyDictionary.c
     ../src/config.c
     ../src/error.c
     ../src/fonts.c
@@ -23,6 +24,7 @@ target_link_libraries(check_config
     ${FONTCONFIG_LIBRARIES}
     ${FREETYPE_LIBRARIES}
     ${JANSSON_LIBRARIES}
+    common
     dl
     )
 add_test(check_config_test check_config)
