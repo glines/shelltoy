@@ -22,6 +22,7 @@
  */
 
 #include <GL/glew.h>
+#include <SDL.h>
 #include <string.h>
 
 #include "../../common/glError.h"
@@ -40,6 +41,9 @@ SHELLTOY_BACKGROUND_TOY_DISPATCH(
     )
 
 /* Private methods */
+float st_Glsltoy_BackgroundToy_getTime(
+    st_Glsltoy_BackgroundToy *self);
+
 void st_Glsltoy_BackgroundToy_initShader(
     st_Glsltoy_BackgroundToy *self);
 
@@ -66,6 +70,7 @@ struct st_Glsltoy_BackgroundToy_Internal_ {
   GLuint texture, framebuffer, quadVertexBuffer, quadIndexBuffer, vao;
   GLuint timeLocation, mouseLocation, resolutionLocation, toySamplerLocation;
   int initializedDrawObjects;
+  uint32_t startTicks;
 };
 
 void st_Glsltoy_BackgroundToy_init(
@@ -77,6 +82,7 @@ void st_Glsltoy_BackgroundToy_init(
   self->internal = (st_Glsltoy_BackgroundToy_Internal *)malloc(
       sizeof(st_Glsltoy_BackgroundToy_Internal));
   self->internal->initializedDrawObjects = 0;
+  self->internal->startTicks = SDL_GetTicks();
 }
 
 void st_Glsltoy_BackgroundToy_destroy(
@@ -87,6 +93,17 @@ void st_Glsltoy_BackgroundToy_destroy(
   }
   /* Free allocated memory */
   free(self->internal);
+}
+
+/* FIXME: I think glslsandbox might operate using tenths of a second? This
+ * function returns tenths of a second accordingly.*/
+float st_Glsltoy_BackgroundToy_getTime(
+    st_Glsltoy_BackgroundToy *self)
+{
+  uint32_t start, current;
+  start = self->internal->startTicks;
+  current = SDL_GetTicks();
+  return (float)(current - start) * 0.0001f;
 }
 
 static const char *vert =
@@ -141,7 +158,7 @@ static const char *blit_frag =
   "smooth in vec2 texCoord;\n"
   "\n"
   "void main(void) {\n"
-  "  gl_FragColor = vec4(1.0, texture(toySampler, texCoord).gb, 1.0);\n"
+  "  gl_FragColor = vec4(texture(toySampler, texCoord).rgb, 1.0);\n"
   "}\n";
 
 void st_Glsltoy_BackgroundToy_initShader(
@@ -386,8 +403,7 @@ void st_Glsltoy_BackgroundToy_drawShader(
   FORCE_ASSERT_GL_ERROR();
   glUniform1f(
       self->internal->timeLocation,  /* location */
-      /* FIXME: Implement time */
-      0.0f  /* v0 */
+      st_Glsltoy_BackgroundToy_getTime(self)  /* v0 */
       );
   FORCE_ASSERT_GL_ERROR();
   glUniform2f(
@@ -450,8 +466,6 @@ void st_Glsltoy_BackgroundToy_drawQuad(
       self->internal->vao  /* array */
       );
   FORCE_ASSERT_GL_ERROR();
-  fprintf(stderr, "vao: %d\n",
-      self->internal->vao);
 
   /* Prepare the toy texture sampler */
   glActiveTexture(
@@ -517,7 +531,4 @@ void st_Glsltoy_BackgroundToy_draw(
       self,
       viewportWidth,
       viewportHeight);
-
-  /* TODO */
-  fprintf(stderr, "inside st_Glsltoy_BackgroundToy_draw()\n");
 }

@@ -549,8 +549,8 @@ void st_ScreenRenderer_addBackgroundCellInstance(
 
   /* Determine the background color */
   code = attr->inverse ? attr->fccode : attr->bccode;
-//  if (code == ST_COLOR_BACKGROUND)
-//    return;  /* transparent background */
+  if (code == ST_COLOR_BACKGROUND)
+    return;  /* transparent background */
   backgroundInstance.bgColor[3] = 255;  /* Assume background alpha of one */
   if (code < 0) {
     /* Use RGB for the background color */
@@ -570,12 +570,6 @@ void st_ScreenRenderer_addBackgroundCellInstance(
       backgroundInstance.bgColor[3] = 255;
     }
   }
-
-  /* XXX */
-  backgroundInstance.bgColor[0] = 255;
-  backgroundInstance.bgColor[1] = 0;
-  backgroundInstance.bgColor[2] = 255;
-  backgroundInstance.bgColor[3] = 255;
 
   /* Make sure we have memory allocated for the new background instance */
   if (self->internal->numBackgroundCells + 1 > self->internal->sizeBackgroundCells) {
