@@ -376,7 +376,8 @@ void st_Terminal_updateScreen(st_Terminal *self) {
 
 void st_Terminal_draw(st_Terminal *self) {
   /* Clear the screen */
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT);
   FORCE_ASSERT_GL_ERROR();
 
   /* Draw the background */

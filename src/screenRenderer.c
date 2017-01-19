@@ -431,6 +431,8 @@ void st_ScreenRenderer_updateScreen(
    * <https://www.opengl.org/wiki/Buffer_Object_Streaming> */
   /* FIXME: We could be even nicer to the GL driver by always requesting
    * sufficiently large buffer sizes. */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->glyphInstanceBuffer);
+  ASSERT_GL_ERROR();
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numGlyphs
@@ -438,6 +440,8 @@ void st_ScreenRenderer_updateScreen(
       NULL,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
+  ASSERT_GL_ERROR();
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->backgroundInstanceBuffer);
   ASSERT_GL_ERROR();
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */

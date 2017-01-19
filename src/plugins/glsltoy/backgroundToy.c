@@ -258,15 +258,15 @@ void st_Glsltoy_BackgroundToy_initQuad(
 {
   st_Glsltoy_BackgroundToy_QuadVertex vertices[] = {
     {
-      .pos = { 0.0f, 0.0f, 0.0f },
+      .pos = { -1.0f, -1.0f, 0.0f },
       .texCoord = { 0.0f, 0.0f },
     },
     {
-      .pos = { 1.0f, 0.0f, 0.0f },
+      .pos = { 1.0f, -1.0f, 0.0f },
       .texCoord = { 1.0f, 0.0f },
     },
     {
-      .pos = { 0.0f, 1.0f, 0.0f },
+      .pos = { -1.0f, 1.0f, 0.0f },
       .texCoord = { 0.0f, 1.0f },
     },
     {
@@ -354,6 +354,7 @@ void st_Glsltoy_BackgroundToy_initQuad(
       sizeof(st_Glsltoy_BackgroundToy_QuadVertex),  /* stride */
       (GLvoid *)offsetof(st_Glsltoy_BackgroundToy_QuadVertex, texCoord)  /* pointer */
       );
+  FORCE_ASSERT_GL_ERROR();
   /* Clear the vertex array object binding */
   glBindVertexArray(
       0  /* array */
@@ -449,6 +450,8 @@ void st_Glsltoy_BackgroundToy_drawQuad(
       self->internal->vao  /* array */
       );
   FORCE_ASSERT_GL_ERROR();
+  fprintf(stderr, "vao: %d\n",
+      self->internal->vao);
 
   /* Prepare the toy texture sampler */
   glActiveTexture(
