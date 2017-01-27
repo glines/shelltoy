@@ -107,13 +107,6 @@ void st_destroyTerminal() {
   st_Terminal_destroy(&shelltoy.terminal);
 }
 
-/* TODO: Load 'toy' information from JSON files with '.toy' extensions */
-/* TODO: Load toys from shared libraries */
-
-/* TODO: Actually get this font path as user input */
-const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu-fonts-2.37/share/fonts/truetype/DejaVuSansMono.ttf";
-/* TODO: We might even want to read a small font into memory */
-
 void print_option(
     const char *flags,
     const char *description)
@@ -152,6 +145,9 @@ void print_version() {
       "Shelltoy %s\n",
       SHELLTOY_VERSION);
 }
+
+/* TODO: Load 'toy' information from JSON files with '.toy' extensions */
+/* TODO: Include a small font embedded in the shelltoy binary? Hmm... */
 
 int main(int argc, char** argv) {
   char *configFilePath, *profileName, *pluginPath;
