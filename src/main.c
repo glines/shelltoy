@@ -119,6 +119,9 @@ int main(int argc, char** argv) {
   size_t len;
   st_Profile *profile;
   st_ErrorCode error;
+  char **shell_argv;
+  int shell_argc;
+  char *shell_argv_buff[4];
 
   configFilePath = NULL;
   profileName = NULL;
@@ -229,17 +232,42 @@ int main(int argc, char** argv) {
   st_Fonts_init();
   atexit(st_Fonts_destroy);
 
+  if (argc - optind == 0) {
+    /* No shell was given; we check the SHELL environment variable */
+    char *shell = getenv("SHELL");
+
+    if (shell == NULL) {
+      ST_LOG_ERROR("%s", "SHELL environment variable not set");
+      shell_argv_buff[0] = "/usr/bin/env";
+      shell_argv_buff[1] = "bash";
+      shell_argv_buff[2] = "-i";  /* interactive + login */
+      shell_argv_buff[3] = NULL;
+      shell_argv = shell_argv_buff;
+      shell_argc = 3;
+    } else {
+      shell_argv_buff[0] = shell;
+      shell_argv_buff[1] = "-i";  /* interactive */
+      shell_argv_buff[2] = NULL;
+      shell_argv = shell_argv_buff;
+      shell_argc = 2;
+    }
+  } else {
+    shell_argc = argc - optind;
+    shell_argv = &argv[optind];
+  }
+
   st_Terminal_init(&shelltoy.terminal,
     profile,  /* profile */
-    argc - optind, &argv[optind]);
+    shell_argc,  /* argc */
+    shell_argv  /* argv */
+    );
   atexit(st_destroyTerminal);
 
+  SDL_GL_SetSwapInterval(1);  /* Wait for vsync */
   while (1) {
     st_dispatchEvents();
     st_Terminal_draw(&shelltoy.terminal);
-    SDL_Delay(50);
-    /* TODO: Write a more intelligent loop that waits for vsync, etc. */
-    /* FIXME: We really need to avoid drawing if the terminal window has not
+    /* FIXME: We should avoid drawing if the terminal window has not
      * changed. */
   }
 

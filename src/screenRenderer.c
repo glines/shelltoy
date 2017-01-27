@@ -619,7 +619,8 @@ void st_ScreenRenderer_addGlyphInstance(
   if (error) {
     /* A glyph for the given character could not be found in the atlas */
     /* TODO: Try to add a glyph for this character */
-    fprintf(stderr, "Could not find glyph for '0x%08x'\n", ch);
+    /* fprintf(stderr, "Could not find glyph for '0x%08x'\n", ch); */
+    /* FIXME: Log one error per missing glyph without repeating errors */
     return;
   }
 

@@ -211,45 +211,13 @@ void st_Terminal_calculatePseudoTerminalSize(
   *rows = self->height / cellHeight;
 }
 
-/* TODO: Allow the user to configure the shell command to invoke */
-#define ENV_PATH "/usr/bin/env"
-#define SHELL "bash"
-
-static char *bash_argv[] = {
-  "/usr/bin/env",
-  "bash",
-};
-
 void st_Terminal_init(
     st_Terminal *self,
     st_Profile *profile,
     int argc,
     char **argv)
 {
-  size_t len;
   int ptyWidth, ptyHeight;
-  char **argv_nullTerminated;
-  if (argc == 0) {
-    /* No shell was given; we check the SHELL environment variable */
-    char *shell = getenv("SHELL");
-    if (shell == NULL) {
-      ST_LOG_ERROR("%s", "SHELL environment variable not set");
-      /* TODO: Try our best to invoke bash */
-      argv = bash_argv;
-      argc = sizeof(bash_argv) / sizeof(bash_argv[0]);
-    } else {
-      argv = &shell;
-      argc = 1;
-    }
-  }
-  /* Copy arguments into a null terminated array */
-  argv_nullTerminated = (char**)malloc(sizeof(char*) * (argc + 1));
-  for (int i = 0; i < argc; ++i) {
-    len = strlen(argv[i]);
-    argv_nullTerminated[i] = (char*)malloc(len + 1);
-    strcpy(argv_nullTerminated[i], argv[i]);
-  }
-  argv_nullTerminated[argc] = NULL;
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
@@ -285,16 +253,11 @@ void st_Terminal_init(
    * faces into one font that supports normal, bold, and wide glyphs */
   /* TODO: Calculate terminal width and height */
   st_PTY_startChild(&self->pty,
-      argv_nullTerminated[0],  /* path */
-      argv_nullTerminated,  /* argv */
+      argv[0],  /* path */
+      argv,  /* argv */
       (st_PTY_readCallback_t)st_Terminal_ptyReadCallback,  /* callback */
       self  /* callback_data */
       );
-  /* Free memory allocated for arguments */
-  for (int i = 0; i < argc; ++i) {
-    free(argv_nullTerminated[i]);
-  }
-  free(argv_nullTerminated);
   /* TODO: Start sending input from the child process to tsm_vte_input()? */
   /* TODO: Start sending keyboard input to tsm_vte_handle_keyboard()? */
 }
