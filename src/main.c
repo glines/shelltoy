@@ -114,6 +114,45 @@ void st_destroyTerminal() {
 const char *FONT_FACE_PATH = "/nix/store/fvwp39z54ka2s7h3gawhfmayrqjnd05a-dejavu-fonts-2.37/share/fonts/truetype/DejaVuSansMono.ttf";
 /* TODO: We might even want to read a small font into memory */
 
+void print_option(
+    const char *flags,
+    const char *description)
+{
+  fprintf(stderr,
+      "  %-20s  %s\n",
+      flags,
+      description);
+}
+
+void print_help() {
+  static const char *helpString =
+    "Usage: shelltoy [options]\n"
+    "       shelltoy [options] -- [shell] [shell arguments]\n"
+    "\n"
+    "Options:\n"
+    ;
+
+  fprintf(stderr, "%s",
+      helpString);
+  print_option("-h, --help", "Print this help text and exit");
+  print_option("-v, --version", "Print the Shelltoy version and exit");
+  print_option("--config <file>",
+      "Path to Shelltoy config file, overriding the default");
+  print_option("-p, --profile <name>",
+      "Name of the profile to use for Shelltoy instance");
+  print_option("--plugin-path <dir>",
+      "Directory path in which Shelltoy will look for plugins");
+}
+
+/* FIXME: Somehow integrate git describe with CMake to get the version */
+#define SHELLTOY_VERSION "unknown version"
+
+void print_version() {
+  fprintf(stderr,
+      "Shelltoy %s\n",
+      SHELLTOY_VERSION);
+}
+
 int main(int argc, char** argv) {
   char *configFilePath, *profileName, *pluginPath;
   size_t len;
@@ -132,14 +171,16 @@ int main(int argc, char** argv) {
     int c, longindex;
     static struct option long_options[] = {
       { "config",      required_argument,    0, 'c' },
+      { "help",        no_argument,          0, 'h' },
       { "profile",     required_argument,    0, 'p' },
       { "plugin-path", required_argument,    0, 0 },
+      { "version",     no_argument,          0, 'v' },
       { NULL,          0,                 NULL, 0 },
     };
 
     c = getopt_long(
         argc, argv,
-        "",  /* optstring */
+        "c:hp:v",  /* optstring */
         long_options,  /* longopts */
         &longindex  /* longindex */
         );
@@ -157,6 +198,9 @@ int main(int argc, char** argv) {
         configFilePath = (char *)malloc(len + 1);
         strcpy(configFilePath, optarg);
         break;
+      case 'h':
+        print_help();
+        return EXIT_SUCCESS;
       case 'p':
         if (profileName != NULL) {
           ST_LOG_ERROR("%s", "More than one profile specified; ignoring");
@@ -166,6 +210,10 @@ int main(int argc, char** argv) {
         len = strlen(optarg);
         profileName = (char *)malloc(len + 1);
         strcpy(profileName, optarg);
+        break;
+      case 'v':
+        print_version();
+        return EXIT_SUCCESS;
         break;
       default:
         assert(longindex >= 0);  /* FIXME: I'm not sure what longindex is set
