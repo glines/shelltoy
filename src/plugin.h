@@ -99,7 +99,7 @@ st_Plugin_getBackgroundToyDispatch(
     INIT_CB, \
     DESTROY_CB \
     ) \
-  const uint32_t SHELLTOY_VERSION = ST_VERSION; \
+  const uint32_t shelltoy_version = SHELLTOY_VERSION; \
   const st_Plugin_Attributes SHELLTOY_PLUGIN_ATTRIBUTES = { \
     .size = sizeof(PLUGIN_STRUCT), \
     .graphicsApis = GRAPHICS_APIS, \

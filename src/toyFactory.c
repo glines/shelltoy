@@ -138,12 +138,12 @@ st_ToyFactory_registerPlugin(
     return ST_ERROR_PLUGIN_MISSING_SYMBOL; \
   }
   GET_REQUIRED_SYMBOL(
-      SHELLTOY_VERSION,
+      shelltoy_version,
       const uint32_t,
       shelltoyVersion);
 
   /* Check the Shelltoy version this plugin was built against */
-  if (*shelltoyVersion != ST_VERSION) {
+  if (*shelltoyVersion != SHELLTOY_VERSION) {
     return ST_ERROR_PLUGIN_VERSION_MISMATCH;
   }
 

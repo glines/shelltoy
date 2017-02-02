@@ -137,13 +137,10 @@ void print_help() {
       "Directory path in which Shelltoy will look for plugins");
 }
 
-/* FIXME: Somehow integrate git describe with CMake to get the version */
-#define SHELLTOY_VERSION "unknown version"
-
 void print_version() {
   fprintf(stderr,
       "Shelltoy %s\n",
-      SHELLTOY_VERSION);
+      SHELLTOY_QUALIFIED_VERSION);
 }
 
 /* TODO: Load 'toy' information from JSON files with '.toy' extensions */
