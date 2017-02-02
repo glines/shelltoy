@@ -7,6 +7,8 @@ enable_testing()
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Add a target to update the Shelltoy version header at build time
+find_package(Git REQUIRED)  # Git needed to get version string
+message("git executable: ${GIT_EXECUTABLE}")
 configure_file(
     "${CMAKE_SOURCE_DIR}/include/shelltoy/configure_version_header.cmake.in"
     "${CMAKE_BINARY_DIR}/include/shelltoy/configure_version_header.cmake"
