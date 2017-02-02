@@ -2,9 +2,6 @@ add_executable(check_boundingBox
     check_boundingBox.c
     ../src/boundingBox.c
     )
-target_include_directories(check_boundingBox SYSTEM
-    PRIVATE "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include"
-    )
 target_link_libraries(check_boundingBox
     ${CHECK_LIBRARIES}
     )
@@ -21,9 +18,6 @@ add_executable(check_config
     ../src/profile.c
     ../src/toyFactory.c
     check_config.c
-    )
-target_include_directories(check_config SYSTEM
-    PRIVATE "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include"
     )
 target_link_libraries(check_config
     ${CHECK_LIBRARIES}

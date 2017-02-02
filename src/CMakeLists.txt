@@ -21,9 +21,7 @@ add_executable(shelltoy
     textToy.c
     toyFactory.c
     )
-target_include_directories(shelltoy SYSTEM
-    PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include"
-    )
+add_dependencies(shelltoy shelltoy_version)
 target_link_libraries(shelltoy
     common
     ${FONTCONFIG_LIBRARIES}
