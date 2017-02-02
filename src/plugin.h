@@ -27,10 +27,10 @@
 #include <inttypes.h>
 #include <jansson.h>
 
-#include "./common/version.h"
-#include "backgroundToy.h"
-#include "error.h"
-#include "textToy.h"
+#include <shelltoy/backgroundToy.h>
+#include <shelltoy/error.h>
+#include <shelltoy/textToy.h>
+#include <shelltoy/version.h>
 
 typedef enum {
   ST_TOY_TYPE_BACKGROUND = 0x01,

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "backgroundToy.h"
+#include <shelltoy/backgroundToy.h>
 
 struct st_BackgroundToy_Internal_ {
   const st_BackgroundToy_Dispatch *dispatch;

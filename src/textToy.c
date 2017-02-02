@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "textToy.h"
+#include <shelltoy/textToy.h>
 
 struct st_TextToy_Internal_ {
   const st_TextToy_Dispatch *dispatch;

@@ -25,7 +25,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include "./common/version.h"
+#include <shelltoy/version.h>
+
 #include "logging.h"
 #include "plugin.h"
 

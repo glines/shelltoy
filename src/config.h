@@ -23,7 +23,7 @@
 
 #include "error.h"
 #include "profile.h"
-#include "backgroundToy.h"
+#include <shelltoy/backgroundToy.h>
 
 struct st_Config_Internal;
 

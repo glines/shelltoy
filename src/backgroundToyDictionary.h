@@ -25,7 +25,7 @@
 #define SHELLTOY_BACKGROUND_TOY_DICTIONARY_H_
 
 #include "./common/dictionary.h"
-#include "backgroundToy.h"
+#include <shelltoy/backgroundToy.h>
 
 ST_DECLARE_DICTIONARY(st_BackgroundToy)
 

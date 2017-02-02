@@ -21,7 +21,7 @@
  * IN THE SOFTWARE.
  */
 
-#include "error.h"
+#include <shelltoy/error.h>
 
 const char *st_ErrorString(
     st_ErrorCode error)

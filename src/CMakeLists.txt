@@ -21,6 +21,9 @@ add_executable(shelltoy
     textToy.c
     toyFactory.c
     )
+target_include_directories(shelltoy SYSTEM
+    PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include"
+    )
 target_link_libraries(shelltoy
     common
     ${FONTCONFIG_LIBRARIES}
@@ -32,7 +35,8 @@ target_link_libraries(shelltoy
     )
 set_property(TARGET shelltoy PROPERTY C_STANDARD 11)
 install(TARGETS shelltoy
-    RUNTIME DESTINATION bin)
+    RUNTIME DESTINATION "bin"
+    INCLUDES DESTINATION "include")
 
 add_subdirectory("./common")
 add_subdirectory("./plugins")

@@ -26,7 +26,8 @@
 
 #include <jansson.h>
 
-#include "../../error.h"
+#include <shelltoy/error.h>
+
 #include "../../plugin.h"
 
 typedef struct st_Glsltoy_Plugin_ {

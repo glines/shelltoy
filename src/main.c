@@ -28,6 +28,7 @@
 #include <libtsm.h>
 #include <stdlib.h>
 
+#include <shelltoy/version.h>
 #include "config.h"
 #include "fonts.h"
 #include "logging.h"

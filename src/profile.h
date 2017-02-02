@@ -26,9 +26,10 @@
 
 #include <inttypes.h>
 
-#include "backgroundToy.h"
+#include <shelltoy/backgroundToy.h>
+#include <shelltoy/error.h>
+
 #include "color.h"
-#include "error.h"
 
 struct st_Profile_Internal_;
 typedef struct st_Profile_Internal_ st_Profile_Internal;

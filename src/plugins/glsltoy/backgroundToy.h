@@ -24,7 +24,7 @@
 #ifndef SHELLTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
 #define SHELLTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
 
-#include "../../backgroundToy.h"
+#include <shelltoy/backgroundToy.h>
 
 struct st_Glsltoy_BackgroundToy_Internal_;
 typedef struct st_Glsltoy_BackgroundToy_Internal_

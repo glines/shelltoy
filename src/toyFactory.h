@@ -26,9 +26,9 @@
 
 #include <jansson.h>
 
-#include "backgroundToy.h"
-#include "error.h"
-#include "textToy.h"
+#include <shelltoy/backgroundToy.h>
+#include <shelltoy/error.h>
+#include <shelltoy/textToy.h>
 
 struct st_ToyFactory_Internal;
 
