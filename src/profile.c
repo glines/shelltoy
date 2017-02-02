@@ -83,11 +83,13 @@ st_ErrorCode st_Profile_setFont(
       );
 
   /* XXX: Print out all of the matching fonts */
+  /*
   for (int i = 0; i < resultFontSet->nfont; ++i) {
     FcPattern *font;
     font = resultFontSet->fonts[i];
     FcPatternPrint(font);
   }
+  */
 
   if (resultFontSet->nfont <= 0) {
     fprintf(stderr, "Error: Fontconfig could not find any suitable fonts.\n");

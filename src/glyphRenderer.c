@@ -22,7 +22,6 @@
  */
 
 #include <assert.h>
-#include <fontconfig/fontconfig.h>
 #include <math.h>
 
 #include "fonts.h"
