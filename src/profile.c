@@ -81,6 +81,7 @@ st_ErrorCode st_Profile_setFont(
        * object_set */
       NULL  /* object_set */
       );
+  FcPatternDestroy(pattern);
 
   /* XXX: Print out all of the matching fonts */
   /*
@@ -93,12 +94,14 @@ st_ErrorCode st_Profile_setFont(
 
   if (resultFontSet->nfont <= 0) {
     fprintf(stderr, "Error: Fontconfig could not find any suitable fonts.\n");
+    FcFontSetDestroy(resultFontSet);
     return ST_ERROR_FONT_NOT_FOUND;
   }
 
   /* Get the file path of the matching font */
   result = FcPatternGet(resultFontSet->fonts[0], FC_FILE, 0, &value);
   if (result != FcResultMatch) {
+    FcFontSetDestroy(resultFontSet);
     return ST_ERROR_FONT_NOT_FOUND;
   }
   assert(value.u.s != NULL);
@@ -107,6 +110,7 @@ st_ErrorCode st_Profile_setFont(
   char *newFontPath = (char *)malloc(
       strlen((const char *)value.u.s) + 1);
   if (newFontPath == NULL) {
+    FcFontSetDestroy(resultFontSet);
     return ST_ERROR_OUT_OF_MEMORY;
   }
   free(self->fontPath);
@@ -116,8 +120,7 @@ st_ErrorCode st_Profile_setFont(
       (const char *)value.u.s);
   fprintf(stderr, "Fontconfig found suitable font: '%s'\n",
       self->fontPath);
-
-  FcPatternDestroy(pattern);
+  FcFontSetDestroy(resultFontSet);
 
   return ST_NO_ERROR;
 }

@@ -91,7 +91,10 @@ void st_Fonts_destroyFreetype() {
 void st_Fonts_initFontconfig() {
   st_Fonts *self = st_Fonts_instance();
 
-  self->fcConfig = FcInitLoadConfigAndFonts();
+  self->fcConfig = FcInitLoadConfig();
+  /* TODO: We might want to re-enable Fontconfig's cache in the future, but for
+   * now disabling it avoids an assert in FcFini() */
+  /* FcConfigBuildFonts(self->fcConfig); */
 }
 
 void st_Fonts_destroyFontconfig() {
