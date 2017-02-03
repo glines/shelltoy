@@ -41,7 +41,7 @@ void st_BackgroundRenderer_destroy(
     st_BackgroundRenderer *self);
 
 void st_BackgroundRenderer_draw(
-    const st_BackgroundRenderer *self,
+    st_BackgroundRenderer *self,
     int viewportWidth,
     int viewportHeight);
 

@@ -47,28 +47,20 @@ float st_Glsltoy_BackgroundToy_getTime(
 void st_Glsltoy_BackgroundToy_initShader(
     st_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_initFramebuffer(
-    st_Glsltoy_BackgroundToy *self);
-
 void st_Glsltoy_BackgroundToy_initQuad(
     st_Glsltoy_BackgroundToy *self);
 
 void st_Glsltoy_BackgroundToy_drawShader(
     st_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_drawQuad(
-    st_Glsltoy_BackgroundToy *self,
-    int viewportWidth,
-    int viewportHeight);
-
 typedef struct st_Glsltoy_BackgroundToy_QuadVertex_ {
   GLfloat pos[3], texCoord[2];
 } st_Glsltoy_BackgroundToy_QuadVertex;
 
 struct st_Glsltoy_BackgroundToy_Internal_ {
-  st_Shader shader, blitShader;
-  GLuint texture, framebuffer, quadVertexBuffer, quadIndexBuffer, vao;
-  GLuint timeLocation, mouseLocation, resolutionLocation, toySamplerLocation;
+  st_Shader shader;
+  GLuint quadVertexBuffer, quadIndexBuffer, vao;
+  GLuint timeLocation, mouseLocation, resolutionLocation;
   int initializedDrawObjects;
   uint32_t startTicks;
 };
@@ -137,30 +129,6 @@ static const char *frag =
   "  gl_FragColor = vec4( vec3( color, color * 0.5, sin( color + time / 3.0 ) * 0.75 ), 1.0 );\n"
   "}\n";
 
-static const char *blit_vert =
-  "#version 330\n"
-  "\n"
-  "layout (location = 0) in vec3 vertPos;\n"
-  "layout (location = 1) in vec2 vertTexCoord;\n"
-  "\n"
-  "smooth out vec2 texCoord;\n"
-  "\n"
-  "void main(void) {\n"
-  "  gl_Position = vec4(vertPos, 1.0);\n"
-  "  texCoord = vertTexCoord;\n"
-  "}\n";
-
-static const char *blit_frag =
-  "#version 330\n"
-  "\n"
-  "uniform sampler2D toySampler;\n"
-  "\n"
-  "smooth in vec2 texCoord;\n"
-  "\n"
-  "void main(void) {\n"
-  "  gl_FragColor = vec4(texture(toySampler, texCoord).rgb, 1.0);\n"
-  "}\n";
-
 void st_Glsltoy_BackgroundToy_initShader(
     st_Glsltoy_BackgroundToy *self)
 {
@@ -171,13 +139,6 @@ void st_Glsltoy_BackgroundToy_initShader(
       strlen(vert),  /* vert_len */
       frag,  /* frag */
       strlen(frag)  /* frag_len */
-      );
-  st_Shader_init(
-      &self->internal->blitShader,
-      blit_vert,  /* vert */
-      strlen(blit_vert),  /* vert_len */
-      blit_frag,  /* frag */
-      strlen(blit_frag)  /* frag_len */
       );
 
   /* Get the uniform locations we are interested in */
@@ -191,83 +152,6 @@ void st_Glsltoy_BackgroundToy_initShader(
   GET_UNIFORM(time)
   GET_UNIFORM(mouse)
   GET_UNIFORM(resolution)
-  GET_UNIFORM(toySampler)
-}
-
-void st_Glsltoy_BackgroundToy_initFramebuffer(
-    st_Glsltoy_BackgroundToy *self)
-{
-  GLenum result;
-
-  /* Prepare the texture */
-  glGenTextures(
-      1,  /* n */
-      &self->internal->texture  /* textures */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glBindTexture(
-      GL_TEXTURE_2D,  /* target */
-      self->internal->texture  /* texture */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glTexParameteri(
-      GL_TEXTURE_2D,  /* target */
-      GL_TEXTURE_MIN_FILTER,  /* pname */
-      GL_LINEAR  /* param */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glTexParameteri(
-      GL_TEXTURE_2D,  /* target */
-      GL_TEXTURE_MAG_FILTER,  /* pname */
-      GL_LINEAR  /* param */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glTexImage2D(
-      GL_TEXTURE_2D,  /* target */
-      0,  /* level */
-      GL_RGBA,  /* internalFormat */
-      640,  /* width */
-      480,  /* height */
-      0,  /* border */
-      GL_RGBA,  /* format */
-      GL_UNSIGNED_INT_8_8_8_8,  /* type */
-      NULL  /* data */
-      );
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Prepare the framebuffer */
-  glGenFramebuffers(
-      1,  /* n */
-      &self->internal->framebuffer  /* ids */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glBindFramebuffer(
-      GL_DRAW_FRAMEBUFFER,  /* target */
-      self->internal->framebuffer  /* framebuffer */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glFramebufferTexture2D(
-      GL_DRAW_FRAMEBUFFER,  /* target */
-      GL_COLOR_ATTACHMENT0,  /* attachment */
-      GL_TEXTURE_2D,  /* textarget */
-      self->internal->texture,  /* texture */
-      0  /* level */
-      );
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Check the validity of the framebuffer */
-  result = glCheckFramebufferStatus(
-      GL_DRAW_FRAMEBUFFER  /* target */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  assert(result == GL_FRAMEBUFFER_COMPLETE);
-
-  /* Clear the framebuffer binding */
-  glBindFramebuffer(
-      GL_DRAW_FRAMEBUFFER,  /* target */
-      0  /* framebuffer */
-      );
-  FORCE_ASSERT_GL_ERROR();
 }
 
 void st_Glsltoy_BackgroundToy_initQuad(
@@ -387,11 +271,6 @@ void st_Glsltoy_BackgroundToy_drawShader(
       self->internal->shader.program  /* program */
       );
   FORCE_ASSERT_GL_ERROR();
-  glBindFramebuffer(
-      GL_DRAW_FRAMEBUFFER,  /* target */
-      self->internal->framebuffer  /* framebuffer */
-      );
-  FORCE_ASSERT_GL_ERROR();
   glBindBuffer(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->quadVertexBuffer  /* buffer */
@@ -421,7 +300,7 @@ void st_Glsltoy_BackgroundToy_drawShader(
       );
   FORCE_ASSERT_GL_ERROR();
 
-  /* Render the shader on a quad to our texture framebuffer */
+  /* Draw the shader on a quad to fill the current framebuffer */
   glBindBuffer(
       GL_ELEMENT_ARRAY_BUFFER,  /* target */
       self->internal->quadIndexBuffer  /* buffer */
@@ -433,74 +312,6 @@ void st_Glsltoy_BackgroundToy_drawShader(
       GL_UNSIGNED_INT,  /* type */
       0  /* indices */
       );
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Clear the vertex array object binding */
-  glBindVertexArray(
-      0  /* array */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  /* Clear the framebuffer binding */
-  glBindFramebuffer(
-      GL_DRAW_FRAMEBUFFER,  /* target */
-      0  /* framebuffer */
-      );
-  FORCE_ASSERT_GL_ERROR();
-}
-
-void st_Glsltoy_BackgroundToy_drawQuad(
-    st_Glsltoy_BackgroundToy *self,
-    int viewportWidth,
-    int viewportHeight)
-{
-  glUseProgram(
-      self->internal->blitShader.program  /* program */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glBindBuffer(
-      GL_ARRAY_BUFFER,  /* target */
-      self->internal->quadVertexBuffer  /* buffer */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glBindVertexArray(
-      self->internal->vao  /* array */
-      );
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Prepare the toy texture sampler */
-  glActiveTexture(
-      GL_TEXTURE0  /* texture */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glBindTexture(
-      GL_TEXTURE_2D,  /* target */
-      self->internal->texture  /* texture */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glUniform1i(
-      self->internal->toySamplerLocation,  /* location */
-      GL_TEXTURE0  /* v0 */
-      );
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Draw our texture to the screen */
-  glDisable(GL_DEPTH_TEST);
-  FORCE_ASSERT_GL_ERROR();
-  glBindBuffer(
-      GL_ELEMENT_ARRAY_BUFFER,  /* target */
-      self->internal->quadIndexBuffer  /* buffer */
-      );
-  FORCE_ASSERT_GL_ERROR();
-  glDrawElements(
-      GL_TRIANGLES,  /* mode */
-      6,  /* count */
-      GL_UNSIGNED_INT,  /* type */
-      0  /* indices */
-      );
-  FORCE_ASSERT_GL_ERROR();
-
-  /* Restore the depth test */
-  glEnable(GL_DEPTH_TEST);
   FORCE_ASSERT_GL_ERROR();
 
   /* Clear the vertex array object binding */
@@ -516,19 +327,12 @@ void st_Glsltoy_BackgroundToy_draw(
     int viewportHeight)
 {
   if (!self->internal->initializedDrawObjects) {
-    /* Initialize the GL objects on the first frame */
+    /* Initialize our GL objects on the first frame */
     st_Glsltoy_BackgroundToy_initShader(self);
-    st_Glsltoy_BackgroundToy_initFramebuffer(self);
     st_Glsltoy_BackgroundToy_initQuad(self);
     self->internal->initializedDrawObjects = 1;
   }
 
-  /* Render the shader to our texture framebuffer */
+  /* Render our shader to the current framebuffer */
   st_Glsltoy_BackgroundToy_drawShader(self);
-
-  /* Draw the rendered shader texture on a quad that fills the screen */
-  st_Glsltoy_BackgroundToy_drawQuad(
-      self,
-      viewportWidth,
-      viewportHeight);
 }
