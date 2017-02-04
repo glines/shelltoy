@@ -26,7 +26,10 @@
 #include <errno.h>
 #include <getopt.h>
 #include <libtsm.h>
+#include <signal.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include <shelltoy/version.h>
 #include "config.h"
@@ -96,6 +99,45 @@ void st_dispatchEvents() {
           /* FIXME: A flag should be set to re-draw now that the screen has
            * changed */
         }
+    }
+  }
+}
+
+/* This routine handles SIGCHLD signals which we recieve when any of our
+ * child processes (typically shells) exit. */
+void st_childExit(int signal) {
+  SDL_Event event;
+  pid_t pid;
+  int status;
+
+  assert(signal == SIGCHLD);
+
+  /* Loop for the case that more than one child has exited */
+  while (1) {
+    /* Check for waitable children without blocking */
+    pid = waitpid(
+        -1,  /* pid (wait for any child process) */
+        &status,  /* status */
+        WNOHANG  /* options */
+        );
+    if (pid == 0) {
+      /* No children are waitable; we are done here. */
+      return;
+    } else if (pid < 0) {
+      /* Some sort of error. Hmm... */
+      return;
+    }
+    /* TODO: Look for the terminal associated with the child that has exited */
+    /* XXX: We only have one terminal emulator window at the moment, so here we
+     * simply call exit(). */
+    assert(shelltoy.terminal.pty.child == pid);
+    fprintf(stderr, "Our child process %d has exited\n", pid);  /* XXX */
+    /* Push an SDL quit event so that we can cleanly exit */
+    event.type = SDL_QUIT;
+    if (SDL_PushEvent(&event) < 0) {
+      fprintf(stderr, "Failed to push quit event to SDL\n");
+      /* TODO: Fail gracefully */
+      assert(0);
     }
   }
 }
@@ -225,6 +267,21 @@ int main(int argc, char** argv) {
     }
   }
 
+  /* Register a signal handler for handling child processes (typically shells)
+   * that have exited */
+  {
+    const struct sigaction sigchldAction = {
+      .sa_handler = st_childExit,
+      .sa_flags = SA_NOCLDSTOP,  /* ignore suspended/resumed children */
+    };
+    sigaction(
+        SIGCHLD,  /* signum */
+        &sigchldAction,  /* act */
+        NULL  /* oldact */
+        );
+  }
+
+  /* Prepare the configuration */
   st_Config_init(&shelltoy.config);
   atexit(st_destroyConfig);
   if (pluginPath != NULL) {
