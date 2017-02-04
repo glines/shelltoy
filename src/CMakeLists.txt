@@ -15,7 +15,6 @@ add_executable(shelltoy
     plugin.c
     profile.c
     pty.c
-    screenRenderer.c
     terminal.c
     textRenderer.c
     textToy.c

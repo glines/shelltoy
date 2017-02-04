@@ -29,7 +29,6 @@
 
 #include "profile.h"
 #include "pty.h"
-#include "screenRenderer.h"
 
 struct st_Terminal_Internal;
 
@@ -68,5 +67,13 @@ void st_Terminal_keyInput(
     st_Terminal *self,
     SDL_Keycode keycode,
     uint16_t modifiers);
+
+st_ErrorCode
+st_Terminal_increaseFontSize(
+    st_Terminal *self);
+
+st_ErrorCode
+st_Terminal_decreaseFontSize(
+    st_Terminal *self);
 
 #endif

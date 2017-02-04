@@ -94,7 +94,7 @@ void st_Fonts_initFontconfig() {
   self->fcConfig = FcInitLoadConfig();
   /* TODO: We might want to re-enable Fontconfig's cache in the future, but for
    * now disabling it avoids an assert in FcFini() */
-  /* FcConfigBuildFonts(self->fcConfig); */
+  FcConfigBuildFonts(self->fcConfig);
 }
 
 void st_Fonts_destroyFontconfig() {

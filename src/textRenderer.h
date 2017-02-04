@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Jonathan Glines
+ * Copyright (c) 2016-2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,14 +21,37 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_TEXT_RENDERER_H_
-#define SHELLTOY_TEXT_RENDERER_H_
+#ifndef ST_TEXT_RENDERER_H_
+#define ST_TEXT_RENDERER_H_
 
-struct st_TextRenderer_Internal_;
-typedef struct st_TextRenderer_Internal_ st_TextRenderer_Internal;
+#include <libtsm.h>
+
+#include "glyphAtlas.h"
+#include "profile.h"
+
+struct st_TextRenderer_Internal;
 
 typedef struct st_TextRenderer_ {
-  st_TextRenderer_Internal *internal;
+  struct st_TextRenderer_Internal *internal;
 } st_TextRenderer;
+
+void st_TextRenderer_init(
+    st_TextRenderer *self,
+    st_GlyphRenderer *glyphRenderer,
+    st_Profile *profile);
+
+void st_TextRenderer_destroy(
+    st_TextRenderer *self);
+
+void st_TextRenderer_updateScreen(
+    st_TextRenderer *self,
+    struct tsm_screen *screen,
+    st_GlyphRenderer *glyphRenderer);
+
+void st_TextRenderer_draw(
+    const st_TextRenderer *self,
+    const st_GlyphRenderer *glyphRenderer,
+    int viewportWidth,
+    int viewportHeight);
 
 #endif

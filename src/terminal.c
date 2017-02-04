@@ -29,12 +29,13 @@
 #include "common/glError.h"
 #include "logging.h"
 #include "profile.h"
+#include "textRenderer.h"
 
 #include "terminal.h"
 
 /* Internal data structure */
 struct st_Terminal_Internal {
-  st_ScreenRenderer screenRenderer;
+  st_TextRenderer textRenderer;
   st_BackgroundRenderer backgroundRenderer;
   st_GlyphRenderer glyphRenderer;
   st_Profile *profile;
@@ -57,7 +58,8 @@ void st_Terminal_tsmWriteCallback(
     st_Terminal *self);
 void st_Terminal_initWindow(st_Terminal *self);
 void st_Terminal_initTSM(st_Terminal *self);
-void st_Terminal_calculatePseudoTerminalSize(
+void st_Terminal_updateScreenSize(st_Terminal *self);
+void st_Terminal_calculateScreenSize(
     st_Terminal *self,
     int *columns,
     int *rows);
@@ -195,7 +197,7 @@ void st_Terminal_initTSM(st_Terminal *self) {
       );
 }
 
-void st_Terminal_calculatePseudoTerminalSize(
+void st_Terminal_calculateScreenSize(
     st_Terminal *self,
     int *columns,
     int *rows)
@@ -205,8 +207,8 @@ void st_Terminal_calculatePseudoTerminalSize(
       &cellWidth,  /* width */
       &cellHeight  /* height */
       );
-  /* The pseudo terminal size is the number of (halfwidth) glyph cells that
-   * will fit in the terminal window */
+  /* The screen size is the number of (halfwidth) glyph cells that will fit in
+   * the terminal window */
   *columns = self->width / cellWidth;
   *rows = self->height / cellHeight;
 }
@@ -229,7 +231,7 @@ void st_Terminal_init(
       profile  /* profile */
       );
   /* Initialize the screen renderer */
-  st_ScreenRenderer_init(&self->internal->screenRenderer,
+  st_TextRenderer_init(&self->internal->textRenderer,
       &self->internal->glyphRenderer,  /* glyphRenderer */
       profile  /* profile */
       );
@@ -241,7 +243,7 @@ void st_Terminal_init(
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
-  st_Terminal_calculatePseudoTerminalSize(self,
+  st_Terminal_calculateScreenSize(self,
       &ptyWidth,  /* ptyWidth */
       &ptyHeight  /* ptyHeight */
       );
@@ -265,7 +267,7 @@ void st_Terminal_init(
 void st_Terminal_destroy(st_Terminal *self) {
   /* Destroy all of the objects that we initialized */
   st_BackgroundRenderer_destroy(&self->internal->backgroundRenderer);
-  st_ScreenRenderer_destroy(&self->internal->screenRenderer);
+  st_TextRenderer_destroy(&self->internal->textRenderer);
   st_GlyphRenderer_destroy(&self->internal->glyphRenderer);
   /* FIXME: Destroy the libtsm state machine */
   /* FIXME: Destroy the libtsm screen */
@@ -280,14 +282,25 @@ void st_Terminal_windowSizeChanged(
     int width,
     int height)
 {
-  int result;
-  int newColumns, newRows;
   /* Store the new window width and height */
   self->width = width;
   self->height = height;
   fprintf(stderr, "new window dimensions: %dx%d\n", width, height);
+  /* Update the screen size based on the new width and height */
+  st_Terminal_updateScreenSize(self);
+  /* Update the GL viewport size */
+  glViewport(0, 0, width, height);
+  FORCE_ASSERT_GL_ERROR();
+  /* Re-draw the screen */
+  st_Terminal_draw(self);
+  SDL_GL_SwapWindow(self->window);
+}
+
+void st_Terminal_updateScreenSize(st_Terminal *self) {
+  int newColumns, newRows;
+  int result;
   /* Calculate new pseudo terminal size */
-  st_Terminal_calculatePseudoTerminalSize(self,
+  st_Terminal_calculateScreenSize(self,
       &newColumns,  /* columns */
       &newRows  /* rows */
       );
@@ -312,17 +325,11 @@ void st_Terminal_windowSizeChanged(
         self->rows  /* height */
         );
     /* Update the screen */
-    st_ScreenRenderer_updateScreen(&self->internal->screenRenderer,
+    st_TextRenderer_updateScreen(&self->internal->textRenderer,
         self->screen,  /* screen */
         &self->internal->glyphRenderer  /* glyphRenderer */
         );
   }
-  /* Update the GL viewport size */
-  glViewport(0, 0, width, height);
-  FORCE_ASSERT_GL_ERROR();
-  /* Re-draw the screen */
-  st_Terminal_draw(self);
-  SDL_GL_SwapWindow(self->window);
 }
 
 void st_Terminal_updateScreen(st_Terminal *self) {
@@ -331,7 +338,7 @@ void st_Terminal_updateScreen(st_Terminal *self) {
   /* TODO: Make sure we have loaded all of the glyphs that we need */
   /* TODO: Make sure the changes get rendered immediately (might be useful to
    * render even sooner than the toy can render) */
-  st_ScreenRenderer_updateScreen(&self->internal->screenRenderer,
+  st_TextRenderer_updateScreen(&self->internal->textRenderer,
       self->screen,  /* screen */
       &self->internal->glyphRenderer  /* glyphRenderer */
       );
@@ -349,7 +356,7 @@ void st_Terminal_draw(st_Terminal *self) {
       );
 
   /* Draw the glyphs on the screen */
-  st_ScreenRenderer_draw(&self->internal->screenRenderer,
+  st_TextRenderer_draw(&self->internal->textRenderer,
       &self->internal->glyphRenderer,  /* glyphRenderer */
       self->width,  /* viewportWidth */
       self->height  /* viewportHeight */
@@ -448,6 +455,13 @@ void st_Terminal_keyInput(
       SDL_XKB(x)
       SDL_XKB(y)
       SDL_XKB(z)
+      case SDLK_EQUALS:  /* plus */
+        /* Shortcut for increasing the font size */
+        /* TODO: Allow for increase font size shortcut to be configured */
+        st_Terminal_increaseFontSize(self);
+        return;
+      case SDLK_MINUS:
+        return;
     }
   } else {
     /* Convert miscellaneous SDL keys to XKB keys */
@@ -530,7 +544,7 @@ st_Terminal_increaseFontSize(
   float fontSize;  /* Font size in pixels */
   st_ErrorCode error;
 
-  /* Look for the next largest available font for this face */
+  /* Look for the next largest available font */
   fontSize = ceil(self->internal->profile->fontSize) + 1.0f;
   for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
     error = st_Profile_setFont(self->internal->profile,
@@ -547,10 +561,28 @@ st_Terminal_increaseFontSize(
     return error;
   }
 
-  /* Load the new font */
-  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
-      self->internal->profile->fontPath,
-      self->internal->profile->fontSize);
+//  /* TODO: Inform the text renderer of the new nominal font size */
+//  //st_TextRenderer_setFontSize();
+//
+//  /* Update the screen size based on the new font size */
+//  st_Terminal_updateScreenSize(self);
+//
+//  /* Load the new font with a new glyph renderer */
+//  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
+//      self->internal->profile->fontPath,
+//      self->internal->profile->fontSize);
+//
+//  /* Generate a new ASCII glyph atlas with our new glyph renderer */
+//  st_GlyphAtlas_init(glyphAtlas);
+//  st_GlyphAtlas_renderASCIIGlyphs(glyphAtlas,
+//      glyphRenderer  /* */
+//      );
+//
+//  /* Inform the text renderer of our new glyph atlas */
+//  st_TextRenderer_setGlyph(&self->internal->textRenderer,
+//      self->internal->glyphRenderer,  /* glyphRenderer */
+//        /* glyphAtlas */
+//      );
 
   return error;
 }

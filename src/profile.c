@@ -84,13 +84,11 @@ st_ErrorCode st_Profile_setFont(
   FcPatternDestroy(pattern);
 
   /* XXX: Print out all of the matching fonts */
-  /*
   for (int i = 0; i < resultFontSet->nfont; ++i) {
     FcPattern *font;
     font = resultFontSet->fonts[i];
     FcPatternPrint(font);
   }
-  */
 
   if (resultFontSet->nfont <= 0) {
     fprintf(stderr, "Error: Fontconfig could not find any suitable fonts.\n");
@@ -121,6 +119,14 @@ st_ErrorCode st_Profile_setFont(
   fprintf(stderr, "Fontconfig found suitable font: '%s'\n",
       self->fontPath);
   FcFontSetDestroy(resultFontSet);
+
+  /* Store the new font size and face name */
+  self->fontSize = fontSize;
+  if ((self->fontFace == NULL) || (strcmp(self->fontFace, fontFace) != 0)) {
+    free(self->fontFace);
+    self->fontFace = malloc(strlen(fontFace) + 1);
+    strcpy(self->fontFace, fontFace);
+  }
 
   return ST_NO_ERROR;
 }

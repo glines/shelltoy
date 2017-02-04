@@ -76,6 +76,7 @@ st_GlyphRenderer_loadFont(
   ft = st_Fonts_getFreeTypeInstance();
   /* FIXME: This call that uses the Freetype library handle might be better as
    * part of a helper method inside of fonts.c */
+  /* FIXME: We need to free the FT_Face object we already have */
   error = FT_New_Face(
       ft,  /* library */
       fontPath,  /* filepathname */
