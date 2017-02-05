@@ -1,6 +1,7 @@
 add_library(glsltoy SHARED
-    plugin.c
     backgroundToy.c
+    plugin.c
+    textToy.c
     )
 target_link_libraries(glsltoy
     common

@@ -100,9 +100,13 @@ void st_GlyphAtlas_addGlyph(
 int st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
+    int cellWidth,
+    int cellHeight,
     st_BoundingBox *bbox,
-    int *xOffset,
-    int *yOffset,
+    float *xOffset,
+    float *yOffset,
+    float *glyphWidth,
+    float *glyphHeight,
     int *atlasTextureIndex);
 
 void st_GlyphAtlas_getTextures(

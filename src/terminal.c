@@ -202,15 +202,10 @@ void st_Terminal_calculateScreenSize(
     int *columns,
     int *rows)
 {
-  int cellWidth, cellHeight;
-  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
-      &cellWidth,  /* width */
-      &cellHeight  /* height */
-      );
   /* The screen size is the number of (halfwidth) glyph cells that will fit in
    * the terminal window */
-  *columns = self->width / cellWidth;
-  *rows = self->height / cellHeight;
+  *columns = self->width / self->cellWidth;
+  *rows = self->height / self->cellHeight;
 }
 
 void st_Terminal_init(
@@ -230,7 +225,12 @@ void st_Terminal_init(
   st_GlyphRenderer_init(&self->internal->glyphRenderer,
       profile  /* profile */
       );
-  /* Initialize the screen renderer */
+  /* Store the cell size as calculated by the glyph renderer */
+  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+      &self->cellWidth,  /* width */
+      &self->cellHeight  /* height */
+      );
+  /* Initialize the text renderer */
   st_TextRenderer_init(&self->internal->textRenderer,
       &self->internal->glyphRenderer,  /* glyphRenderer */
       profile  /* profile */
@@ -333,11 +333,6 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
 }
 
 void st_Terminal_updateScreen(st_Terminal *self) {
-  /* TODO: The update should probably be queued as an event... maybe? */
-  /* TODO: Read the character grid from the libtsm screen */
-  /* TODO: Make sure we have loaded all of the glyphs that we need */
-  /* TODO: Make sure the changes get rendered immediately (might be useful to
-   * render even sooner than the toy can render) */
   st_TextRenderer_updateScreen(&self->internal->textRenderer,
       self->screen,  /* screen */
       &self->internal->glyphRenderer  /* glyphRenderer */
@@ -357,7 +352,8 @@ void st_Terminal_draw(st_Terminal *self) {
 
   /* Draw the glyphs on the screen */
   st_TextRenderer_draw(&self->internal->textRenderer,
-      &self->internal->glyphRenderer,  /* glyphRenderer */
+      self->cellWidth,  /* cellWidth */
+      self->cellHeight,  /* cellHeight */
       self->width,  /* viewportWidth */
       self->height  /* viewportHeight */
       );
@@ -457,10 +453,15 @@ void st_Terminal_keyInput(
       SDL_XKB(z)
       case SDLK_EQUALS:  /* plus */
         /* Shortcut for increasing the font size */
+        /* FIXME: Somehow this code does not swallow the = sign as we would
+         * like, i.e. = is still sent to the pty. */
         /* TODO: Allow for increase font size shortcut to be configured */
         st_Terminal_increaseFontSize(self);
         return;
       case SDLK_MINUS:
+        /* Shortcut for decreasing the font size */
+        /* TODO: Allow for decrease font size shortcut to be configured */
+        st_Terminal_decreaseFontSize(self);
         return;
     }
   } else {
@@ -561,28 +562,87 @@ st_Terminal_increaseFontSize(
     return error;
   }
 
-//  /* TODO: Inform the text renderer of the new nominal font size */
-//  //st_TextRenderer_setFontSize();
-//
-//  /* Update the screen size based on the new font size */
-//  st_Terminal_updateScreenSize(self);
-//
-//  /* Load the new font with a new glyph renderer */
-//  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
-//      self->internal->profile->fontPath,
-//      self->internal->profile->fontSize);
-//
-//  /* Generate a new ASCII glyph atlas with our new glyph renderer */
-//  st_GlyphAtlas_init(glyphAtlas);
-//  st_GlyphAtlas_renderASCIIGlyphs(glyphAtlas,
-//      glyphRenderer  /* */
-//      );
-//
-//  /* Inform the text renderer of our new glyph atlas */
-//  st_TextRenderer_setGlyph(&self->internal->textRenderer,
-//      self->internal->glyphRenderer,  /* glyphRenderer */
-//        /* glyphAtlas */
-//      );
+  /* Load the new font with our glyph renderer */
+  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
+      self->internal->profile->fontPath,
+      self->internal->profile->fontSize);
+  ST_ASSERT_ERROR_CODE(error);
 
+  /* FIXME: We need to re-generate the glyphs stored in the current glyph atlas
+   * within the text renderer. This could be done with a healthy amount of
+   * threading since rendering glyphs is expensive. */
+
+  /* Update the cell size to the new size as calculated by the glyph renderer */
+  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+      &self->cellWidth,  /* width */
+      &self->cellHeight  /* height */
+      );
+
+  /* Update the screen size based on the new cell size */
+  st_Terminal_updateScreenSize(self);
+
+  /* Re-draw the screen */
+  st_Terminal_draw(self);
+  SDL_GL_SwapWindow(self->window);
+
+  /* TODO: Do we need an error code for not being able to increase the font
+   * size? */
+  return error;
+}
+
+st_ErrorCode
+st_Terminal_decreaseFontSize(
+    st_Terminal *self)
+{
+#define MAX_DECREASE_FONT_SIZE_ATTEMPTS 32
+  float fontSize;  /* Font size in pixels */
+  st_ErrorCode error;
+
+  /* Look for the next smallest available font, while avoiding negative
+   * values */
+  fontSize = floor(self->internal->profile->fontSize) - 1.0f;
+  for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
+    error = st_Profile_setFont(self->internal->profile,
+        self->internal->profile->fontFace,
+        fontSize);
+    if (error == ST_NO_ERROR)
+      break;
+
+    fontSize -= 1.0f;
+    if (fontSize < 1.0f) {
+      return ST_ERROR_NEGATIVE_FONT_SIZE;
+    }
+  }
+
+  if (error != ST_NO_ERROR) {
+    /* We were unable to find the font in a larger size */
+    return error;
+  }
+
+  /* Load the new font with our glyph renderer */
+  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
+      self->internal->profile->fontPath,
+      self->internal->profile->fontSize);
+  ST_ASSERT_ERROR_CODE(error);
+
+  /* FIXME: We need to re-generate the glyphs stored in the current glyph atlas
+   * within the text renderer. This could be done with a healthy amount of
+   * threading since rendering glyphs is expensive. */
+
+  /* Update the cell size to the new size as calculated by the glyph renderer */
+  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+      &self->cellWidth,  /* width */
+      &self->cellHeight  /* height */
+      );
+
+  /* Update the screen size based on the new cell size */
+  st_Terminal_updateScreenSize(self);
+
+  /* Re-draw the screen */
+  st_Terminal_draw(self);
+  SDL_GL_SwapWindow(self->window);
+
+  /* TODO: Do we need an error code for not being able to increase the font
+   * size? */
   return error;
 }

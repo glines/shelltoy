@@ -11,9 +11,11 @@ in int atlasIndex;  /* Index of the atlas texture to use for the glyph
 in vec2 atlasPos;  /* The position of the glyph in the atlas texture. This
                       position is the bottom-left corner of the glyph in pixel
                       coordinates. */
-in vec2 glyphSize;  /* The dimension of the glyph as it appears in the atlas,
-                       including padding. Most glyphs are slightly smaller than
-                       the terminal cell. */
+in vec2 atlasGlyphSize;  /* The dimension of the glyph as it appears in the
+                            atlas. */
+in vec2 glyphSize;  /* The dimension of the glyph as it appears on the screen.
+                       Most glyphs are slightly smaller than the terminal cell,
+                       but some can be larger. */
 in vec2 offset;  /* The offset of the glyph within its cell. As they are stored
                     in the atlas, glyphs do not occupy an entire cell. Instead,
                     this offset must be applied to the glyph from the
@@ -54,7 +56,7 @@ void main(void) {
   vec2 normalizedPos = 2.0 * (screenPos / viewportSize) - vec2(1.0);
 
   /* Compute the texture coordinates of our glyph in the atlas */
-  atlasTexCoord = (atlasPos + vertPos * glyphSize) / vec2(atlasSize);
+  atlasTexCoord = (atlasPos + vertPos * atlasGlyphSize) / vec2(atlasSize);
 
   /* Pass foreground and background colors to the fragment shader */
   fragFgColor = fgColor;

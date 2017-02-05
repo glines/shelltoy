@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,60 +21,41 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_TERMINAL_H_
-#define SHELLTOY_TERMINAL_H_
+#include "textToy.h"
 
-#include <SDL.h>
-#include <libtsm.h>
+SHELLTOY_TEXT_TOY_DISPATCH(
+    st_Glsltoy_TextToy,  /* TEXT_TOY_STRUCT */
+    (st_TextToy_Init)st_Glsltoy_TextToy_init,  /* INIT_CB */
+    (st_TextToy_Destroy)st_Glsltoy_TextToy_destroy,  /* DESTROY_CB */
+    (st_TextToy_Draw)st_Glsltoy_TextToy_draw  /* DRAW_CB */
+    )
 
-#include "profile.h"
-#include "pty.h"
+struct st_Glsltoy_TextToy_Internal_ {
+  int foo;
+};
 
-struct st_Terminal_Internal;
+void st_Glsltoy_TextToy_init(
+    st_Glsltoy_TextToy *self,
+    const char *name,
+    json_t *config)
+{
+  /* Allocate memory for internal structures */
+  self->internal = (st_Glsltoy_TextToy_Internal *)malloc(
+      sizeof(st_Glsltoy_TextToy_Internal));
+}
 
-typedef struct {
-  SDL_Window *window;
-  SDL_GLContext glContext;
-  st_PTY pty;
-  struct tsm_screen *screen;
-  struct tsm_vte *vte;
-  int width, height;
-  int cellWidth, cellHeight;
-  int columns, rows;
+void st_Glsltoy_TextToy_destroy(
+    st_Glsltoy_TextToy *self)
+{
+  /* Free allocated memory */
+  free(self->internal);
+}
 
-  struct st_Terminal_Internal *internal;
-} st_Terminal;
-
-void st_Terminal_init(
-    st_Terminal *self,
-    st_Profile *profile,
-    int argc,
-    char **argv);
-void st_Terminal_destroy(st_Terminal *self);
-
-void st_Terminal_windowSizeChanged(
-    st_Terminal *self,
-    int width,
-    int height);
-
-void st_Terminal_updateScreen(st_Terminal *self);
-
-void st_Terminal_draw(st_Terminal *self);
-
-void st_Terminal_textInput(
-    st_Terminal *self,
-    const char *text);
-void st_Terminal_keyInput(
-    st_Terminal *self,
-    SDL_Keycode keycode,
-    uint16_t modifiers);
-
-st_ErrorCode
-st_Terminal_increaseFontSize(
-    st_Terminal *self);
-
-st_ErrorCode
-st_Terminal_decreaseFontSize(
-    st_Terminal *self);
-
-#endif
+void st_Glsltoy_TextToy_draw(
+    st_Glsltoy_TextToy *self,
+    int viewportWidth,
+    int viewportHeight)
+{
+  /* TODO */
+  fprintf(stderr, "inside st_Glsltoy_TextToy_draw()\n");
+}

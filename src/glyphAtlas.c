@@ -35,6 +35,7 @@
 typedef struct st_GlyphAtlasEntry_ {
   st_BoundingBox bbox;
   int xOffset, yOffset;
+  int cellWidth, cellHeight;
   uint32_t ch;
 } st_GlyphAtlasEntry;
 
@@ -121,9 +122,17 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   int textureSize;
   const int padding = 2;
   int error;
+  int cellWidth, cellHeight;
 
   pendingGlyphs = (st_GlyphAtlasEntry*)malloc(
       sizeof(st_GlyphAtlasEntry) * NUM_PRINT_ASCII);
+
+  /* We will need to store the cell size with each glyph rendered, for future
+   * reference if the cell size ever changes */
+  st_GlyphRenderer_getCellSize(glyphRenderer,
+      &cellWidth,  /* width */
+      &cellHeight  /* height */
+      );
 
   /* Iterate over the printable ASCII characters and gather glyphs (without
    * rendering them) from this face */
@@ -157,6 +166,9 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     /* Compensate for the padding in the glyph offset */
     currentGlyph->xOffset -= padding;
     currentGlyph->yOffset -= padding;
+    /* Store the cell size for which this glyph was rendered */
+    currentGlyph->cellWidth = cellWidth;
+    currentGlyph->cellHeight = cellHeight;
     /*
     fprintf(stderr,
         "currentGlyph: '%c'\n"
@@ -356,12 +368,17 @@ void st_GlyphAtlas_renderASCIIGlyphs(
 int st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
+    int cellWidth,
+    int cellHeight,
     st_BoundingBox *bbox,
-    int *xOffset,
-    int *yOffset,
+    float *xOffset,
+    float *yOffset,
+    float *glyphWidth,
+    float *glyphHeight,
     int *atlasTextureIndex)
 {
   int a, b, i;
+  float widthRatio, heightRatio;
   st_GlyphAtlasEntry *currentGlyph;
   if (self->internal->numGlyphs == 0)
     return 1;
@@ -385,8 +402,15 @@ int st_GlyphAtlas_getGlyph(
   if (currentGlyph->ch != character)
     return 1;
   memcpy(bbox, &currentGlyph->bbox, sizeof(*bbox));
-  *xOffset = currentGlyph->xOffset;
-  *yOffset = currentGlyph->yOffset;
+  /* TODO: Calculate the offset and dimensions of the glyph using the ratio of
+   * the current cell dimensions over the cell dimensions for which the glyph
+   * was rendered at */
+  widthRatio = (float)cellWidth / (float)currentGlyph->cellWidth;
+  heightRatio = (float)cellHeight / (float)currentGlyph->cellHeight;
+  *xOffset = currentGlyph->xOffset * widthRatio;
+  *yOffset = currentGlyph->yOffset * heightRatio;
+  *glyphWidth = currentGlyph->bbox.dim[0] * widthRatio;
+  *glyphHeight = currentGlyph->bbox.dim[1] * heightRatio;
   /* FIXME: Set the atlas texture index once we start using more than one atlas
    * texture */
   *atlasTextureIndex = 0;

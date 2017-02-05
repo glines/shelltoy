@@ -50,7 +50,8 @@ void st_TextRenderer_updateScreen(
 
 void st_TextRenderer_draw(
     const st_TextRenderer *self,
-    const st_GlyphRenderer *glyphRenderer,
+    int cellWidth,
+    int cellHeight,
     int viewportWidth,
     int viewportHeight);
 

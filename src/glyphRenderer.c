@@ -28,10 +28,14 @@
 
 #include "glyphRenderer.h"
 
-/* We convert the fixed-point 26.6 format (a.k.a. 1/64th pixel format) to an
+/* Convert the fixed-point 26.6 format (a.k.a. 1/64th pixel format) to an
  * integer value in pixels, rounding up */
 #define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
     ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
+/* Convert a floating point value to the fixed-point 26.6 format */
+#define FLOAT_TO_TWENTY_SIX_SIX(value) ( \
+    ((int)(trunc(value)) << 6) \
+    + (int)trunc(((value) - trunc(value)) * (float)(1 << 6)))
 
 /* Private methods */
 void st_GlyphRenderer_updateCellSize(
@@ -100,9 +104,9 @@ st_GlyphRenderer_loadFont(
   error = FT_Set_Char_Size(
       self->internal->face,  /* face */
       0,  /* char_width */
-      4 << 6,  /* char_height */
-      300,  /* horz_resolution */
-      300  /* vert_resolution */
+      FLOAT_TO_TWENTY_SIX_SIX(fontSize),  /* char_height */
+      144,  /* horz_resolution */
+      144  /* vert_resolution */
       );
   if (error != FT_Err_Ok) {
     fprintf(stderr,

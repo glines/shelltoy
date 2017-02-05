@@ -38,6 +38,7 @@ typedef struct st_TextRenderer_QuadVertex_ {
 
 typedef struct st_TextRenderer_GlyphInstance_ {
   float atlasPos[2];
+  float atlasGlyphSize[2];
   float glyphSize[2];
   float offset[2];
   int cell[2];
@@ -52,9 +53,11 @@ typedef struct st_TextRenderer_BackgroundInstance_ {
 typedef struct st_TextRenderer_ScreenDrawCallbackData_ {
   st_TextRenderer *self;
   st_GlyphRenderer *glyphRenderer;
+  int cellWidth, cellHeight;
 } st_TextRenderer_ScreenDrawCallbackData;
 
 struct st_TextRenderer_Internal {
+  st_TextToy *textToy;
   st_GlyphAtlas *atlas;
   st_Profile *profile;
   st_TextRenderer_GlyphInstance *glyphs;
@@ -65,6 +68,7 @@ struct st_TextRenderer_Internal {
   GLuint glyphInstanceBuffer, glyphInstanceVAO;
   GLuint backgroundInstanceBuffer, backgroundInstanceVAO;
   GLuint glyphShader, backgroundShader;
+  int cellWidth, cellHeight;
 };
 
 /* Private method declarations */
@@ -100,7 +104,9 @@ void st_TextRenderer_addGlyphInstance(
     uint32_t ch,
     int posx,
     int posy,
-    const struct tsm_screen_attr *attr);
+    const struct tsm_screen_attr *attr,
+    int cellWidth,
+    int cellHeight);
 st_ErrorCode
 st_TextRenderer_colorCodeToRGB(
     const st_TextRenderer *self,
@@ -132,6 +138,8 @@ void st_TextRenderer_init(
   self->internal->numBackgroundCells = 0;
   /* Store a pointer to the profile */
   self->internal->profile = profile;
+  /* Store a pointer to the text toy, for fancy text rendering */
+  self->internal->textToy = st_Profile_getTextToy(profile);
   /* Initialize our GL resources */
   st_TextRenderer_initShaders(self);
   st_TextRenderer_initBuffers(self);
@@ -208,8 +216,8 @@ void st_TextRenderer_initVAO(
 void st_TextRenderer_initGlyphInstanceVAO(
     st_TextRenderer *self)
 {
-  GLuint vertPosLocation, atlasPosLocation, glyphSizeLocation, offsetLocation,
-         cellLocation, fgColorLocation;
+  GLuint vertPosLocation, atlasPosLocation, atlasGlyphSizeLocation,
+         glyphSizeLocation, offsetLocation, cellLocation, fgColorLocation;
 
   glGenVertexArrays(1, &self->internal->glyphInstanceVAO);
   FORCE_ASSERT_GL_ERROR();
@@ -256,6 +264,24 @@ void st_TextRenderer_initGlyphInstanceVAO(
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(atlasPosLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure atlasGlyphSize */
+  atlasGlyphSizeLocation = glGetAttribLocation(
+      self->internal->glyphShader,
+      "atlasGlyphSize");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(atlasGlyphSizeLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      atlasGlyphSizeLocation,  /* index */
+      2,  /* size */
+      GL_FLOAT,  /* type */
+      0,  /* normalized */
+      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(st_TextRenderer_GlyphInstance, atlasGlyphSize)  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(atlasGlyphSizeLocation, 1);
   FORCE_ASSERT_GL_ERROR();
   /* Configure glyphSize */
   glyphSizeLocation = glGetAttribLocation(
@@ -462,6 +488,10 @@ void st_TextRenderer_updateScreen(
    * contents */
   data.self = self;
   data.glyphRenderer = glyphRenderer;
+  st_GlyphRenderer_getCellSize(glyphRenderer,
+      &data.cellWidth,  /* cellWidth */
+      &data.cellHeight  /* cellHeight */
+      );
   self->internal->numGlyphs = 0;
   self->internal->numBackgroundCells = 0;
   tsm_screen_draw(
@@ -536,7 +566,9 @@ void st_TextRenderer_screenDrawCallback(
         *ch,  /* ch */
         posx,  /* posx */
         posy,  /* posx */
-        attr  /* attr */
+        attr,  /* attr */
+        data->cellWidth,  /* cellWidth */
+        data->cellHeight  /* cellWidth */
         );
   }
 }
@@ -609,20 +641,27 @@ void st_TextRenderer_addGlyphInstance(
     uint32_t ch,
     int posx,
     int posy,
-    const struct tsm_screen_attr *attr)
+    const struct tsm_screen_attr *attr,
+    int cellWidth,
+    int cellHeight)
 {
   st_TextRenderer_GlyphInstance glyphInstance;
   st_BoundingBox bbox;
-  int atlasIndex, xOffset, yOffset;
+  float xOffset, yOffset, glyphWidth, glyphHeight;
+  int atlasIndex;
   int error, result;
   int8_t code;
 
   /* Look for this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(self->internal->atlas,
       ch,  /* character */
+      cellWidth,  /* cellWidth */
+      cellHeight,  /* cellWidth */
       &bbox,  /* bbox */
       &xOffset,  /* xOffset */
       &yOffset,  /* yOffset */
+      &glyphWidth,  /* glyphWidth */
+      &glyphHeight, /* glyphHeight */
       &atlasIndex  /* atlasTextureIndex */
       );
   if (error) {
@@ -634,14 +673,16 @@ void st_TextRenderer_addGlyphInstance(
   }
 
   /* Set up the glyph instance data structure */
-  glyphInstance.glyphSize[0] = (float)bbox.w;
-  glyphInstance.glyphSize[1] = (float)bbox.h;
+  glyphInstance.atlasGlyphSize[0] = (float)bbox.w;
+  glyphInstance.atlasGlyphSize[1] = (float)bbox.h;
+  glyphInstance.glyphSize[0] = glyphWidth;
+  glyphInstance.glyphSize[1] = glyphHeight;
   glyphInstance.atlasPos[0] = (float)bbox.x;
   glyphInstance.atlasPos[1] = (float)bbox.y;
   glyphInstance.cell[0] = posx;
   glyphInstance.cell[1] = posy;
-  glyphInstance.offset[0] = (float)xOffset;
-  glyphInstance.offset[1] = (float)yOffset;
+  glyphInstance.offset[0] = xOffset;
+  glyphInstance.offset[1] = yOffset;
 
   /* Determine the foreground color */
   code = attr->inverse ? attr->bccode : attr->fccode;
@@ -873,20 +914,9 @@ void st_TextRenderer_drawGlyphs(
 
 void st_TextRenderer_draw(
     const st_TextRenderer *self,
-    const st_GlyphRenderer *glyphRenderer,
+    int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight)
 {
-  int cellSize[2];
-
-  /* Get cell size from our glyph renderer */
-  /* FIXME: The need for this call seems a little strange. Our glyphs have long
-   * since been rendered to the glyph atlas. We should have simply stored the
-   * cell size when the atlas was updated. */
-  st_GlyphRenderer_getCellSize(glyphRenderer,
-      &cellSize[0],  /* width */
-      &cellSize[1]  /* height */
-      );
-
   /* Configure blending mode */
   glEnable(GL_BLEND);
   ASSERT_GL_ERROR();
@@ -900,16 +930,16 @@ void st_TextRenderer_draw(
 
   /* Draw the background cells */
   st_TextRenderer_drawBackgroundCells(self,
-      cellSize[0],  /* cellWidth */
-      cellSize[1],  /* cellHeight */
+      cellWidth,  /* cellWidth */
+      cellHeight,  /* cellHeight */
       viewportWidth,  /* viewportWidth */
       viewportHeight  /* viewportHeight */
       );
 
   /* Draw the glyphs on top of the background cells */
   st_TextRenderer_drawGlyphs(self,
-      cellSize[0],  /* cellWidth */
-      cellSize[1],  /* cellHeight */
+      cellWidth,  /* cellWidth */
+      cellHeight,  /* cellHeight */
       viewportWidth,  /* viewportWidth */
       viewportHeight  /* viewportHeight */
       );

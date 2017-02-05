@@ -8,6 +8,7 @@
 
 struct st_Profile_Internal_ {
   st_BackgroundToy *backgroundToy;
+  st_TextToy *textToy;
 };
 
 void st_Profile_init(
@@ -20,6 +21,7 @@ void st_Profile_init(
   /* Allocate memory for internal structures */
   self->internal = (st_Profile_Internal *)malloc(sizeof(st_Profile_Internal));
   self->internal->backgroundToy = NULL;
+  self->internal->textToy = NULL;
   /* Copy the name string */
   self->name = (char *)malloc(strlen(name) + 1);
   strcpy(self->name, name);
@@ -143,4 +145,18 @@ st_Profile_getBackgroundToy(
     st_Profile *self)
 {
   return self->internal->backgroundToy;
+}
+
+void st_Profile_setTextToy(
+    st_Profile *self,
+    st_TextToy *textToy)
+{
+  self->internal->textToy = textToy;
+}
+
+st_TextToy *
+st_Profile_getTextToy(
+    st_Profile *self)
+{
+  return self->internal->textToy;
 }

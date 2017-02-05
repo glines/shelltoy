@@ -75,6 +75,7 @@ void st_Glsltoy_BackgroundToy_init(
       sizeof(st_Glsltoy_BackgroundToy_Internal));
   self->internal->initializedDrawObjects = 0;
   self->internal->startTicks = SDL_GetTicks();
+  /* TODO: Read the config */
 }
 
 void st_Glsltoy_BackgroundToy_destroy(

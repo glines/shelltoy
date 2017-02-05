@@ -28,6 +28,7 @@
 
 #include <shelltoy/backgroundToy.h>
 #include <shelltoy/error.h>
+#include <shelltoy/textToy.h>
 
 #include "color.h"
 
@@ -69,6 +70,14 @@ void st_Profile_setBackgroundToy(
 
 st_BackgroundToy *
 st_Profile_getBackgroundToy(
+    st_Profile *self);
+
+void st_Profile_setTextToy(
+    st_Profile *self,
+    st_TextToy *textToy);
+
+st_TextToy *
+st_Profile_getTextToy(
     st_Profile *self);
 
 
