@@ -368,7 +368,7 @@ int main(int argc, char** argv) {
       ST_LOG_ERROR("%s", "SHELL environment variable not set");
       shell_argv_buff[0] = "/usr/bin/env";
       shell_argv_buff[1] = "bash";
-      shell_argv_buff[2] = "-i";  /* interactive + login */
+      shell_argv_buff[2] = "-il";  /* interactive + login */
       shell_argv_buff[3] = NULL;
       shell_argv = shell_argv_buff;
       shell_argc = 3;
