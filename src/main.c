@@ -74,10 +74,39 @@ void st_dispatchEvents() {
             );
         break;
       case SDL_KEYDOWN:
+        /* Stop receiving text input events while certain modifier keys are
+         * pressed */
+        switch (event.key.keysym.sym) {
+          case SDLK_LALT:
+          case SDLK_LCTRL:
+          case SDLK_RALT:
+          case SDLK_RCTRL:
+            SDL_StopTextInput();
+            break;
+        }
         st_Terminal_keyInput(&shelltoy.terminal,
-            event.key.keysym.sym,  /* keycode */
+            event.key.keysym.sym,  /* virtual key code */
             event.key.keysym.mod  /* modifiers */
             );
+        break;
+      case SDL_KEYUP:
+        /* Resume receiving text input events once all modifier keys are
+         * released */
+        switch (event.key.keysym.sym) {
+          case SDLK_LALT:
+          case SDLK_LCTRL:
+          case SDLK_RALT:
+          case SDLK_RCTRL:
+            if ((SDL_GetModState() & (
+                  KMOD_LALT |
+                  KMOD_LCTRL |
+                  KMOD_RALT |
+                  KMOD_RCTRL)) == 0)
+            {
+              SDL_StartTextInput();
+            }
+            break;
+        }
         break;
       /* TODO: Handle SDL_WINDOWEVENT_CLOSE events if we ever have more than
        * one terminal at a time. */
@@ -362,6 +391,7 @@ int main(int argc, char** argv) {
     );
   atexit(st_destroyTerminal);
 
+  SDL_StartTextInput();  /* Receive text input by default */
   SDL_GL_SetSwapInterval(1);  /* Wait for vsync */
   while (1) {
     st_dispatchEvents();
