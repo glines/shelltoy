@@ -322,12 +322,10 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
         self->rows  /* height */
         );
     /* Update the screen */
-    /* FIXME: I don't think the following section of code helps latency, but
-     * it's difficult to say for sure. */
-//    st_TextRenderer_updateScreen(&self->internal->textRenderer,
-//        self->screen,  /* screen */
-//        &self->internal->glyphRenderer  /* glyphRenderer */
-//        );
+    st_TextRenderer_updateScreen(&self->internal->textRenderer,
+        self->screen,  /* screen */
+        &self->internal->glyphRenderer  /* glyphRenderer */
+        );
   }
 }
 
