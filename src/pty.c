@@ -62,7 +62,9 @@ void st_PTY_pushEvent(st_PTY *self) {
   event.type = st_PTY_eventType();
   event.user.data1 = self;
   if (SDL_PushEvent(&event) < 0) {
-    fprintf(stderr, "Failed to push PTY event to SDL\n");
+    fprintf(stderr,
+        "Failed to push PTY event to SDL: %s\n",
+        SDL_GetError());
     /* TODO: Fail gracefully */
     assert(0);
   }
@@ -72,7 +74,10 @@ void st_PTY_pushEvent(st_PTY *self) {
  * is very good at servicing multiple file descriptors */
 void *st_PTY_watchPTY(st_PTY *self) {
   struct epoll_event ev;
+  int eventType;
   /* Thread routine for watching for input from the pseudo terminal master */
+
+  eventType = st_PTY_eventType();
 
   while (1) {
     /* TODO: Check for signal to join main thread */
@@ -87,6 +92,18 @@ void *st_PTY_watchPTY(st_PTY *self) {
         1,  /* maxevents */
         -1  /* timeout */
         );
+
+    /* Avoid filling the SDL event queue */
+    if (SDL_PeepEvents(
+          NULL,  /* events */
+          1,  /* numevents */
+          SDL_PEEKEVENT,  /* action */
+          eventType,  /* minType */
+          eventType  /* maxType */
+          ) >= 1)
+    {
+      continue;
+    }
 
     /* Notify the main thread with an SDL event */
     st_PTY_pushEvent(self);
