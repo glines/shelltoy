@@ -426,7 +426,6 @@ void st_Terminal_keyInput(
       SDL_XKB(e)
       SDL_XKB(f)
       SDL_XKB(g)
-      /* FIXME: CTRL+h does not work for some reason. */
       SDL_XKB(h)
       SDL_XKB(i)
       SDL_XKB(j)
