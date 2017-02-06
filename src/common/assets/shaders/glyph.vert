@@ -31,7 +31,8 @@ in vec4 bgColor;  /* The color of the background behind the glyph. Notice that
 out vec2 atlasTexCoord;  /* The coordinates at which to access the atlas
                             texture are passed to the fragment shader. */
 flat out vec3 fragFgColor;
-flat out vec4 fragBgColor;
+flat out vec4 fragBgColor;  /* FIXME: Remove bg color from glyph shader, as
+                               this is no longer used */
 
 uniform ivec2 cellSize;  /* The pixel size of each cell in the terminal. This
                             is used to calculate the position of this vertex on

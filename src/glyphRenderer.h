@@ -66,6 +66,10 @@ void st_GlyphRenderer_getGlyphOffset(
     uint32_t character,
     int *x, int *y);
 
+void st_GlyphRenderer_getUnderlineOffset(
+    st_GlyphRenderer *self,
+    int *offset);
+
 st_ErrorCode
 st_GlyphRenderer_loadFont(
     st_GlyphRenderer *self,

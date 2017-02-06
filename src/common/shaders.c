@@ -29,3 +29,6 @@ ST_DEFINE_SHADER(glyph)
 #include "assets_shaders_background.vert.c"
 #include "assets_shaders_background.frag.c"
 ST_DEFINE_SHADER(background)
+#include "assets_shaders_underline.vert.c"
+#include "assets_shaders_underline.frag.c"
+ST_DEFINE_SHADER(underline)

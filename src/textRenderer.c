@@ -30,6 +30,7 @@
 
 #define ST_TEXT_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
 #define ST_TEXT_RENDERER_INIT_SIZE_BACKGROUND_CELLS (80 * 24 * 2)
+#define ST_TEXT_RENDERER_INIT_SIZE_UNDERLINES (128)
 
 /* Private internal structures */
 typedef struct st_TextRenderer_QuadVertex_ {
@@ -50,6 +51,11 @@ typedef struct st_TextRenderer_BackgroundInstance_ {
   uint8_t bgColor[4];
 } st_TextRenderer_BackgroundInstance;
 
+typedef struct st_TextRenderer_UnderlineInstance_ {
+  int cell[2];
+  uint8_t fgColor[3];
+} st_TextRenderer_UnderlineInstance;
+
 typedef struct st_TextRenderer_ScreenDrawCallbackData_ {
   st_TextRenderer *self;
   st_GlyphRenderer *glyphRenderer;
@@ -64,10 +70,13 @@ struct st_TextRenderer_Internal {
   size_t numGlyphs, sizeGlyphs;
   st_TextRenderer_BackgroundInstance *backgroundCells;
   size_t numBackgroundCells, sizeBackgroundCells;
+  st_TextRenderer_UnderlineInstance *underlines;
+  size_t numUnderlines, sizeUnderlines;
   GLuint quadVertexBuffer, quadIndexBuffer;
   GLuint glyphInstanceBuffer, glyphInstanceVAO;
   GLuint backgroundInstanceBuffer, backgroundInstanceVAO;
-  GLuint glyphShader, backgroundShader;
+  GLuint underlineInstanceBuffer, underlineInstanceVAO;
+  GLuint glyphShader, backgroundShader, underlineShader;
   int cellWidth, cellHeight;
 };
 
@@ -81,6 +90,8 @@ void st_TextRenderer_initVAO(
 void st_TextRenderer_initGlyphInstanceVAO(
     st_TextRenderer *self);
 void st_TextRenderer_initBackgroundInstanceVAO(
+    st_TextRenderer *self);
+void st_TextRenderer_initUnderlineInstanceVAO(
     st_TextRenderer *self);
 void st_TextRenderer_screenDrawCallback(
     struct tsm_screen *con,
@@ -107,12 +118,27 @@ void st_TextRenderer_addGlyphInstance(
     const struct tsm_screen_attr *attr,
     int cellWidth,
     int cellHeight);
+void st_TextRenderer_addUnderlineInstance(
+    st_TextRenderer *self,
+    int posx,
+    int posy,
+    const struct tsm_screen_attr *attr);
 st_ErrorCode
 st_TextRenderer_colorCodeToRGB(
     const st_TextRenderer *self,
     int8_t code,
     uint8_t *rgb);
+
 void st_TextRenderer_drawBackgroundCells(
+    const st_TextRenderer *self,
+    int cellWidth, int cellHeight,
+    int viewportWidth, int viewportHeight);
+void st_TextRenderer_drawUnderlines(
+    const st_TextRenderer *self,
+    int cellWidth, int cellHeight,
+    int underlineOffset,
+    int viewportWidth, int viewportHeight);
+void st_TextRenderer_drawGlyphs(
     const st_TextRenderer *self,
     int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight);
@@ -125,6 +151,7 @@ void st_TextRenderer_init(
   /* Allocate memory for internal data structures */
   self->internal = (struct st_TextRenderer_Internal*)malloc(
       sizeof(struct st_TextRenderer_Internal));
+  /* TODO: Consolidate initialization of these dynamic arrays */
   self->internal->sizeGlyphs = ST_TEXT_RENDERER_INIT_SIZE_GLYPHS;
   self->internal->glyphs = (st_TextRenderer_GlyphInstance *)malloc(
       sizeof(st_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs);
@@ -136,6 +163,10 @@ void st_TextRenderer_init(
       sizeof(st_TextRenderer_BackgroundInstance)
       * self->internal->sizeBackgroundCells);
   self->internal->numBackgroundCells = 0;
+  self->internal->sizeUnderlines = ST_TEXT_RENDERER_INIT_SIZE_UNDERLINES;
+  self->internal->underlines = (st_TextRenderer_UnderlineInstance *)malloc(
+      sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
+  self->internal->numUnderlines = 0;
   /* Store a pointer to the profile */
   self->internal->profile = profile;
   /* Store a pointer to the text toy, for fancy text rendering */
@@ -156,6 +187,7 @@ void st_TextRenderer_initShaders(
 {
   self->internal->glyphShader = st_Shaders_glyphShader();
   self->internal->backgroundShader = st_Shaders_backgroundShader();
+  self->internal->underlineShader = st_Shaders_underlineShader();
 }
 
 void st_TextRenderer_initBuffers(
@@ -204,6 +236,10 @@ void st_TextRenderer_initBuffers(
   /* Initialize the background instance buffer */
   glGenBuffers(1, &self->internal->backgroundInstanceBuffer);
   FORCE_ASSERT_GL_ERROR();
+
+  /* Initialize the underline instance buffer */
+  glGenBuffers(1, &self->internal->underlineInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
 }
 
 void st_TextRenderer_initVAO(
@@ -211,6 +247,7 @@ void st_TextRenderer_initVAO(
 {
   st_TextRenderer_initGlyphInstanceVAO(self);
   st_TextRenderer_initBackgroundInstanceVAO(self);
+  st_TextRenderer_initUnderlineInstanceVAO(self);
 }
 
 void st_TextRenderer_initGlyphInstanceVAO(
@@ -393,7 +430,7 @@ void st_TextRenderer_initBackgroundInstanceVAO(
       );
   FORCE_ASSERT_GL_ERROR();
 
-  /* Configure the vertex attributes from the glyph instance buffer */
+  /* Configure the vertex attributes from the background instance buffer */
   glBindBuffer(GL_ARRAY_BUFFER, self->internal->backgroundInstanceBuffer);
   FORCE_ASSERT_GL_ERROR();
   /* Configure cell */
@@ -432,7 +469,84 @@ void st_TextRenderer_initBackgroundInstanceVAO(
   glVertexAttribDivisor(bgColorLocation, 1);
   FORCE_ASSERT_GL_ERROR();
 
-  /* Configure the IBO for drawing glyph quads */
+  /* Configure the IBO for drawing background cell quads */
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->internal->quadIndexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+
+  glBindVertexArray(0);
+  FORCE_ASSERT_GL_ERROR();
+}
+
+void st_TextRenderer_initUnderlineInstanceVAO(
+    st_TextRenderer *self)
+{
+  GLuint vertPosLocation, cellLocation, fgColorLocation;
+
+  glGenVertexArrays(1, &self->internal->underlineInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
+  glBindVertexArray(self->internal->underlineInstanceVAO);
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the vertex attributes from the quad buffer */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->quadVertexBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure vertPos */
+  vertPosLocation = glGetAttribLocation(
+      self->internal->underlineShader,
+      "vertPos");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(vertPosLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      vertPosLocation,  /* index */
+      2,  /* size */
+      GL_FLOAT,  /* type */
+      GL_FALSE,  /* normalized */
+      sizeof(st_TextRenderer_QuadVertex),  /* stride */
+      (void *)offsetof(st_TextRenderer_QuadVertex, pos)  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the vertex attributes from the underline instance buffer */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->underlineInstanceBuffer);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure cell */
+  cellLocation = glGetAttribLocation(
+      self->internal->underlineShader,
+      "cell");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(cellLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribIPointer(
+      cellLocation,  /* index */
+      2,  /* size */
+      GL_INT,  /* type */
+      sizeof(st_TextRenderer_UnderlineInstance),  /* stride */
+      (void *)offsetof(st_TextRenderer_UnderlineInstance, cell)  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(cellLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
+  /* Configure fgColor */
+  fgColorLocation = glGetAttribLocation(
+      self->internal->underlineShader,
+      "fgColor");
+  FORCE_ASSERT_GL_ERROR();
+  glEnableVertexAttribArray(fgColorLocation);
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribPointer(
+      fgColorLocation,  /* index */
+      3,  /* size */
+      GL_UNSIGNED_BYTE,  /* type */
+      1,  /* normalized */
+      sizeof(st_TextRenderer_UnderlineInstance),  /* stride */
+      (void *)offsetof(st_TextRenderer_UnderlineInstance, fgColor)  /* pointer */
+      );
+  FORCE_ASSERT_GL_ERROR();
+  glVertexAttribDivisor(fgColorLocation, 1);
+  FORCE_ASSERT_GL_ERROR();
+
+  /* Configure the IBO for drawing underline quads */
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->internal->quadIndexBuffer);
   FORCE_ASSERT_GL_ERROR();
 
@@ -447,6 +561,7 @@ void st_TextRenderer_destroy(
   st_GlyphAtlas_destroy(self->internal->atlas);
   free(self->internal->atlas);
   /* Free internal data structures */
+  free(self->internal->underlines);
   free(self->internal->backgroundCells);
   free(self->internal->glyphs);
   free(self->internal);
@@ -494,6 +609,7 @@ void st_TextRenderer_updateScreen(
       );
   self->internal->numGlyphs = 0;
   self->internal->numBackgroundCells = 0;
+  self->internal->numUnderlines = 0;
   tsm_screen_draw(
       screen,  /* con */
       (tsm_screen_draw_cb)st_TextRenderer_screenDrawCallback,  /* draw_cb */
@@ -520,6 +636,18 @@ void st_TextRenderer_updateScreen(
       self->internal->numBackgroundCells
       * sizeof(st_TextRenderer_BackgroundInstance),  /* size */
       self->internal->backgroundCells,  /* data */
+      GL_STREAM_DRAW  /* usage */
+      );
+  ASSERT_GL_ERROR();
+
+  /* Send the recently updated underline instance buffer to the GL */
+  glBindBuffer(GL_ARRAY_BUFFER, self->internal->underlineInstanceBuffer);
+  ASSERT_GL_ERROR();
+  glBufferData(
+      GL_ARRAY_BUFFER,  /* target */
+      self->internal->numUnderlines
+      * sizeof(st_TextRenderer_UnderlineInstance),  /* size */
+      self->internal->underlines,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
   ASSERT_GL_ERROR();
@@ -569,6 +697,16 @@ void st_TextRenderer_screenDrawCallback(
         attr,  /* attr */
         data->cellWidth,  /* cellWidth */
         data->cellHeight  /* cellWidth */
+        );
+  }
+
+  /* Add an underline instance for characters with underlines */
+  /* FIXME: Support full-width underlines */
+  if (attr->underline) {
+    st_TextRenderer_addUnderlineInstance(self,
+        posx,  /* posx */
+        posy,  /* posy */
+        attr  /* attr */
         );
   }
 }
@@ -727,6 +865,60 @@ void st_TextRenderer_addGlyphInstance(
       sizeof(st_TextRenderer_GlyphInstance));
 }
 
+void st_TextRenderer_addUnderlineInstance(
+    st_TextRenderer *self,
+    int posx,
+    int posy,
+    const struct tsm_screen_attr *attr)
+{
+  st_TextRenderer_UnderlineInstance underlineInstance;
+  st_ErrorCode result;
+  int8_t code;
+
+  /* Set up the underline instance data structure */
+  underlineInstance.cell[0] = posx;
+  underlineInstance.cell[1] = posy;
+
+  /* Determine the foreground color */
+  code = attr->inverse ? attr->bccode : attr->fccode;
+  if (code < 0) {
+    /* Use RGB for the foreground color */
+    underlineInstance.fgColor[0] = attr->inverse ? attr->br : attr->fr;
+    underlineInstance.fgColor[1] = attr->inverse ? attr->bg : attr->fg;
+    underlineInstance.fgColor[2] = attr->inverse ? attr->bb : attr->fb;
+  } else {
+    result = st_TextRenderer_colorCodeToRGB(self,
+        code,  /* code */
+        underlineInstance.fgColor  /* rgb */
+        );
+    if (result != ST_NO_ERROR) {
+      /* Set the color to cyan for debugging */
+      underlineInstance.fgColor[0] = 0;
+      underlineInstance.fgColor[1] = 255;
+      underlineInstance.fgColor[2] = 255;
+    }
+  }
+
+  /* TODO: Consolidate array appending code for the underline instances */
+  /* Make sure we have memory allocated for the new underline instance */
+  if (self->internal->numUnderlines + 1 > self->internal->sizeUnderlines) {
+    st_TextRenderer_UnderlineInstance *newUnderlines;
+
+    /* Double the number of underlines to ensure we have enough space */
+    newUnderlines = (st_TextRenderer_UnderlineInstance*)malloc(
+        sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines * 2);
+    memcpy(newUnderlines, self->internal->underlines,
+        sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
+    free(self->internal->underlines);
+    self->internal->underlines = newUnderlines;
+    self->internal->sizeUnderlines *= 2;
+  }
+
+  /* Append the underline instance data structure to our buffer */
+  memcpy(&self->internal->underlines[self->internal->numUnderlines++], &underlineInstance,
+      sizeof(st_TextRenderer_UnderlineInstance));
+}
+
 st_ErrorCode
 st_TextRenderer_colorCodeToRGB(
     const st_TextRenderer *self,
@@ -809,6 +1001,68 @@ void st_TextRenderer_drawBackgroundCells(
       GL_UNSIGNED_INT,  /* mode */
       0,  /* indices */
       self->internal->numBackgroundCells  /* primcount */
+      );
+  ASSERT_GL_ERROR();
+
+  glBindVertexArray(0);
+  ASSERT_GL_ERROR();
+}
+
+void st_TextRenderer_drawUnderlines(
+    const st_TextRenderer *self,
+    int cellWidth, int cellHeight,
+    int underlineOffset,
+    int viewportWidth, int viewportHeight)
+{
+  GLuint cellSizeLocation, underlineOffsetLocation, viewportSizeLocation;
+
+  /* Use the underline shader program */
+  glUseProgram(self->internal->underlineShader);
+  ASSERT_GL_ERROR();
+
+  /* Use our VAO for instanced underline rendering */
+  glBindVertexArray(self->internal->underlineInstanceVAO);
+  ASSERT_GL_ERROR();
+
+  /* Configure the uniform values */
+  /* Configure the cellSize uniform */
+  /* FIXME: Store the cellSize attribute location */
+  cellSizeLocation = glGetUniformLocation(
+      self->internal->underlineShader,
+      "cellSize");
+  ASSERT_GL_ERROR();
+  glUniform2i(cellSizeLocation,
+      cellWidth,
+      cellHeight);
+  ASSERT_GL_ERROR();
+  /* Configure the underlineOffset uniform */
+  /* FIXME: Store the underlineOffset attribute location */
+  underlineOffsetLocation = glGetUniformLocation(
+      self->internal->underlineShader,
+      "underlineOffset");
+  ASSERT_GL_ERROR();
+  glUniform1i(underlineOffsetLocation,
+      underlineOffset);
+  ASSERT_GL_ERROR();
+  /* Configure the viewportSize uniform */
+  /* FIXME: Store the viewportSize attribute location */
+  viewportSizeLocation = glGetUniformLocation(
+      self->internal->underlineShader,
+      "viewportSize");
+  ASSERT_GL_ERROR();
+  glUniform2i(viewportSizeLocation,
+      viewportWidth,
+      viewportHeight);
+  ASSERT_GL_ERROR();
+
+  /* Draw the instanced underlines, which are quads */
+  glDrawElementsInstanced(
+      /* FIXME: This might be better as GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN */
+      GL_TRIANGLES,  /* mode */
+      6,  /* count */
+      GL_UNSIGNED_INT,  /* mode */
+      0,  /* indices */
+      self->internal->numUnderlines  /* primcount */
       );
   ASSERT_GL_ERROR();
 
@@ -936,7 +1190,18 @@ void st_TextRenderer_draw(
       viewportHeight  /* viewportHeight */
       );
 
-  /* Draw the glyphs on top of the background cells */
+  /* Draw the underlines on top of the background cells */
+  int underlineOffset = 2;  /* FIXME: The glyph renderer needs to calculate the
+                               underline offset */
+  st_TextRenderer_drawUnderlines(self,
+      cellWidth,  /* cellWidth */
+      cellHeight,  /* cellHeight */
+      underlineOffset,  /* underlineOffset */
+      viewportWidth,  /* viewportWidth */
+      viewportHeight  /* viewportHeight */
+      );
+
+  /* Draw the glyphs on top of everything */
   st_TextRenderer_drawGlyphs(self,
       cellWidth,  /* cellWidth */
       cellHeight,  /* cellHeight */

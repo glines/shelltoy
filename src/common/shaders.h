@@ -8,5 +8,6 @@
 
 ST_DECLARE_SHADER(glyph)
 ST_DECLARE_SHADER(background)
+ST_DECLARE_SHADER(underline)
 
 #endif

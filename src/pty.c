@@ -236,6 +236,8 @@ void st_PTY_prepareChild(st_PTY *self) {
     assert(0);
   }
   /* Set erase character to normal backspace */
+  /* FIXME: This precludes the possibility of using ^h as a shortcut in any
+   * terminal applications */
   attr.c_cc[VERASE] = 010;
   /* Set the terminal attributes */
   if (tcsetattr(slave_fd, TCSANOW, &attr) < 0) {
