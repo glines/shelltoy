@@ -95,7 +95,7 @@ void st_dispatchEvents() {
              * soon? */
             /* TODO: Should we simply schedule a new pty event? */
           }
-          /* FIXME: We need to draw immediately after the screen changes */
+          /* FIXME: We need to draw immediately after the screen changes? */
           /* FIXME: A flag should be set to re-draw now that the screen has
            * changed */
         }

@@ -291,9 +291,6 @@ void st_Terminal_windowSizeChanged(
   /* Update the GL viewport size */
   glViewport(0, 0, width, height);
   FORCE_ASSERT_GL_ERROR();
-  /* Re-draw the screen */
-  st_Terminal_draw(self);
-  SDL_GL_SwapWindow(self->window);
 }
 
 void st_Terminal_updateScreenSize(st_Terminal *self) {
@@ -325,10 +322,12 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
         self->rows  /* height */
         );
     /* Update the screen */
-    st_TextRenderer_updateScreen(&self->internal->textRenderer,
-        self->screen,  /* screen */
-        &self->internal->glyphRenderer  /* glyphRenderer */
-        );
+    /* FIXME: I don't think the following section of code helps latency, but
+     * it's difficult to say for sure. */
+//    st_TextRenderer_updateScreen(&self->internal->textRenderer,
+//        self->screen,  /* screen */
+//        &self->internal->glyphRenderer  /* glyphRenderer */
+//        );
   }
 }
 
@@ -460,6 +459,8 @@ void st_Terminal_keyInput(
         return;
       case SDLK_MINUS:
         /* Shortcut for decreasing the font size */
+        /* FIXME: Somehow this code does not swallow the - sign as we would
+         * like, i.e. - is still sent to the pty. */
         /* TODO: Allow for decrease font size shortcut to be configured */
         st_Terminal_decreaseFontSize(self);
         return;
@@ -581,10 +582,6 @@ st_Terminal_increaseFontSize(
   /* Update the screen size based on the new cell size */
   st_Terminal_updateScreenSize(self);
 
-  /* Re-draw the screen */
-  st_Terminal_draw(self);
-  SDL_GL_SwapWindow(self->window);
-
   /* TODO: Do we need an error code for not being able to increase the font
    * size? */
   return error;
@@ -638,11 +635,7 @@ st_Terminal_decreaseFontSize(
   /* Update the screen size based on the new cell size */
   st_Terminal_updateScreenSize(self);
 
-  /* Re-draw the screen */
-  st_Terminal_draw(self);
-  SDL_GL_SwapWindow(self->window);
-
-  /* TODO: Do we need an error code for not being able to increase the font
+  /* TODO: Do we need an error code for not being able to decrease the font
    * size? */
   return error;
 }
