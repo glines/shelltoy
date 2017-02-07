@@ -116,7 +116,9 @@ void st_BackgroundRenderer_initShader(
 void st_BackgroundRenderer_initFramebuffer(
     st_BackgroundRenderer *self)
 {
+#ifndef NDEBUG
   GLenum result;
+#endif
 
   /* Prepare the texture */
   glGenTextures(
@@ -175,7 +177,10 @@ void st_BackgroundRenderer_initFramebuffer(
   FORCE_ASSERT_GL_ERROR();
 
   /* Check the validity of the framebuffer */
-  result = glCheckFramebufferStatus(
+#ifndef NDEBUG
+  result =
+#endif
+  glCheckFramebufferStatus(
       GL_DRAW_FRAMEBUFFER  /* target */
       );
   FORCE_ASSERT_GL_ERROR();

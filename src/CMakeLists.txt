@@ -19,6 +19,7 @@ add_executable(shelltoy
     terminal.c
     textRenderer.c
     textToy.c
+    textToyDictionary.c
     toyFactory.c
     )
 add_dependencies(shelltoy shelltoy_version)

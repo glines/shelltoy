@@ -35,6 +35,7 @@
 #include "backgroundToyDictionary.h"
 #include "fonts.h"
 #include "logging.h"
+#include "textToyDictionary.h"
 #include "toyFactory.h"
 
 #include "config.h"
@@ -67,12 +68,12 @@ st_ErrorCode st_Config_serialize(
 struct st_Config_Internal {
   /* FIXME: Since we are returning pointers to these profiles, this might be
    * better as a linked list. */
+  /* FIXME: Replace profiles with a dictionary */
   st_Profile **profiles;
   char *defaultProfile, *fontFilePath;
   size_t sizeProfiles, numProfiles;
   st_BackgroundToyDictionary backgroundToys;
-  st_TextToy **textToys;
-  size_t sizeTexttoys, numTextToys;
+  st_TextToyDictionary textToys;
   st_ToyFactory toyFactory;
 };
 
@@ -99,6 +100,7 @@ void st_Config_init(
       DEFAULT_PLUGIN_PATH);
   /* Initialize our toy dictionaries */
   st_BackgroundToyDictionary_init(&self->internal->backgroundToys);
+  st_TextToyDictionary_init(&self->internal->textToys);
 }
 
 void st_Config_destroy(
@@ -114,9 +116,22 @@ void st_Config_destroy(
         &self->internal->backgroundToys,
         i);
     st_BackgroundToy_destroy(backgroundToy);
+    free(backgroundToy);
+  }
+  for (size_t i = 0;
+      i < st_TextToyDictionary_size(&self->internal->textToys);
+      ++i)
+  {
+    st_TextToy *textToy;
+    textToy = st_TextToyDictionary_getValueAtIndex(
+        &self->internal->textToys,
+        i);
+    st_TextToy_destroy(textToy);
+    free(textToy);
   }
   /* Destroy all of our toy dictionaries */
   st_BackgroundToyDictionary_destroy(&self->internal->backgroundToys);
+  st_TextToyDictionary_destroy(&self->internal->textToys);
   /* Destroy each of the held profiles */
   for (size_t i = 0; i < self->internal->numProfiles; ++i) {
     st_Profile_destroy(self->internal->profiles[i]);
@@ -398,18 +413,20 @@ int st_Config_buildConfig(
           toy  /* value */
           );
     } else if (strcmp(json_string_value(toyType_json), "text") == 0) {
-      st_TextToy **toy;
+      st_TextToy *toy;
       /* This is a text toy */
-      assert(0);  /* FIXME: Text toys are not supported yet. We need to
-                     refactor add replace self->internal->textToys with some
-                     sort of map class */
-      toy = &self->internal->textToys[self->internal->numTextToys++];
       error = st_ToyFactory_buildTextToy(
           &self->internal->toyFactory,
           json_string_value(pluginName_json),  /* pluginName */
           json_string_value(toyName_json),  /* toyName */
           toyConfig_json,  /* config */
-          toy  /* toy */
+          &toy  /* toy */
+          );
+      /* Insert this toy into our text toy dictionary */
+      st_TextToyDictionary_insert(
+          &self->internal->textToys,
+          json_string_value(toyName_json),  /* key */
+          toy  /* value */
           );
     } else {
       ST_LOG_ERROR("Config error: Unknown toy type '%s'",

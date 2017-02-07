@@ -78,7 +78,9 @@ st_Plugin_init(
     const char *name,
     const st_Plugin_Dispatch *dispatch,
     const st_BackgroundToy_Attributes *backgroundToyAttributes,
-    const st_BackgroundToy_Dispatch *backgroundToyDispatch);
+    const st_BackgroundToy_Dispatch *backgroundToyDispatch,
+    const st_TextToy_Attributes *textToyAttributes,
+    const st_TextToy_Dispatch *textToyDispatch);
 
 void
 st_Plugin_destroy(
@@ -87,9 +89,15 @@ st_Plugin_destroy(
 const st_BackgroundToy_Attributes *
 st_Plugin_getBackgroundToyAttributes(
     st_Plugin *self);
-
 const st_BackgroundToy_Dispatch *
 st_Plugin_getBackgroundToyDispatch(
+    st_Plugin *self);
+
+const st_TextToy_Attributes *
+st_Plugin_getTextToyAttributes(
+    st_Plugin *self);
+const st_TextToy_Dispatch *
+st_Plugin_getTextToyDispatch(
     st_Plugin *self);
 
 #define SHELLTOY_PLUGIN_DISPATCH( \

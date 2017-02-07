@@ -99,6 +99,12 @@ st_ToyFactory_registerPlugin(
   const uint32_t *shelltoyVersion;
   const char *oldDlPath;
   st_Plugin *plugin;
+  const st_Plugin_Attributes *pluginAttributes;
+  const st_Plugin_Dispatch *pluginDispatch;
+  const st_BackgroundToy_Attributes *backgroundToyAttributes;
+  const st_BackgroundToy_Dispatch *backgroundToyDispatch;
+  const st_TextToy_Attributes *textToyAttributes;
+  const st_TextToy_Dispatch *textToyDispatch;
 
   /* Check for an existing plugin with the same name */
   if (st_ToyFactory_getPlugin(self, name) != NULL) {
@@ -149,26 +155,44 @@ st_ToyFactory_registerPlugin(
     return ST_ERROR_PLUGIN_VERSION_MISMATCH;
   }
 
-  const st_Plugin_Attributes *pluginAttributes;
   GET_REQUIRED_SYMBOL(
       SHELLTOY_PLUGIN_ATTRIBUTES,
       const st_Plugin_Attributes,
       pluginAttributes);
-  const st_Plugin_Dispatch *pluginDispatch;
   GET_REQUIRED_SYMBOL(
       SHELLTOY_PLUGIN_DISPATCH,
       const st_Plugin_Dispatch,
       pluginDispatch);
-  const st_BackgroundToy_Attributes *backgroundToyAttributes;
-  GET_REQUIRED_SYMBOL(
-      SHELLTOY_BACKGROUND_TOY_ATTRIBUTES,
-      const st_BackgroundToy_Attributes,
-      backgroundToyAttributes);
-  const st_BackgroundToy_Dispatch *backgroundToyDispatch;
-  GET_REQUIRED_SYMBOL(
-      SHELLTOY_BACKGROUND_TOY_DISPATCH,
-      const st_BackgroundToy_Dispatch,
-      backgroundToyDispatch);
+
+  /* Get background toy symbols if needed */
+  if (pluginAttributes->toyTypes & ST_TOY_TYPE_BACKGROUND) {
+    GET_REQUIRED_SYMBOL(
+        SHELLTOY_BACKGROUND_TOY_ATTRIBUTES,
+        const st_BackgroundToy_Attributes,
+        backgroundToyAttributes);
+    GET_REQUIRED_SYMBOL(
+        SHELLTOY_BACKGROUND_TOY_DISPATCH,
+        const st_BackgroundToy_Dispatch,
+        backgroundToyDispatch);
+  } else {
+    backgroundToyAttributes = NULL;
+    backgroundToyDispatch = NULL;
+  }
+
+  /* Get text toy symbols if needed */
+  if (pluginAttributes->toyTypes & ST_TOY_TYPE_TEXT) {
+    GET_REQUIRED_SYMBOL(
+        SHELLTOY_TEXT_TOY_ATTRIBUTES,
+        const st_TextToy_Attributes,
+        textToyAttributes);
+    GET_REQUIRED_SYMBOL(
+        SHELLTOY_TEXT_TOY_DISPATCH,
+        const st_TextToy_Dispatch,
+        textToyDispatch);
+  } else {
+    textToyAttributes = NULL;
+    textToyDispatch = NULL;
+  }
 
   /* Initialize and insert the new plugin */
   plugin = (st_Plugin *)malloc(pluginAttributes->size);
@@ -176,7 +200,9 @@ st_ToyFactory_registerPlugin(
       name,  /* name */
       pluginDispatch,  /* dispatch */
       backgroundToyAttributes,  /* backgroundToyAttributes */
-      backgroundToyDispatch  /* backgroundToyDispatch */
+      backgroundToyDispatch,  /* backgroundToyDispatch */
+      textToyAttributes,  /* textToyAttributes */
+      textToyDispatch  /* textToyDispatch */
       );
   pluginDispatch->init(plugin, name);
   st_PluginDictionary_insert(&self->internal->plugins,
@@ -229,6 +255,43 @@ st_ToyFactory_buildBackgroundToy(
   *toy = (st_BackgroundToy *)malloc(toyAttributes->size);
   /* Initialize the toy */
   st_BackgroundToy_init(*toy,
+      toyName,  /* name */
+      toyDispatch  /* dispatch */
+      );
+  /* Call the virtual init method */
+  toyDispatch->init(*toy,
+      toyName,  /* name */
+      config  /* config */
+      );
+
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_ToyFactory_buildTextToy(
+    st_ToyFactory *self,
+    const char *pluginName,
+    const char *toyName,
+    json_t *config,
+    st_TextToy **toy)
+{
+  st_Plugin *plugin;
+  const st_TextToy_Attributes *toyAttributes;
+  const st_TextToy_Dispatch *toyDispatch;
+
+  /* Find the plugin with the given name */
+  plugin = st_ToyFactory_getPlugin(self,
+      pluginName);
+  if (plugin == NULL) {
+    return ST_ERROR_PLUGIN_NOT_FOUND;
+  }
+  toyAttributes = st_Plugin_getTextToyAttributes(plugin);
+  toyDispatch = st_Plugin_getTextToyDispatch(plugin);
+
+  /* Allocate memory for the toy */
+  *toy = (st_TextToy *)malloc(toyAttributes->size);
+  /* Initialize the toy */
+  st_TextToy_init(*toy,
       toyName,  /* name */
       toyDispatch  /* dispatch */
       );
