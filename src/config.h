@@ -89,3 +89,7 @@ st_ErrorCode
 st_Config_getDefaultProfile(
     st_Config *self,
     st_Profile **profile);
+
+st_ErrorCode
+st_Config_createDefaultConfigFile(
+    const st_Config *self);

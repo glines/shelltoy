@@ -15,6 +15,7 @@ add_executable(check_config
     ../src/fonts.c
     ../src/logging.c
     ../src/plugin.c
+    ../src/pluginDictionary.c
     ../src/profile.c
     ../src/toyFactory.c
     check_config.c

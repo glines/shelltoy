@@ -13,6 +13,7 @@ add_executable(shelltoy
     main.c
     naiveCollisionDetection.c
     plugin.c
+    pluginDictionary.c
     profile.c
     pty.c
     terminal.c

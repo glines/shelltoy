@@ -30,6 +30,8 @@
 #include <shelltoy/error.h>
 #include <shelltoy/textToy.h>
 
+#include "pluginDictionary.h"
+
 struct st_ToyFactory_Internal;
 
 typedef struct st_ToyFactory_ {
@@ -51,6 +53,10 @@ st_ToyFactory_registerPlugin(
     st_ToyFactory *self,
     const char *name,
     const char *dlPath);
+
+st_PluginDictionary *
+st_ToyFactory_getPlugins(
+    st_ToyFactory *self);
 
 st_ErrorCode
 st_ToyFactory_buildBackgroundToy(

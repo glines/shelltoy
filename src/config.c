@@ -31,12 +31,15 @@
 #include <fontconfig/fontconfig.h>
 #include <unistd.h>
 
+#include "./common/mkdir.h"
 #include "backgroundToyDictionary.h"
-#include "config.h"
 #include "fonts.h"
 #include "logging.h"
 #include "toyFactory.h"
 
+#include "config.h"
+
+/* Private methods */
 void st_Config_parseConfig(
     st_Config *self,
     const char *config,
@@ -57,6 +60,9 @@ st_ErrorCode st_Config_readConfigFile(
 st_ErrorCode st_Config_insertNewProfile(
     st_Config *self,
     st_Profile *newProfile);
+st_ErrorCode st_Config_serialize(
+    const st_Config *self,
+    const char *path);
 
 struct st_Config_Internal {
   /* FIXME: Since we are returning pointers to these profiles, this might be
@@ -141,7 +147,7 @@ st_ErrorCode st_Config_findConfigFile(
   const char *home;
   const char *suffix = "/.config/shelltoy/config.json";
 
-  /* TODO: Check for existance of $HOME/.config/shelltoy/config.json */
+  /* Check for existence of $HOME/.config/shelltoy/config.json */
   home = getenv("HOME");
   if (home == NULL) {
     ST_LOG_ERROR("%s", "HOME environment variable not set");
@@ -878,6 +884,134 @@ st_ErrorCode st_Config_insertNewProfile(
   /* Insert the new profile */
   self->internal->profiles[i] = newProfile;
   self->internal->numProfiles += 1;
+
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_Config_serialize(
+    const st_Config *self,
+    const char *path)
+{
+  /* FIXME: This function leaks jansson objects very badly, especially upon
+   * error */
+  st_PluginDictionary *plugins;
+  json_t *root, *plugins_json;
+  FILE *fp;
+  int result;
+
+  /* Create the root JSON object of the config */
+  root = json_object();
+  if (root == NULL) {
+    return ST_ERROR_OUT_OF_MEMORY;
+  }
+
+  /* Build the array of plugins */
+  plugins_json = json_array();
+  if (plugins_json == NULL) {
+    return ST_ERROR_OUT_OF_MEMORY;
+  }
+  /* Iterate over the plugins registered with our toy factory */
+  plugins = st_ToyFactory_getPlugins(&self->internal->toyFactory);
+  for (size_t i = 0;
+      i < st_PluginDictionary_size(plugins);
+      ++i)
+  {
+    st_Plugin *plugin;
+    json_t *plugin_json, *name_json;
+
+    plugin = st_PluginDictionary_getValueAtIndex(plugins, i);
+
+    plugin_json = json_object();
+    if (plugin_json == NULL) {
+      return ST_ERROR_OUT_OF_MEMORY;
+    }
+    name_json = json_string(plugin->name);
+    if (name_json == NULL) {
+      return ST_ERROR_OUT_OF_MEMORY;
+    }
+    result = json_object_set(plugin_json, "name", name_json);
+    if (result < 0) {
+      ST_LOG_ERROR("%s", "Failed to set JSON plugin name");
+      return ST_ERROR_CONFIG_FAILED_TO_SERIALIZE;
+    }
+  }
+  result = json_object_set(root, "plugins", plugins_json);
+  if (result < 0) {
+    ST_LOG_ERROR("%s", "Failed to add plugins to JSON root object");
+    return ST_ERROR_CONFIG_FAILED_TO_SERIALIZE;
+  }
+
+  /* TODO: Build the array of toys */
+
+  /* TODO: Build the array of profiles */
+
+  /* Open the config file for writing */
+  fp = fopen(path, "w");
+  if (fp == NULL) {
+    ST_LOG_ERROR("Failed to open config file for writing: %s",
+        strerror(errno));
+    return ST_ERROR_CONFIG_FAILED_TO_SERIALIZE;
+  }
+
+  /* Write the JSON representation of our config to file */
+  result = json_dumpf(
+      root,  /* json */
+      fp,  /* output */
+      JSON_INDENT(4)  /* flags */
+      );
+  if (result < 0) {
+    /* FIXME: This can result in corrupted JSON files... perhaps using
+     * json_dumps() instead would be safer? */
+    ST_LOG_ERROR("%s", "Failed to write JSON config file");
+    return ST_ERROR_CONFIG_FAILED_TO_SERIALIZE;
+  }
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_Config_createDefaultConfigFile(
+    const st_Config *self)
+{
+  struct stat sbuf;
+  int result;
+  const char *home;
+  const char *suffix = "/.config/shelltoy/config.json";
+  char *path;
+  st_ErrorCode error;
+
+  /* Check for existence of $HOME directory */
+  home = getenv("HOME");
+  if (home == NULL) {
+    ST_LOG_ERROR("%s", "HOME environment variable not set");
+    return ST_ERROR_FAILED_TO_CREATE_CONFIG_FILE;
+  }
+  result = stat(home, &sbuf);
+  if (result != 0) {
+    ST_LOG_ERROR("Could not stat HOME directory '%s': %s\n",
+        home);
+    return ST_ERROR_FAILED_TO_CREATE_CONFIG_FILE;
+  }
+  if (!S_ISDIR(sbuf.st_mode)) {
+    ST_LOG_ERROR("HOME path '%s' is not a directory",
+        home);
+    return ST_ERROR_FAILED_TO_CREATE_CONFIG_FILE;
+  }
+  /* Recursively create $HOME/.config/shelltoy directory */
+  error = st_mkdir(
+      home,  /* working directory */
+      ".config/shelltoy"  /* directory path */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+  /* Concatenate config file path */
+  path = (char *)malloc(strlen(home) + strlen(suffix) + 1);
+  strcpy(path, home);
+  strcpy(path + strlen(home), suffix);
+  /* Serialize a JSON representation of the current (presumably default)
+   * config */
+  st_Config_serialize(self, path);
 
   return ST_NO_ERROR;
 }

@@ -171,6 +171,10 @@ void st_childExit(int signal) {
   }
 }
 
+void st_writeConfig() {
+  /* st_Config_write(&shelltoy.config); */
+}
+
 void st_destroyConfig() {
   st_Config_destroy(&shelltoy.config);
 }
@@ -329,6 +333,10 @@ int main(int argc, char** argv) {
     error = st_Config_findConfigFile(&shelltoy.config);
     if (error == ST_ERROR_CONFIG_FILE_NOT_FOUND) {
       /* Could not find config file; we're using the default configuration */
+      error = st_Config_createDefaultConfigFile(&shelltoy.config);
+      if (error != ST_NO_ERROR) {
+        ST_LOG_ERROR_CODE(error);
+      }
     } else if (error != ST_NO_ERROR) {
       ST_LOG_ERROR_CODE(error);
       exit(EXIT_FAILURE);

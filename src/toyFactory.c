@@ -25,10 +25,11 @@
 #include <errno.h>
 #include <string.h>
 
+#include <shelltoy/plugin.h>
 #include <shelltoy/version.h>
 
 #include "logging.h"
-#include "plugin.h"
+#include "pluginDictionary.h"
 
 #include "toyFactory.h"
 
@@ -39,8 +40,7 @@ st_ToyFactory_getPlugin(
     const char *name);
 
 struct st_ToyFactory_Internal {
-  st_Plugin **plugins;
-  size_t sizePlugins, numPlugins;
+  st_PluginDictionary plugins;
   const char *pluginPath;
 };
 
@@ -53,10 +53,7 @@ void st_ToyFactory_init(
   /* Initialize memory for internal data structures */
   self->internal = (struct st_ToyFactory_Internal *)malloc(
       sizeof(struct st_ToyFactory_Internal));
-  self->internal->plugins = (st_Plugin **)malloc(
-      sizeof(st_Plugin *) * INIT_SIZE_PLUGINS);
-  self->internal->sizePlugins = INIT_SIZE_PLUGINS;
-  self->internal->numPlugins = 0;
+  st_PluginDictionary_init(&self->internal->plugins);
   self->internal->pluginPath = malloc(strlen(pluginPath) + 1);
   strcpy((char *)self->internal->pluginPath, pluginPath);
 }
@@ -65,12 +62,16 @@ void st_ToyFactory_destroy(
     st_ToyFactory *self)
 {
   /* Destroy all held plugins */
-  for (size_t i = 0; i < self->internal->numPlugins; ++i) {
+  for (size_t i = 0
+      ; i < st_PluginDictionary_size(&self->internal->plugins)
+      ; ++i)
+  {
     st_Plugin_destroy(
-        self->internal->plugins[i]);
+        st_PluginDictionary_getValueAtIndex(
+          &self->internal->plugins, i));
   }
+  st_PluginDictionary_destroy(&self->internal->plugins);
   /* Free internal data structure memory */
-  free(self->internal->plugins);
   free((char *)self->internal->pluginPath);
   free(self->internal);
 }
@@ -169,20 +170,6 @@ st_ToyFactory_registerPlugin(
       const st_BackgroundToy_Dispatch,
       backgroundToyDispatch);
 
-  /* Ensure we have memory allocated to store a pointer to this plugin */
-  if (self->internal->numPlugins + 1 > self->internal->sizePlugins) {
-    st_Plugin **newPlugins;
-    newPlugins = (st_Plugin **)malloc(
-        sizeof(st_Plugin *) * self->internal->sizePlugins * 2);
-    memcpy(
-        newPlugins,
-        self->internal->plugins,
-        sizeof(st_Plugin *) * self->internal->numPlugins);
-    free(self->internal->plugins);
-    self->internal->plugins = newPlugins;
-    self->internal->sizePlugins *= 2;
-  }
-
   /* Initialize and insert the new plugin */
   plugin = (st_Plugin *)malloc(pluginAttributes->size);
   st_Plugin_init(plugin,
@@ -192,17 +179,19 @@ st_ToyFactory_registerPlugin(
       backgroundToyDispatch  /* backgroundToyDispatch */
       );
   pluginDispatch->init(plugin, name);
-  self->internal->plugins[self->internal->numPlugins++] = plugin;
-
-  /* Sort the plugins by name */
-  qsort(
-      self->internal->plugins,  /* ptr */
-      self->internal->numPlugins,  /* count */
-      sizeof(self->internal->plugins[0]),  /* size */
-      (int (*)(const void *, const void *))comp_plugins  /* comp */
+  st_PluginDictionary_insert(&self->internal->plugins,
+      name,  /* key */
+      plugin  /* value */
       );
 
   return ST_NO_ERROR;
+}
+
+st_PluginDictionary *
+st_ToyFactory_getPlugins(
+    st_ToyFactory *self)
+{
+  return &self->internal->plugins;
 }
 
 st_Plugin *
@@ -210,32 +199,9 @@ st_ToyFactory_getPlugin(
     st_ToyFactory *self,
     const char *name)
 {
-  int a, b, i;
-  if (self->internal->numPlugins == 0)
-    return NULL;
-  /* Find the plugin with a binary search */
-  a = 0; b = self->internal->numPlugins;
-  while (b - a > 0) {
-    int result;
-    i = (b - a) / 2 + a;
-    result = strcmp(name, self->internal->plugins[i]->name);
-    if (result < 0) {
-      b = i;
-    } else if (result > 0) {
-      a = i + 1;
-    } else {
-      /* result == 0 */
-      return self->internal->plugins[i];
-    }
-  }
-  /* Scan for the plugin in the range a to b */
-  for (i = a; i < b; ++i) {
-    int result = strcmp(name, self->internal->plugins[i]->name);
-    if (result == 0) {
-      return self->internal->plugins[i];
-    }
-  }
-  return NULL;
+  return st_PluginDictionary_getValue(
+      &self->internal->plugins,
+      name);
 }
 
 st_ErrorCode

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "plugin.h"
+#include <shelltoy/plugin.h>
 
 struct st_Plugin_Internal_ {
   const st_Plugin_Dispatch *dispatch;
