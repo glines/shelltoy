@@ -578,11 +578,26 @@ void st_TextRenderer_setGlyphRenderer(
     st_TextRenderer *self,
     st_GlyphRendererRef *glyphRenderer)
 {
+  st_GlyphAtlas *newAtlas;
+
   /* TODO: Convert this serial implementation into a parallel implementation
-   * with a thread to prepare a stagingGlyphAtlas with a
+   * with a thread to prepare a stagingAtlas with a
    * stagingGlyphRenderer. */
-  /* TODO: Construct a new glyph atlas with the given glyph renderer */
-  /* TODO: Destroy our old atlas */
+  /* Construct a new glyph atlas with the given glyph renderer */
+  newAtlas = (st_GlyphAtlas *)malloc(sizeof(st_GlyphAtlas));
+  st_GlyphAtlas_init(newAtlas);
+  st_GlyphAtlas_renderASCIIGlyphs(newAtlas,
+      st_GlyphRendererRef_get(glyphRenderer)  /* glyphRenderer */
+      );
+
+  /* Destroy our old atlas and replace it with the new one */
+  st_GlyphAtlas_destroy(self->internal->atlas);
+  free(self->internal->atlas);
+  self->internal->atlas = newAtlas;
+
+  /* Disown our old glyph renderer and use the new one */
+  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  self->internal->glyphRenderer = glyphRenderer;
 }
 
 void st_TextRenderer_updateScreen(
