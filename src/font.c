@@ -299,6 +299,13 @@ st_Font_getFaceName(
   return (const char *)self->internal->faceName;
 }
 
+const char *
+st_Font_getFontPath(
+    const st_Font *self)
+{
+  return (const char *)self->internal->fontPath;
+}
+
 float
 st_Font_getSize(
     const st_Font *self)
@@ -306,6 +313,34 @@ st_Font_getSize(
   return self->internal->size;
 }
 
+st_ErrorCode
+st_Font_setSize(
+    const st_Font *self,
+    float size)
+{
+  FT_Error ftError;
+
+  /* Attempt to set the FreeType font size */
+  ftError = FT_Set_Char_Size(
+      self->internal->face,  /* face */
+      0,  /* char_width */
+      FLOAT_TO_TWENTY_SIX_SIX(size),  /* char_height */
+      /* FIXME: Actually pass the DPI somehow */
+      144,  /* horz_resolution */
+      144  /* vert_resolution */
+      );
+  if (ftError != FT_Err_Ok) {
+    ST_LOG_ERROR("Freetype failed to set character size for font '%s': %s",
+        self->internal->fontPath,
+        st_FreeTypeErrorString(ftError));
+    return ST_ERROR_FREETYPE_ERROR;
+  }
+
+  /* Store the new font size */
+  self->internal->size = size;
+
+  return ST_NO_ERROR;
+}
 
 FT_Face
 st_Font_getFtFace(

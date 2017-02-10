@@ -8,6 +8,12 @@
 
 #include "profile.h"
 
+/* Private methods */
+st_ErrorCode
+st_Profile_adjustFallbackFontSize(
+    st_Profile *self,
+    st_Font *font);
+
 /**
  * Structure that describes a font as it is known by the Shelltoy profile. This
  * structure includes information (obtained via Fontconfig) about which
@@ -181,8 +187,7 @@ st_Profile_setPrimaryFont(
   }
 
   /* Load the font with FreeType */
-  fontRef = (st_FontRef *)malloc(sizeof(st_FontRef));
-  st_FontRef_init(fontRef);
+  st_FontRef_init(&fontRef);
   st_Font_init(st_FontRef_get(fontRef));
   error = st_Font_load(st_FontRef_get(fontRef),
       fontPath,  /* fontPath */
@@ -243,11 +248,58 @@ st_Profile_setFontSize(
     st_Profile *self,
     float fontSize)
 {
-  /* TODO: Re-load the primary font with the given font size */
+  st_Font *primaryFont;
+  st_ErrorCode error;
 
-  /* TODO: Re-load all of the fallback fonts now that the primary font has
+  /* TODO: Change the size of the primary font */
+  primaryFont = st_Profile_getPrimaryFont(self);
+  if (primaryFont == NULL) {
+    return ST_ERROR_PROFILE_NO_PRIMARY_FONT;
+  }
+  error = st_Font_setSize(primaryFont, fontSize);
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  /* Adjust all of the fallback font sizes now that the primary font has
    * changed size */
+  for (size_t i = 1;
+      i < st_FontRefArray_size(&self->internal->fonts);
+      ++i)
+  {
+    st_Font *font;
+    font = st_FontRef_get(st_FontRefArray_get(&self->internal->fonts, i));
+    error = st_Profile_adjustFallbackFontSize(self, font);
+    if (error != ST_NO_ERROR) {
+      ST_LOG_ERROR(
+          "Profile '%s' failed to adjust size for fallback font '%s'",
+          self->name,
+          st_Font_getFontPath(font));
+      /* NOTE: Not a fatal error; we might have some poorly rendered glyphs
+       * though */
+    }
+  }
+  for (size_t i = 0;
+      i < st_FontRefArray_size(&self->internal->boldFonts);
+      ++i)
+  {
+    st_Font *font;
+    /* FIXME: Shouldn't we just set the bold font to the same size as the
+     * normal font? */
+    font = st_FontRef_get(st_FontRefArray_get(&self->internal->fonts, i));
+    st_Profile_adjustFallbackFontSize(self, font);
+  }
 
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_Profile_adjustFallbackFontSize(
+    st_Profile *self,
+    st_Font *font)
+{
+  /* TODO: Actually adjust the fallback font sizes (once we have fallback
+   * fonts) */
   return ST_NO_ERROR;
 }
 

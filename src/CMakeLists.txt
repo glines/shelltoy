@@ -12,6 +12,7 @@ add_executable(shelltoy
     fonts.c
     glyphAtlas.c
     glyphRenderer.c
+    glyphRendererRef.c
     logging.c
     main.c
     naiveCollisionDetection.c

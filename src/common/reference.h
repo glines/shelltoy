@@ -32,7 +32,7 @@
     int refCount; \
   } TYPE ## Ref; \
   void TYPE ## Ref_init( \
-      TYPE ## Ref *self); \
+      TYPE ## Ref **self); \
   TYPE *TYPE ## Ref_get( \
       TYPE ## Ref *self); \
   void TYPE ## Ref_increment( \
@@ -42,9 +42,10 @@
 
 #define ST_DEFINE_REFERENCE(TYPE) \
   void TYPE ## Ref_init( \
-      TYPE ## Ref *self) \
+      TYPE ## Ref **self) \
   { \
-    self->refCount = 1; \
+    *self = (TYPE ## Ref *)malloc(sizeof(TYPE ## Ref)); \
+    (*self)->refCount = 1; \
   } \
   TYPE *TYPE ## Ref_get( \
       TYPE ## Ref *self) \
@@ -61,7 +62,7 @@
   { \
     self->refCount -= 1; \
     if (self->refCount == 0) { \
-      TYPE ## _destroy((TYPE *)&self->base); \
+      TYPE ## _destroy(&self->base); \
       free(self); \
     } \
   }

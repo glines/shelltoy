@@ -91,9 +91,18 @@ const char *
 st_Font_getFaceName(
     const st_Font *self);
 
+const char *
+st_Font_getFontPath(
+    const st_Font *self);
+
 float
 st_Font_getSize(
     const st_Font *self);
+
+st_ErrorCode
+st_Font_setSize(
+    const st_Font *self,
+    float size);
 
 FT_Face
 st_Font_getFtFace(
