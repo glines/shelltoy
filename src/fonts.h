@@ -71,13 +71,6 @@ st_MonospaceFontFace *st_Fonts_loadMonospace(
 void st_printGlyphDebug(const FT_Bitmap *bitmap);
 void st_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap);
 
-/*
-void st_GlyphAtlas_addGlyph(
-    st_GlyphAtlas *self,
-    int width, int height, uint32_t ch);
-void st_GlyphAtlas_packGlyphs(st_GlyphAtlas *self);
-*/
-
 void st_MonospaceFontFace_init(st_MonospaceFontFace *self);
 void st_MonospaceFontFace_loadGlyph(
     st_MonospaceFontFace *self,

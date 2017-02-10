@@ -337,7 +337,7 @@ int st_Config_buildConfig(
   for (size_t i = 0; i < json_array_size(plugins); ++i) {
     json_t *plugin_json, *name_json, *file_json;
     plugin_json = json_array_get(plugins, i);
-    if(!json_is_object(plugin_json)) {
+    if (!json_is_object(plugin_json)) {
       ST_LOG_ERROR("%s", "Config error: each plugin must be a JSON object");
       return ST_ERROR_CONFIG_FILE_FORMAT;
     }
@@ -502,8 +502,8 @@ st_Config_buildProfile(
     st_Profile *profile,
     json_t *profile_json)
 {
-  json_t *name, *fontFace, *fontSize, *antialiasFont, *brightIsBold, *colors,
-      *background;
+  json_t *name, *fontFace, *fallbackFontFaces, *fontSize, *antialiasFont,
+      *brightIsBold, *colors, *background;
   uint32_t flags;
   st_ErrorCode error;
 
@@ -575,17 +575,48 @@ st_Config_buildProfile(
     return error;
   }
 
-  /* Set the font used by the profile. Note that failure to find the font is
-   * not a fatal error, since we might not even use this profile. */
-  error = st_Profile_setFont(profile,
-      json_string_value(fontFace),
-      (float)json_real_value(fontSize));
+  /* Set the primary font used by the profile. Note that failure to find the
+   * font is not a fatal error, since we might not even use this profile. */
+  error = st_Profile_setPrimaryFont(profile,
+      json_string_value(fontFace),  /* fontFace */
+      (float)json_real_value(fontSize)  /* fontSize */
+      );
   if (error != ST_NO_ERROR) {
-    ST_LOG_ERROR("Could not find font face '%s' in size '%f' for profile '%s'",
+    ST_LOG_ERROR_CODE(error);
+    ST_LOG_ERROR("Could not load font face '%s' in size '%f' for profile '%s'",
         json_string_value(fontFace),
         (float)json_real_value(fontSize),
         json_string_value(name));
-    ST_LOG_ERROR_CODE(error);
+  }
+
+  /* Iterate through all of the fallback fonts */
+  fallbackFontFaces = json_object_get(profile_json, "fallbackFontFaces");
+  if (fallbackFontFaces == NULL || json_is_null(fallbackFontFaces)) {
+    /* No fallback font faces specified; this is okay */
+  } else if (!json_is_array(fallbackFontFaces)) {
+      ST_LOG_ERROR("Fallback font faces must be in an array in profile '%s'",
+          json_string_value(name));
+      return ST_ERROR_CONFIG_FILE_FORMAT;
+  } else {
+    for (size_t i = 0; i < json_array_size(fallbackFontFaces); ++i) {
+      json_t *fallbackFontFace;
+      fallbackFontFace = json_array_get(fallbackFontFaces, i);
+      if (!json_is_string(fallbackFontFace)) {
+        ST_LOG_ERROR("Fallback font faces must be strings in profile '%s'",
+            json_string_value(name));
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      /* Add this fallback font face to the profile */
+      error = st_Profile_addFallbackFont(profile,
+          json_string_value(fallbackFontFace));
+      if (error != ST_NO_ERROR) {
+        ST_LOG_ERROR_CODE(error);
+        ST_LOG_ERROR("Could not load fallback font face '%s' for profile '%s'",
+            json_string_value(fallbackFontFace),
+            json_string_value(name));
+        /* NOTE: Missing fallback fonts is a non-fatal error */
+      }
+    }
   }
 
   /* Get the background toy used by this profile */
@@ -802,7 +833,7 @@ st_Config_getDefaultProfile(
       SET_COLOR(15,192,192,192)  /* white */
       SET_COLOR(FOREGROUND,255,255,255)  /* white */
       SET_COLOR(BACKGROUND,0,0,0)  /* black */
-      error = st_Profile_setFont(newProfile,
+      error = st_Profile_setPrimaryFont(newProfile,
           DEFAULT_FONT_FACE,
           DEFAULT_FONT_SIZE);
       /* Insert the new profile in the array of profiles */

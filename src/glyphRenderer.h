@@ -29,6 +29,9 @@
 
 #include <inttypes.h>
 
+#include <shelltoy/error.h>
+
+#include "font.h"
 #include "profile.h"
 
 struct st_GlyphRenderer_Internal;
@@ -52,28 +55,51 @@ void st_GlyphRenderer_getCellSize(
     const st_GlyphRenderer *self,
     int *width, int *height);
 
-int st_GlyphRenderer_getGlyphDimensions(
-    st_GlyphRenderer *self,
-    uint32_t character,
-    int *width, int *height);
-
-FT_Bitmap *st_GlyphRenderer_renderGlyph(
-    st_GlyphRenderer *self,
-    uint32_t character);
-
-void st_GlyphRenderer_getGlyphOffset(
-    st_GlyphRenderer *self,
-    uint32_t character,
-    int *x, int *y);
-
 void st_GlyphRenderer_getUnderlineOffset(
     st_GlyphRenderer *self,
     int *offset);
 
 st_ErrorCode
-st_GlyphRenderer_loadFont(
+st_GlyphRenderer_getFont(
     st_GlyphRenderer *self,
-    const char *fontPath,
-    float fontSize);
+    uint32_t character,
+    int bold,
+    st_Font **font,
+    int *fontIndex);
+
+/**
+ * Convenience function to get the font index for a glyph without needing to
+ * provide storange for the font pointer.
+ */
+st_ErrorCode
+st_GlyphRenderer_getFontIndex(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    int *fontIndex);
+
+st_ErrorCode
+st_GlyphRenderer_getGlyphDimensions(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    int *width,
+    int *height);
+
+st_ErrorCode
+st_GlyphRenderer_getGlyphOffset(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    int *x,
+    int *y);
+
+st_ErrorCode
+st_GlyphRenderer_renderGlyph(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    FT_Bitmap **bitmap,
+    int *fontIndex);
 
 #endif

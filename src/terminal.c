@@ -27,6 +27,7 @@
 
 #include "backgroundRenderer.h"
 #include "common/glError.h"
+#include "glyphRendererRef.h"
 #include "logging.h"
 #include "profile.h"
 #include "textRenderer.h"
@@ -37,7 +38,7 @@
 struct st_Terminal_Internal {
   st_TextRenderer textRenderer;
   st_BackgroundRenderer backgroundRenderer;
-  st_GlyphRenderer glyphRenderer;
+  st_GlyphRendererRef *glyphRenderer;
   st_Profile *profile;
 };
 
@@ -222,17 +223,20 @@ void st_Terminal_init(
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
   /* Initialize the glyph renderer */
-  st_GlyphRenderer_init(&self->internal->glyphRenderer,
+  st_GlyphRendererRef_init(&self->internal->glyphRenderer);
+  st_GlyphRenderer_init(
+      st_GlyphRendererRef_get(self->internal->glyphRenderer),
       profile  /* profile */
       );
   /* Store the cell size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+  st_GlyphRenderer_getCellSize(
+      st_GlyphRendererRef_get(self->internal->glyphRenderer),
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
   /* Initialize the text renderer */
   st_TextRenderer_init(&self->internal->textRenderer,
-      &self->internal->glyphRenderer,  /* glyphRenderer */
+      self->internal->glyphRenderer,  /* glyphRenderer */
       profile  /* profile */
       );
   /* Initialize the background renderer */
@@ -268,7 +272,7 @@ void st_Terminal_destroy(st_Terminal *self) {
   /* Destroy all of the objects that we initialized */
   st_BackgroundRenderer_destroy(&self->internal->backgroundRenderer);
   st_TextRenderer_destroy(&self->internal->textRenderer);
-  st_GlyphRenderer_destroy(&self->internal->glyphRenderer);
+  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   /* FIXME: Destroy the libtsm state machine */
   /* FIXME: Destroy the libtsm screen */
   st_PTY_destroy(&self->pty);
@@ -324,7 +328,8 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
     /* Update the screen */
     st_TextRenderer_updateScreen(&self->internal->textRenderer,
         self->screen,  /* screen */
-        &self->internal->glyphRenderer  /* glyphRenderer */
+        self->cellWidth,  /* cellWidth */
+        self->cellHeight  /* cellHeight */
         );
   }
 }
@@ -332,7 +337,8 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
 void st_Terminal_updateScreen(st_Terminal *self) {
   st_TextRenderer_updateScreen(&self->internal->textRenderer,
       self->screen,  /* screen */
-      &self->internal->glyphRenderer  /* glyphRenderer */
+      self->cellWidth,  /* cellWidth */
+      self->cellHeight  /* cellHeight */
       );
 }
 
@@ -541,13 +547,14 @@ st_Terminal_increaseFontSize(
 {
 #define MAX_INCREASE_FONT_SIZE_ATTEMPTS 32
   float fontSize;  /* Font size in pixels */
+  st_GlyphRendererRef *newGlyphRenderer;
   st_ErrorCode error;
 
   /* Look for the next largest available font */
-  fontSize = ceil(self->internal->profile->fontSize) + 1.0f;
+  fontSize = st_Profile_getFontSize(self->internal->profile);
+  fontSize = ceil(fontSize) + 1.0f;
   for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
-    error = st_Profile_setFont(self->internal->profile,
-        self->internal->profile->fontFace,
+    error = st_Profile_setFontSize(self->internal->profile,
         fontSize);
     if (error == ST_NO_ERROR)
       break;
@@ -560,18 +567,29 @@ st_Terminal_increaseFontSize(
     return error;
   }
 
-  /* Load the new font with our glyph renderer */
-  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
-      self->internal->profile->fontPath,
-      self->internal->profile->fontSize);
-  ST_ASSERT_ERROR_CODE(error);
+  /* Construct a new glyph renderer */
+  st_GlyphRendererRef_init(&newGlyphRenderer);
+  st_GlyphRenderer_init(
+      st_GlyphRendererRef_get(newGlyphRenderer),
+      self->internal->profile  /* profile */
+      );
 
-  /* FIXME: We need to re-generate the glyphs stored in the current glyph atlas
-   * within the text renderer. This could be done with a healthy amount of
-   * threading since rendering glyphs is expensive. */
+  /* TODO: Construct a new glyph renderer and pass it to the text renderer */
+  /* NOTE: This will prompt the text renderer to start re-building its glyph
+   * atlas. Because the text renderer will need to continue to use the old
+   * glyph renderer for a number of frames, it is important that the glyph
+   * renderer actually exist as an st_GlyphRendererRef */
+  st_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
+      newGlyphRenderer  /* glyphRenderer */
+      );
+
+  /* Disown our old glyph renderer */
+  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  self->internal->glyphRenderer = newGlyphRenderer;
 
   /* Update the cell size to the new size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+  st_GlyphRenderer_getCellSize(
+      st_GlyphRendererRef_get(self->internal->glyphRenderer),
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
@@ -590,22 +608,19 @@ st_Terminal_decreaseFontSize(
 {
 #define MAX_DECREASE_FONT_SIZE_ATTEMPTS 32
   float fontSize;  /* Font size in pixels */
+  st_GlyphRendererRef *newGlyphRenderer;
   st_ErrorCode error;
 
-  /* Look for the next smallest available font, while avoiding negative
-   * values */
-  fontSize = floor(self->internal->profile->fontSize) - 1.0f;
-  for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
-    error = st_Profile_setFont(self->internal->profile,
-        self->internal->profile->fontFace,
+  /* Look for the next largest available font */
+  fontSize = st_Profile_getFontSize(self->internal->profile);
+  fontSize = floor(fontSize) - 1.0f;
+  for (int i = 0; i < MAX_DECREASE_FONT_SIZE_ATTEMPTS; ++i) {
+    error = st_Profile_setFontSize(self->internal->profile,
         fontSize);
     if (error == ST_NO_ERROR)
       break;
 
     fontSize -= 1.0f;
-    if (fontSize < 1.0f) {
-      return ST_ERROR_NEGATIVE_FONT_SIZE;
-    }
   }
 
   if (error != ST_NO_ERROR) {
@@ -613,18 +628,29 @@ st_Terminal_decreaseFontSize(
     return error;
   }
 
-  /* Load the new font with our glyph renderer */
-  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
-      self->internal->profile->fontPath,
-      self->internal->profile->fontSize);
-  ST_ASSERT_ERROR_CODE(error);
+  /* Construct a new glyph renderer */
+  st_GlyphRendererRef_init(&newGlyphRenderer);
+  st_GlyphRenderer_init(
+      st_GlyphRendererRef_get(newGlyphRenderer),
+      self->internal->profile  /* profile */
+      );
 
-  /* FIXME: We need to re-generate the glyphs stored in the current glyph atlas
-   * within the text renderer. This could be done with a healthy amount of
-   * threading since rendering glyphs is expensive. */
+  /* TODO: Construct a new glyph renderer and pass it to the text renderer */
+  /* NOTE: This will prompt the text renderer to start re-building its glyph
+   * atlas. Because the text renderer will need to continue to use the old
+   * glyph renderer for a number of frames, it is important that the glyph
+   * renderer actually exist as an st_GlyphRendererRef */
+  st_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
+      newGlyphRenderer  /* glyphRenderer */
+      );
+
+  /* Disown our old glyph renderer */
+  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  self->internal->glyphRenderer = newGlyphRenderer;
 
   /* Update the cell size to the new size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
+  st_GlyphRenderer_getCellSize(
+      st_GlyphRendererRef_get(self->internal->glyphRenderer),
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
@@ -632,7 +658,7 @@ st_Terminal_decreaseFontSize(
   /* Update the screen size based on the new cell size */
   st_Terminal_updateScreenSize(self);
 
-  /* TODO: Do we need an error code for not being able to decrease the font
+  /* TODO: Do we need an error code for not being able to increase the font
    * size? */
   return error;
 }

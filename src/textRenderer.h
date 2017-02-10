@@ -27,6 +27,7 @@
 #include <libtsm.h>
 
 #include "glyphAtlas.h"
+#include "glyphRendererRef.h"
 #include "profile.h"
 
 struct st_TextRenderer_Internal;
@@ -37,16 +38,21 @@ typedef struct st_TextRenderer_ {
 
 void st_TextRenderer_init(
     st_TextRenderer *self,
-    st_GlyphRenderer *glyphRenderer,
+    st_GlyphRendererRef *glyphRenderer,
     st_Profile *profile);
 
 void st_TextRenderer_destroy(
     st_TextRenderer *self);
 
+void st_TextRenderer_setGlyphRenderer(
+    st_TextRenderer *self,
+    st_GlyphRendererRef *glyphRenderer);
+
 void st_TextRenderer_updateScreen(
     st_TextRenderer *self,
     struct tsm_screen *screen,
-    st_GlyphRenderer *glyphRenderer);
+    int cellWidth,
+    int cellHeight);
 
 void st_TextRenderer_draw(
     const st_TextRenderer *self,

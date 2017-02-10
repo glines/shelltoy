@@ -12,6 +12,9 @@ add_executable(check_config
     ../src/backgroundToyDictionary.c
     ../src/config.c
     ../src/error.c
+    ../src/font.c
+    ../src/fontRef.c
+    ../src/fontRefArray.c
     ../src/fonts.c
     ../src/logging.c
     ../src/plugin.c

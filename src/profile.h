@@ -31,6 +31,7 @@
 #include <shelltoy/textToy.h>
 
 #include "color.h"
+#include "fontRefArray.h"
 
 struct st_Profile_Internal_;
 typedef struct st_Profile_Internal_ st_Profile_Internal;
@@ -41,7 +42,7 @@ typedef enum st_Profile_Flag_ {
 } st_Profile_Flag;
 
 typedef struct st_Profile_ {
-  char *name, *fontFace, *fontPath;
+  char *name;
   float fontSize;
   uint32_t flags;
   st_ColorScheme colorScheme;
@@ -59,10 +60,38 @@ void st_Profile_setFlags(
     st_Profile *self,
     uint32_t flags);
 
-st_ErrorCode st_Profile_setFont(
+void
+st_Profile_clearFonts(
+    st_Profile *self);
+
+st_Font *
+st_Profile_getPrimaryFont(
+    st_Profile *self);
+
+st_ErrorCode
+st_Profile_setPrimaryFont(
     st_Profile *self,
     const char *fontFace,
     float fontSize);
+
+st_ErrorCode
+st_Profile_addFallbackFont(
+    st_Profile *self,
+    const char *fontFace);
+
+float
+st_Profile_getFontSize(
+    st_Profile *self);
+
+st_ErrorCode
+st_Profile_setFontSize(
+    st_Profile *self,
+    float fontSize);
+
+void st_Profile_getFonts(
+    st_Profile *self,
+    st_FontRefArray *fonts,
+    st_FontRefArray *boldFonts);
 
 void st_Profile_setBackgroundToy(
     st_Profile *self,

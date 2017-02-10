@@ -24,7 +24,9 @@
 #include <assert.h>
 #include <math.h>
 
+#include "fontRefArray.h"
 #include "fonts.h"
+#include "logging.h"
 
 #include "glyphRenderer.h"
 
@@ -32,25 +34,22 @@
  * integer value in pixels, rounding up */
 #define TWENTY_SIX_SIX_TO_PIXELS(value) ( \
     ((value) >> 6) + ((value) & ((1 << 6) - 1) ? 1 : 0))
-/* Convert a floating point value to the fixed-point 26.6 format */
-#define FLOAT_TO_TWENTY_SIX_SIX(value) ( \
-    ((int)(trunc(value)) << 6) \
-    + (int)trunc(((value) - trunc(value)) * (float)(1 << 6)))
 
 /* Private methods */
-void st_GlyphRenderer_updateCellSize(
-    st_GlyphRenderer *self);
-void st_GlyphRenderer_calculateCellSize(
-    const FT_Face face,
+st_ErrorCode
+st_GlyphRenderer_calculateCellSize(
+    st_GlyphRenderer *self,
     int *width, int *height);
+st_ErrorCode
+st_GlyphRenderer_calculateUnderlineOffset(
+    st_GlyphRenderer *self,
+    int *offset);
 
 struct st_GlyphRenderer_Internal {
-  /* TODO: Support multiple font faces in this structure */
-  /* TODO: Somewhere in the FreeType documentation they suggest disposing of
-   * FT_Face objects whenever possible. It might be best not to keep these
-   * objects around, but I don't know. */
-  FT_Face face;
+  st_FontRefArray fonts;
+  st_FontRefArray boldFonts;
   int cellSize[2];
+  int underlineOffset;
   float fontSize;
 };
 
@@ -58,93 +57,68 @@ void st_GlyphRenderer_init(
     st_GlyphRenderer *self,
     st_Profile *profile)
 {
+  st_ErrorCode error;
+
   /* Allocate internal data structures */
   self->internal = (struct st_GlyphRenderer_Internal*)malloc(
       sizeof(struct st_GlyphRenderer_Internal));
+  st_FontRefArray_init(&self->internal->fonts);
+  st_FontRefArray_init(&self->internal->boldFonts);
 
-  st_GlyphRenderer_loadFont(self,
-      profile->fontPath,
-      profile->fontSize);
-}
-
-/* FIXME: st_GlyphRenderer_loadFont() does not return any error codes. */
-st_ErrorCode
-st_GlyphRenderer_loadFont(
-    st_GlyphRenderer *self,
-    const char *fontPath,
-    float fontSize)
-{
-  FT_Error error;
-  FT_Library ft;
-
-  ft = st_Fonts_getFreeTypeInstance();
-  /* FIXME: This call that uses the Freetype library handle might be better as
-   * part of a helper method inside of fonts.c */
-  /* FIXME: We need to free the FT_Face object we already have */
-  error = FT_New_Face(
-      ft,  /* library */
-      fontPath,  /* filepathname */
-      0,  /* face_index */
-      &self->internal->face  /* aface */
+  /* Get the current font lists from the profile */
+  st_Profile_getFonts(profile,
+      &self->internal->fonts,  /* fonts */
+      &self->internal->boldFonts  /* boldFonts */
       );
-  if (error == FT_Err_Unknown_File_Format) {
-    fprintf(stderr, "Freetype encountered an unknown file format: %s\n",
-        fontPath);
-    /* TODO: Print the specific error message from Freetype */
-  } else if (error != FT_Err_Ok) {
-    fprintf(stderr, "Freetype encountered an error reading file: %s\n",
-        fontPath);
-    /* TODO: Print the specific error message from Freetype */
-  }
-  /* TODO: Fail gracefully? */
-  /* TODO: Support setting different font sizes */
-  /* TODO: Support differentiation between bitmap and vector fonts here */
-  /* TODO: Try out using FT_SIZE_REQUEST_TYPE_CELL, since it is obviously
-   * intended for terminal emulator applications. */
-  error = FT_Set_Char_Size(
-      self->internal->face,  /* face */
-      0,  /* char_width */
-      FLOAT_TO_TWENTY_SIX_SIX(fontSize),  /* char_height */
-      144,  /* horz_resolution */
-      144  /* vert_resolution */
-      );
-  if (error != FT_Err_Ok) {
-    fprintf(stderr,
-        "Freetype failed to set dimensions for font: %s\n",
-        fontPath);
-    /* TODO: Fail gracefully? */
-  }
-  st_GlyphRenderer_updateCellSize(self);
 
-  return ST_NO_ERROR;
-}
-
-void st_GlyphRenderer_updateCellSize(
-    st_GlyphRenderer *self)
-{
-  FT_Face face;
-
-  face = self->internal->face;
-
-  /* Calculate the cell size for the current base font */
-  st_GlyphRenderer_calculateCellSize(
-      face,  /* face */
+  /* Calculate the cell size for the given fonts */
+  error = st_GlyphRenderer_calculateCellSize(self,
       &self->internal->cellSize[0],  /* width */
       &self->internal->cellSize[1]  /* height */
       );
+  ST_LOG_ERROR_CODE(error);
+
+  /* Calculate the underline offset for the given fonts */
+  error = st_GlyphRenderer_calculateUnderlineOffset(self,
+      &self->internal->underlineOffset  /* offset */
+      );
+  ST_LOG_ERROR_CODE(error);
+
+  /* Store the font size */
+  self->internal->fontSize = profile->fontSize;
 }
 
 /** Each FreeType font face defines a "bounding box" that encloses all glyphs.
  * The atlas does not use this information, since it packs glyphs as tightly as
  * possible, but we do need to compute bounding box information for the
  * terminal. */
-void st_GlyphRenderer_calculateCellSize(
-    const FT_Face face,
+st_ErrorCode
+st_GlyphRenderer_calculateCellSize(
+    st_GlyphRenderer *self,
     int *width, int *height)
 {
   double y_pixels_per_unit, units_per_em;
   FT_UInt glyph_index;
   FT_Error error;
+  st_Font *font;
+  FT_Face face;
+
+  /* Use the character 'M' for approximating the cell dimensions */
+#define CELL_REFERENCE_CHAR 'M'
+
+  /* Get the font providing our reference character */
+  error = st_GlyphRenderer_getFont(self,
+      CELL_REFERENCE_CHAR,  /* character */
+      0,  /* bold */
+      &font,  /* font */
+      NULL  /* fondIndex */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  /* Get the FreeType face handle */
+  face = st_Font_getFtFace(font);
 
   /* Compute a scaling factor to convert from font units to pixels, as
    * described in
@@ -153,13 +127,17 @@ void st_GlyphRenderer_calculateCellSize(
   y_pixels_per_unit = face->size->metrics.y_ppem / units_per_em;
 
   /* Horizontal distance between glyphs is estimated by looking at the glyph
-   * for 'M'.  bbox is not appropriate here since some monospace fonts contain
-   * characters far wider than expected. */
-  glyph_index = FT_Get_Char_Index(face, (FT_ULong)'M');
+   * for our reference character.  bbox is not appropriate here since some
+   * monospace fonts contain characters far wider than expected. */
+  glyph_index = FT_Get_Char_Index(
+      face,  /* face */
+      (FT_ULong)CELL_REFERENCE_CHAR  /* charcode */
+      );
   if (glyph_index == 0) {
-    fprintf(stderr, "Font does not contain the character 'M'\n");
-    /* TODO: Fail gracefully */
-    assert(0);
+    /* This should never happen... */
+    ST_LOG_ERROR("No fonts provide the character '%c'",
+        CELL_REFERENCE_CHAR);
+    return ST_ERROR_MISSING_FONT_FOR_CHARACTER_CODE;
   }
   error = FT_Load_Glyph(
       face,  /* face */
@@ -167,10 +145,10 @@ void st_GlyphRenderer_calculateCellSize(
       FT_LOAD_DEFAULT  /* load_flags */
       );
   if (error != FT_Err_Ok) {
-    fprintf(stderr,
-        "Freetype error loading the glyph for ASCII character 'M'\n");
-    /* TODO: Fail gracefully */
-    assert(0);
+    ST_LOG_ERROR(
+        "Freetype error loading the glyph for ASCII character '%c'",
+        CELL_REFERENCE_CHAR);
+    return ST_ERROR_FREETYPE_ERROR;
   }
   *width = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiAdvance);
 
@@ -179,13 +157,40 @@ void st_GlyphRenderer_calculateCellSize(
 
   /* NOTE: The following calculation also seems to work well */
 /*  *height = TWENTY_SIX_SIX_TO_PIXELS(face->size->metrics.height); */
+
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_GlyphRenderer_calculateUnderlineOffset(
+    st_GlyphRenderer *self,
+    int *offset)
+{
+  /* TODO: Actually calculate the underline offset */
+  *offset = 2;
+
+  return ST_NO_ERROR;
 }
 
 void st_GlyphRenderer_destroy(
     st_GlyphRenderer *self)
 {
+  /* Decrement all font references */
+#define DEC_FONT_REFS(ARRAY) \
+  for (size_t i = 0; \
+      i < st_FontRefArray_size(&self->internal->ARRAY); \
+      ++i) \
+  { \
+    st_FontRef *fontRef; \
+    fontRef = st_FontRefArray_get(&self->internal->ARRAY, i); \
+    st_FontRef_decrement(fontRef); \
+  }
+  DEC_FONT_REFS(fonts)
+  DEC_FONT_REFS(boldFonts)
+  /* Destroy font arrays */
+  st_FontRefArray_destroy(&self->internal->fonts);
+  st_FontRefArray_destroy(&self->internal->boldFonts);
   /* Free internal data structures */
-  FT_Done_Face(self->internal->face);
   free(self->internal);
 }
 
@@ -197,104 +202,201 @@ void st_GlyphRenderer_getCellSize(
   *height = self->internal->cellSize[1];
 }
 
-int st_GlyphRenderer_getGlyphDimensions(
+void st_GlyphRenderer_getUnderlineOffset(
     st_GlyphRenderer *self,
-    uint32_t character,
-    int *width, int *height)
+    int *offset)
 {
-  int glyph_index;
-  FT_Error error;
-  /* TODO: Look for a face that provides this glyph (once we add support for
-   * multiple faces) */
-  /* Check for a corresponding glyph provided by this face */
-  glyph_index = FT_Get_Char_Index(self->internal->face, character);
-  if (!glyph_index)
-    return 1;  /* Error; could not find the glyph */
-  /* Load the glyph */
-  error = FT_Load_Glyph(
-      self->internal->face,  /* face */
-      glyph_index,  /* glyph_index */
-      FT_LOAD_DEFAULT  /* load_flags */
-      );
-  if (error != FT_Err_Ok) {
-    fprintf(stderr,
-        "Freetype error loading the glyph for ASCII character '%c'\n",
-        (char)character);
-  }
-  /* Calculate the pixel dimensions of this glyph, as we would render it */
-  *width = 
-    TWENTY_SIX_SIX_TO_PIXELS(self->internal->face->glyph->metrics.width);
-  *height = 
-    TWENTY_SIX_SIX_TO_PIXELS(self->internal->face->glyph->metrics.height);
-  return 0;
+  *offset = self->internal->underlineOffset;
 }
 
-FT_Bitmap *st_GlyphRenderer_renderGlyph(
-    st_GlyphRenderer *self,
-    uint32_t character)
-{
-  int glyph_index;
-  FT_Error error;
-
-  /* Render the glyph for this character */
-  glyph_index = FT_Get_Char_Index(self->internal->face, character);
-  assert(glyph_index != 0);
-  error = FT_Load_Glyph(
-      self->internal->face,  /* face */
-      glyph_index,  /* glyph_index */
-      FT_LOAD_DEFAULT  /* load_flags */
-      );
-  assert(error == FT_Err_Ok);
-  error = FT_Render_Glyph(
-      self->internal->face->glyph,
-      FT_RENDER_MODE_NORMAL);
-  if (error != FT_Err_Ok) {
-    fprintf(stderr,
-        "Freetype encountered an error rendering the glyph for '0x%08x'\n",
-        character);
-    /* TODO: Fail gracefully */
-    assert(0);
-  }
-  return &self->internal->face->glyph->bitmap;
-}
-
-void st_GlyphRenderer_getGlyphOffset(
+st_ErrorCode
+st_GlyphRenderer_getFont(
     st_GlyphRenderer *self,
     uint32_t character,
-    int *x, int *y)
+    int bold,
+    st_Font **font,
+    int *fontIndex)
 {
-  FT_UInt glyph_index;
-  FT_Face face;
-  FT_Error error;
+  st_FontRefArray *fonts;
+  int firstTry = 1;
+  int foo;
 
-  face = self->internal->face;
+  /* TODO: I don't know how well FcCharSet or FC_Face performs. We might be
+   * able to improve performance here by caching these results */
 
-  /* TODO: Look for a face that provides this glyph (once we add support for
-   * multiple faces) */
-  glyph_index = FT_Get_Char_Index(face, character);
-  assert(glyph_index);
-  /* Load the glyph */
-  error = FT_Load_Glyph(
-      face,  /* face */
-      glyph_index,  /* glyph_index */
-      FT_LOAD_DEFAULT  /* load_flags */
-      );
-  if (error != FT_Err_Ok) {
-    fprintf(stderr,
-        "Freetype error loading the glyph for ASCII character '%c'\n",
-        (char)character);
-    /* FIXME: Fail gracefully */
-    assert(0);
+  if (fontIndex == NULL) {
+    /* Discard font index result */
+    fontIndex = &foo;
   }
-  /* Calculate the horizontal offset of this glyph */
-  *x = TWENTY_SIX_SIX_TO_PIXELS(face->glyph->metrics.horiBearingX);
-  /* Calculate the vertical offset of this glyph */
-  FT_Pos linegap = face->size->metrics.height
-    - face->size->metrics.ascender
-    + face->size->metrics.descender;
-  *y = TWENTY_SIX_SIX_TO_PIXELS(
-      face->glyph->metrics.horiBearingY
-      - face->size->metrics.descender
-      - face->glyph->metrics.height
-      - linegap / 2);  /* Distribute the linegap above and below the glyph */
+
+  if (bold) {
+    /* Start looking for bold fonts */
+    fonts = &self->internal->boldFonts;
+    /* Start the font index past the ordinary fonts */
+    *fontIndex = st_FontRefArray_size(&self->internal->fonts);
+  } else {
+    /* Start looking for ordinary fonts */
+    fonts = &self->internal->fonts;
+    /* Start the font index at zero */
+    *fontIndex = 0;
+  }
+
+  do {
+    /* Iterate over our list of fonts, looking for the first font that provides
+     * the given character */
+    for (size_t i = 0;
+        i < st_FontRefArray_size(fonts);
+        ++i)
+    {
+      *font = st_FontRef_get(st_FontRefArray_get(fonts, i));
+      if (st_Font_hasCharacter(*font, character)) {
+        /* Found a suitable font */
+        /* Adjust the font index by the index into this font array */
+        *fontIndex += i;
+        return ST_NO_ERROR;
+      }
+    }
+
+    if (bold) {
+      /* Look for ordinary fonts out of desperation */
+      fonts = &self->internal->fonts;
+      /* Start the font index at zero */
+      *fontIndex = 0;
+    } else {
+      /* Look for bold fonts out of desperation */
+      fonts = &self->internal->boldFonts;
+      /* Start the font index past the ordinary fonts */
+      *fontIndex = st_FontRefArray_size(&self->internal->fonts);
+    }
+  } while (firstTry--);
+
+  /* No suitable font was found */
+  *font = NULL;
+  *fontIndex = -1;
+
+  return ST_ERROR_MISSING_FONT_FOR_CHARACTER_CODE;
+}
+
+st_ErrorCode
+st_GlyphRenderer_getFontIndex(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    int *fontIndex)
+{
+  st_Font *font;
+  st_ErrorCode error;
+
+  error = st_GlyphRenderer_getFont(self,
+      character,  /* character */
+      bold,  /* bold */
+      &font,  /* font */
+      fontIndex  /* fontIndex */
+      );
+
+  return error;
+}
+
+st_ErrorCode
+st_GlyphRenderer_getGlyphDimensions(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    int *width,
+    int *height)
+{
+  st_ErrorCode error;
+  st_Font *font;
+
+  /* Get the font that provides this character's glyph */
+  error = st_GlyphRenderer_getFont(self,
+      character,  /* character */
+      bold,  /* bold */
+      &font,  /* font */
+      NULL  /* fontIndex */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  /* Get the dimensions of the glyph from our font */
+  error = st_Font_getGlyphDimensions(font,
+      character,  /* character */
+      width,  /* width */
+      height  /* height */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_GlyphRenderer_getGlyphOffset(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    int *x,
+    int *y)
+{
+  st_Font *font;
+  st_ErrorCode error;
+
+  /* Get the font that provides this character's glyph */
+  error = st_GlyphRenderer_getFont(self,
+      character,  /* character */
+      bold,  /* bold */
+      &font,  /* font */
+      NULL  /* fontIndex */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  /* Get the offset of the glyph from our font */
+  error = st_Font_getGlyphOffset(font,
+      character,  /* character */
+      x,  /* x */
+      y  /* y */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  return ST_NO_ERROR;
+}
+
+st_ErrorCode
+st_GlyphRenderer_renderGlyph(
+    st_GlyphRenderer *self,
+    uint32_t character,
+    int bold,
+    FT_Bitmap **bitmap,
+    int *fontIndex)
+{
+  st_Font *font;
+  st_ErrorCode error;
+
+  /* Determine which font provides the glyph for this character code */
+  error = st_GlyphRenderer_getFont(self,
+      character,  /* character */
+      bold,  /* bold */
+      &font,  /* font */
+      fontIndex  /* fontIndex */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  /* Render the glyph for this character code with our font */
+  error = st_Font_renderGlyph(font,
+      character,  /* character */
+      bitmap  /* bitmap */
+      );
+  if (error != ST_NO_ERROR) {
+    return error;
+  }
+
+  return ST_NO_ERROR;
 }

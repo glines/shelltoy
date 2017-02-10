@@ -58,12 +58,12 @@ typedef struct st_TextRenderer_UnderlineInstance_ {
 
 typedef struct st_TextRenderer_ScreenDrawCallbackData_ {
   st_TextRenderer *self;
-  st_GlyphRenderer *glyphRenderer;
   int cellWidth, cellHeight;
 } st_TextRenderer_ScreenDrawCallbackData;
 
 struct st_TextRenderer_Internal {
   st_TextToy *textToy;
+  st_GlyphRendererRef *glyphRenderer;
   st_GlyphAtlas *atlas;
   st_Profile *profile;
   st_TextRenderer_GlyphInstance *glyphs;
@@ -111,7 +111,6 @@ void st_TextRenderer_addBackgroundCellInstance(
     const struct tsm_screen_attr *attr);
 void st_TextRenderer_addGlyphInstance(
     st_TextRenderer *self,
-    st_GlyphRenderer *glyphRenderer,
     uint32_t ch,
     int posx,
     int posy,
@@ -145,7 +144,7 @@ void st_TextRenderer_drawGlyphs(
 
 void st_TextRenderer_init(
     st_TextRenderer *self,
-    st_GlyphRenderer *glyphRenderer,
+    st_GlyphRendererRef *glyphRenderer,
     st_Profile *profile)
 {
   /* Allocate memory for internal data structures */
@@ -167,6 +166,9 @@ void st_TextRenderer_init(
   self->internal->underlines = (st_TextRenderer_UnderlineInstance *)malloc(
       sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
   self->internal->numUnderlines = 0;
+  /* Store a reference to the glyph renderer */
+  self->internal->glyphRenderer = glyphRenderer;
+  st_GlyphRendererRef_increment(glyphRenderer);
   /* Store a pointer to the profile */
   self->internal->profile = profile;
   /* Store a pointer to the text toy, for fancy text rendering */
@@ -179,7 +181,10 @@ void st_TextRenderer_init(
   self->internal->atlas = (st_GlyphAtlas *)malloc(sizeof(st_GlyphAtlas));
   st_GlyphAtlas_init(self->internal->atlas);
   /* Render glyphs to the atlas representative of ASCII terminals */
-  st_GlyphAtlas_renderASCIIGlyphs(self->internal->atlas, glyphRenderer);
+  st_GlyphAtlas_renderASCIIGlyphs(self->internal->atlas,
+      st_GlyphRendererRef_get(
+        self->internal->glyphRenderer)  /* glyphRenderer */
+      );
 }
 
 void st_TextRenderer_initShaders(
@@ -560,6 +565,8 @@ void st_TextRenderer_destroy(
   /* Destroy the glyph atlas */
   st_GlyphAtlas_destroy(self->internal->atlas);
   free(self->internal->atlas);
+  /* Disown our glyph renderer */
+  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   /* Free internal data structures */
   free(self->internal->underlines);
   free(self->internal->backgroundCells);
@@ -567,10 +574,37 @@ void st_TextRenderer_destroy(
   free(self->internal);
 }
 
+void st_TextRenderer_setGlyphRenderer(
+    st_TextRenderer *self,
+    st_GlyphRendererRef *glyphRenderer)
+{
+  st_GlyphAtlas *newAtlas;
+
+  /* TODO: Convert this serial implementation into a parallel implementation
+   * with a thread to prepare a stagingAtlas with a
+   * stagingGlyphRenderer. */
+  /* Construct a new glyph atlas with the given glyph renderer */
+  newAtlas = (st_GlyphAtlas *)malloc(sizeof(st_GlyphAtlas));
+  st_GlyphAtlas_init(newAtlas);
+  st_GlyphAtlas_renderASCIIGlyphs(newAtlas,
+      st_GlyphRendererRef_get(glyphRenderer)  /* glyphRenderer */
+      );
+
+  /* Destroy our old atlas and replace it with the new one */
+  st_GlyphAtlas_destroy(self->internal->atlas);
+  free(self->internal->atlas);
+  self->internal->atlas = newAtlas;
+
+  /* Disown our old glyph renderer and use the new one */
+  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  self->internal->glyphRenderer = glyphRenderer;
+}
+
 void st_TextRenderer_updateScreen(
     st_TextRenderer *self,
     struct tsm_screen *screen,
-    st_GlyphRenderer *glyphRenderer)
+    int cellWidth,
+    int cellHeight)
 {
   st_TextRenderer_ScreenDrawCallbackData data;
 
@@ -602,11 +636,8 @@ void st_TextRenderer_updateScreen(
   /* Fill the background and glyph instance buffers with the latest screen
    * contents */
   data.self = self;
-  data.glyphRenderer = glyphRenderer;
-  st_GlyphRenderer_getCellSize(glyphRenderer,
-      &data.cellWidth,  /* cellWidth */
-      &data.cellHeight  /* cellHeight */
-      );
+  data.cellWidth = cellWidth;
+  data.cellHeight = cellHeight;
   self->internal->numGlyphs = 0;
   self->internal->numBackgroundCells = 0;
   self->internal->numUnderlines = 0;
@@ -669,10 +700,8 @@ void st_TextRenderer_screenDrawCallback(
   st_TextRenderer_ScreenDrawCallbackData *data)
 {
   st_TextRenderer *self;
-  st_GlyphRenderer *glyphRenderer;
 
   self = data->self;
-  glyphRenderer = data->glyphRenderer;
 
   /* Add background instances for cells with a background color */
   /* FIXME: I'm not sure how to check for no background color. It might be
@@ -690,7 +719,6 @@ void st_TextRenderer_screenDrawCallback(
   /* FIXME: Better detection for whitespace characters here? */
   if ((*ch) && (*ch != 0x20)) {
     st_TextRenderer_addGlyphInstance(self,
-        glyphRenderer,  /* glyphRenderer */
         *ch,  /* ch */
         posx,  /* posx */
         posy,  /* posx */
@@ -775,7 +803,6 @@ void st_TextRenderer_addBackgroundCellInstance(
 
 void st_TextRenderer_addGlyphInstance(
     st_TextRenderer *self,
-    st_GlyphRenderer *glyphRenderer,
     uint32_t ch,
     int posx,
     int posy,
@@ -783,26 +810,39 @@ void st_TextRenderer_addGlyphInstance(
     int cellWidth,
     int cellHeight)
 {
+  st_GlyphRenderer *glyphRenderer;
   st_TextRenderer_GlyphInstance glyphInstance;
   st_BoundingBox bbox;
   float xOffset, yOffset, glyphWidth, glyphHeight;
-  int atlasIndex;
-  int error, result;
+  int result;
+  int fontIndex;
   int8_t code;
+  st_ErrorCode error;
+
+  glyphRenderer = st_GlyphRendererRef_get(self->internal->glyphRenderer);
+  error = st_GlyphRenderer_getFontIndex(glyphRenderer,
+      ch,  /* character */
+      attr->bold,  /* bold */
+      &fontIndex  /* fontIndex */
+      );
+  if (error != ST_NO_ERROR) {
+    /* No fonts provide a glyph for this character code */
+    return;
+  }
 
   /* Look for this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(self->internal->atlas,
       ch,  /* character */
+      fontIndex,  /* fontIndex */
       cellWidth,  /* cellWidth */
-      cellHeight,  /* cellWidth */
+      cellHeight,  /* cellHeight */
       &bbox,  /* bbox */
       &xOffset,  /* xOffset */
       &yOffset,  /* yOffset */
       &glyphWidth,  /* glyphWidth */
-      &glyphHeight, /* glyphHeight */
-      &atlasIndex  /* atlasTextureIndex */
+      &glyphHeight  /* glyphHeight */
       );
-  if (error) {
+  if (error != ST_NO_ERROR) {
     /* A glyph for the given character could not be found in the atlas */
     /* TODO: Try to add a glyph for this character */
     /* fprintf(stderr, "Could not find glyph for '0x%08x'\n", ch); */
