@@ -314,6 +314,9 @@ int main(int argc, char** argv) {
         );
   }
 
+  st_Fonts_init();
+  atexit(st_Fonts_destroy);
+
   /* Prepare the configuration */
   st_Config_init(&shelltoy.config);
   atexit(st_destroyConfig);
@@ -365,8 +368,6 @@ int main(int argc, char** argv) {
 
   st_initSDL();
   atexit(st_quitSDL);
-  st_Fonts_init();
-  atexit(st_Fonts_destroy);
 
   if (argc - optind == 0) {
     /* No shell was given; we check the SHELL environment variable */

@@ -1,4 +1,5 @@
 add_library(common
+    array.c
     dictionary.c
     glError.c
     mkdir.c

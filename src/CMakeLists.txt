@@ -6,6 +6,9 @@ add_executable(shelltoy
     collisionDetection.c
     config.c
     error.c
+    font.c
+    fontRef.c
+    fontRefArray.c
     fonts.c
     glyphAtlas.c
     glyphRenderer.c

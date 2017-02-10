@@ -35,8 +35,9 @@
 typedef struct st_GlyphAtlasEntry_ {
   st_BoundingBox bbox;
   int xOffset, yOffset;
-  int cellWidth, cellHeight;
   uint32_t ch;
+  int cellWidth, cellHeight;
+  int fontIndex;
 } st_GlyphAtlasEntry;
 
 struct st_GlyphAtlas_Internal {
@@ -91,13 +92,17 @@ int st_compareGlyphSizes(
   return 0;
 }
 
-int st_compareGlyphCharacters(
+int st_compareGlyphs(
     const st_GlyphAtlasEntry *a,
     const st_GlyphAtlasEntry *b)
 {
   if (a->ch < b->ch)
     return -1;
   if (a->ch > b->ch)
+    return 1;
+  if (a->fontIndex < b->fontIndex)
+    return -1;
+  if (a->fontIndex > b->fontIndex)
     return 1;
   return 0;
 }
@@ -144,10 +149,9 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     assert(numPendingGlyphs < NUM_PRINT_ASCII);
     currentGlyph = &pendingGlyphs[numPendingGlyphs];
     /* Check for the glyph and get its dimensions */
-    /* FIXME: I don't really like that the
-     * st_GlyphRenderer_getGlyphDimensions() method does two things, but it
-     * does avoid a few FreeType calls */
-    error = st_GlyphRenderer_getGlyphDimensions(glyphRenderer, c,
+    error = st_GlyphRenderer_getGlyphDimensions(glyphRenderer,
+        c,  /* character */
+        0,  /* bold */
         &currentGlyph->bbox.w, &currentGlyph->bbox.h);
     if (error)
       continue;  /* This glyph is not being provided */
@@ -157,6 +161,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     /* Store the glyph offset */
     st_GlyphRenderer_getGlyphOffset(glyphRenderer,
         c,  /* character */
+        0,  /* bold */
         &currentGlyph->xOffset,  /* x */
         &currentGlyph->yOffset  /* y */
         );
@@ -167,6 +172,12 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     currentGlyph->xOffset -= padding;
     currentGlyph->yOffset -= padding;
     /* Store the cell size for which this glyph was rendered */
+    /* FIXME: The same font can be rendered for different cell dimensions, e.g.
+     * if a secondary font for asian characters is chosen for different cell
+     * dimensions. I think it would be best to give up on glyph "garbage
+     * collection" and simply toss the glyph atlas whenever the font changes.
+     * We can still get responsive font size changes while the new atlas is
+     * being computed. */
     currentGlyph->cellWidth = cellWidth;
     currentGlyph->cellHeight = cellHeight;
     /*
@@ -276,9 +287,12 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   for (int i = 0; i < numPendingGlyphs; ++i) {
     currentGlyph = &pendingGlyphs[i];
     /* Render each glyph */
-    bitmap = st_GlyphRenderer_renderGlyph(
-        glyphRenderer,
-        currentGlyph->ch);
+    error = st_GlyphRenderer_renderGlyph(glyphRenderer,
+        currentGlyph->ch,  /* character */
+        0,  /* bold */
+        &bitmap,  /* bitmap */
+        &currentGlyph->fontIndex  /* fontIndex */
+        );
     assert(bitmap->width < currentGlyph->bbox.w);
     assert(bitmap->rows < currentGlyph->bbox.h);
     /* Blit the rendered glyph onto our texture in memory */
@@ -358,30 +372,35 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     self->internal->glyphs,  /* ptr */
     self->internal->numGlyphs,  /* count */
     sizeof(st_GlyphAtlasEntry),  /* size */
-    (int(*)(const void *, const void *))st_compareGlyphCharacters  /* comp */
+    (int(*)(const void *, const void *))st_compareGlyphs  /* comp */
     );
 
   free(atlasTexture);
   free(pendingGlyphs);
 }
 
-int st_GlyphAtlas_getGlyph(
+st_ErrorCode
+st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
+    int fontIndex,
     int cellWidth,
     int cellHeight,
     st_BoundingBox *bbox,
     float *xOffset,
     float *yOffset,
     float *glyphWidth,
-    float *glyphHeight,
-    int *atlasTextureIndex)
+    float *glyphHeight)
 {
   int a, b, i;
   float widthRatio, heightRatio;
   st_GlyphAtlasEntry *currentGlyph;
+  st_GlyphAtlasEntry target;
+  int result;
   if (self->internal->numGlyphs == 0)
-    return 1;
+    return ST_ERROR_ATLAS_GLYPH_NOT_FOUND;
+  target.ch = character;
+  target.fontIndex = fontIndex;
   currentGlyph = &self->internal->glyphs[0];
   /* Binary search for the glyph corresponding to the given character */
   /* FIXME: Check the loop conditions and write some unit tests for this thing;
@@ -390,31 +409,32 @@ int st_GlyphAtlas_getGlyph(
   while (a < b) {
     i = (b - a) / 2 + a;
     currentGlyph = &self->internal->glyphs[i];
-    if (character < currentGlyph->ch) {
+    result = st_compareGlyphs(&target, currentGlyph);
+    if (result < 0) {
       b = i;
-    } else if (character > currentGlyph->ch) {
+    } else if (result > 0) {
       a = i + 1;
     } else {
-      /* character == currentGlyph->ch */
+      /* target == currentGlyph */
       break;
     }
   }
-  if (currentGlyph->ch != character)
-    return 1;
+  result = st_compareGlyphs(&target, currentGlyph);
+  if (result != 0)
+    return ST_ERROR_ATLAS_GLYPH_NOT_FOUND;
   memcpy(bbox, &currentGlyph->bbox, sizeof(*bbox));
-  /* TODO: Calculate the offset and dimensions of the glyph using the ratio of
-   * the current cell dimensions over the cell dimensions for which the glyph
-   * was rendered at */
+  /* Calculate the offset and dimensions of the glyph using the ratio of the
+   * current cell dimensions over the cell dimensions for which the glyph was
+   * rendered at */
   widthRatio = (float)cellWidth / (float)currentGlyph->cellWidth;
   heightRatio = (float)cellHeight / (float)currentGlyph->cellHeight;
   *xOffset = currentGlyph->xOffset * widthRatio;
   *yOffset = currentGlyph->yOffset * heightRatio;
   *glyphWidth = currentGlyph->bbox.dim[0] * widthRatio;
   *glyphHeight = currentGlyph->bbox.dim[1] * heightRatio;
-  /* FIXME: Set the atlas texture index once we start using more than one atlas
+  /* TODO: Set the atlas texture index once we start using more than one atlas
    * texture */
-  *atlasTextureIndex = 0;
-  return 0;
+  return ST_NO_ERROR;
 }
 
 void st_GlyphAtlas_blitGlyph(

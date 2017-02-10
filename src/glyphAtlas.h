@@ -97,17 +97,18 @@ void st_GlyphAtlas_renderASCIIGlyphs(
 void st_GlyphAtlas_addGlyph(
     /* TODO */);
 
-int st_GlyphAtlas_getGlyph(
+st_ErrorCode
+st_GlyphAtlas_getGlyph(
     const st_GlyphAtlas *self,
     uint32_t character,
+    int fontIndex,
     int cellWidth,
     int cellHeight,
     st_BoundingBox *bbox,
     float *xOffset,
     float *yOffset,
     float *glyphWidth,
-    float *glyphHeight,
-    int *atlasTextureIndex);
+    float *glyphHeight);
 
 void st_GlyphAtlas_getTextures(
     const st_GlyphAtlas *self,

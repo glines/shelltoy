@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,39 +21,49 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_ERROR_H_
-#define SHELLTOY_ERROR_H_
+#ifndef SHELLTOY_COMMON_REFERENCE_H_
+#define SHELLTOY_COMMON_REFERENCE_H_
 
-typedef enum st_ErrorCode_ {
-  ST_NO_ERROR = 0,
-  ST_ERROR_ATLAS_GLYPH_NOT_FOUND,
-  ST_ERROR_CONFIG,
-  ST_ERROR_CONFIG_FAILED_TO_SERIALIZE,
-  ST_ERROR_CONFIG_FILE_FORMAT,
-  ST_ERROR_CONFIG_FILE_NOT_FOUND,
-  ST_ERROR_CONFIG_FILE_PATH_NOT_SET,
-  ST_ERROR_CONFIG_FILE_READ,
-  ST_ERROR_DUPLICATE_PLUGIN_NAME,
-  ST_ERROR_FAILED_TO_CREATE_CONFIG_FILE,
-  ST_ERROR_FAILED_TO_CREATE_DIRECTORY,
-  ST_ERROR_FAILED_TO_LOAD_FONT,
-  ST_ERROR_FONTCONFIG_ERROR,
-  ST_ERROR_FONT_GLYPH_NOT_FOUND,
-  ST_ERROR_FONT_NOT_FOUND,
-  ST_ERROR_FREETYPE_ERROR,
-  ST_ERROR_MISSING_FONT,
-  ST_ERROR_MISSING_FONT_FOR_CHARACTER_CODE,
-  ST_ERROR_NEGATIVE_FONT_SIZE,
-  ST_ERROR_OUT_OF_MEMORY,
-  ST_ERROR_PLUGIN_DL_FAILED_TO_LOAD,
-  ST_ERROR_PLUGIN_MISSING_SYMBOL,
-  ST_ERROR_PLUGIN_NOT_FOUND,
-  ST_ERROR_PLUGIN_VERSION_MISMATCH,
-  ST_ERROR_PROFILE_NOT_FOUND,
-  ST_ERROR_UNKNOWN_COLOR_CODE,
-} st_ErrorCode;
+#include <stdlib.h>
 
-const char *st_ErrorString(
-    st_ErrorCode error);
+#define ST_DECLARE_REFERENCE(TYPE) \
+  typedef struct TYPE ## Ref_ { \
+    TYPE base; \
+    int refCount; \
+  } TYPE ## Ref; \
+  void TYPE ## Ref_init( \
+      TYPE ## Ref *self); \
+  TYPE *TYPE ## Ref_get( \
+      TYPE ## Ref *self); \
+  void TYPE ## Ref_increment( \
+      TYPE ## Ref *self); \
+  void TYPE ## Ref_decrement( \
+      TYPE ## Ref *self);
+
+#define ST_DEFINE_REFERENCE(TYPE) \
+  void TYPE ## Ref_init( \
+      TYPE ## Ref *self) \
+  { \
+    self->refCount = 1; \
+  } \
+  TYPE *TYPE ## Ref_get( \
+      TYPE ## Ref *self) \
+  { \
+    return &self->base; \
+  } \
+  void TYPE ## Ref_increment( \
+      TYPE ## Ref *self) \
+  { \
+    self->refCount += 1; \
+  } \
+  void TYPE ## Ref_decrement( \
+      TYPE ## Ref *self) \
+  { \
+    self->refCount -= 1; \
+    if (self->refCount == 0) { \
+      TYPE ## _destroy((TYPE *)&self->base); \
+      free(self); \
+    } \
+  }
 
 #endif

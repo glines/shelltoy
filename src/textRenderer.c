@@ -786,23 +786,34 @@ void st_TextRenderer_addGlyphInstance(
   st_TextRenderer_GlyphInstance glyphInstance;
   st_BoundingBox bbox;
   float xOffset, yOffset, glyphWidth, glyphHeight;
-  int atlasIndex;
-  int error, result;
+  int result;
+  int fontIndex;
   int8_t code;
+  st_ErrorCode error;
+
+  error = st_GlyphRenderer_getFontIndex(glyphRenderer,
+      ch,  /* character */
+      attr->bold,  /* bold */
+      &fontIndex  /* fontIndex */
+      );
+  if (error != ST_NO_ERROR) {
+    /* No fonts provide a glyph for this character code */
+    return;
+  }
 
   /* Look for this glyph in our atlas */
   error = st_GlyphAtlas_getGlyph(self->internal->atlas,
       ch,  /* character */
+      fontIndex,  /* fontIndex */
       cellWidth,  /* cellWidth */
-      cellHeight,  /* cellWidth */
+      cellHeight,  /* cellHeight */
       &bbox,  /* bbox */
       &xOffset,  /* xOffset */
       &yOffset,  /* yOffset */
       &glyphWidth,  /* glyphWidth */
-      &glyphHeight, /* glyphHeight */
-      &atlasIndex  /* atlasTextureIndex */
+      &glyphHeight  /* glyphHeight */
       );
-  if (error) {
+  if (error != ST_NO_ERROR) {
     /* A glyph for the given character could not be found in the atlas */
     /* TODO: Try to add a glyph for this character */
     /* fprintf(stderr, "Could not find glyph for '0x%08x'\n", ch); */

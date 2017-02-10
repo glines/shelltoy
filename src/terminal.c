@@ -544,10 +544,10 @@ st_Terminal_increaseFontSize(
   st_ErrorCode error;
 
   /* Look for the next largest available font */
-  fontSize = ceil(self->internal->profile->fontSize) + 1.0f;
+  fontSize = st_Profile_getFontSize(self->internal->profile);
+  fontSize = ceil(fontSize) + 1.0f;
   for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
-    error = st_Profile_setFont(self->internal->profile,
-        self->internal->profile->fontFace,
+    error = st_Profile_setFontSize(self->internal->profile,
         fontSize);
     if (error == ST_NO_ERROR)
       break;
@@ -560,15 +560,16 @@ st_Terminal_increaseFontSize(
     return error;
   }
 
-  /* Load the new font with our glyph renderer */
-  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
-      self->internal->profile->fontPath,
-      self->internal->profile->fontSize);
-  ST_ASSERT_ERROR_CODE(error);
-
-  /* FIXME: We need to re-generate the glyphs stored in the current glyph atlas
-   * within the text renderer. This could be done with a healthy amount of
-   * threading since rendering glyphs is expensive. */
+  /* TODO: Construct a new glyph renderer and pass it to the text renderer */
+  /* NOTE: This will prompt the text renderer to start re-building its glyph
+   * atlas. Because the text renderer will need to continue to use the old
+   * glyph renderer for a number of frames, it is important that the glyph
+   * renderer actually exist as an st_GlyphRendererRef */
+  /*
+  st_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
+      self->internal->glyphRenderer
+      );
+  */
 
   /* Update the cell size to the new size as calculated by the glyph renderer */
   st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
@@ -588,51 +589,7 @@ st_ErrorCode
 st_Terminal_decreaseFontSize(
     st_Terminal *self)
 {
-#define MAX_DECREASE_FONT_SIZE_ATTEMPTS 32
-  float fontSize;  /* Font size in pixels */
-  st_ErrorCode error;
-
-  /* Look for the next smallest available font, while avoiding negative
-   * values */
-  fontSize = floor(self->internal->profile->fontSize) - 1.0f;
-  for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
-    error = st_Profile_setFont(self->internal->profile,
-        self->internal->profile->fontFace,
-        fontSize);
-    if (error == ST_NO_ERROR)
-      break;
-
-    fontSize -= 1.0f;
-    if (fontSize < 1.0f) {
-      return ST_ERROR_NEGATIVE_FONT_SIZE;
-    }
-  }
-
-  if (error != ST_NO_ERROR) {
-    /* We were unable to find the font in a larger size */
-    return error;
-  }
-
-  /* Load the new font with our glyph renderer */
-  error = st_GlyphRenderer_loadFont(&self->internal->glyphRenderer,
-      self->internal->profile->fontPath,
-      self->internal->profile->fontSize);
-  ST_ASSERT_ERROR_CODE(error);
-
-  /* FIXME: We need to re-generate the glyphs stored in the current glyph atlas
-   * within the text renderer. This could be done with a healthy amount of
-   * threading since rendering glyphs is expensive. */
-
-  /* Update the cell size to the new size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(&self->internal->glyphRenderer,
-      &self->cellWidth,  /* width */
-      &self->cellHeight  /* height */
-      );
-
-  /* Update the screen size based on the new cell size */
-  st_Terminal_updateScreenSize(self);
-
-  /* TODO: Do we need an error code for not being able to decrease the font
-   * size? */
-  return error;
+  /* TODO: Copy the structure of this routine from st_Terminal_increaseFontSize
+   * once that is working again */
+  return ST_NO_ERROR;
 }
