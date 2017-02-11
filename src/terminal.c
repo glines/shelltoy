@@ -34,12 +34,19 @@
 
 #include "terminal.h"
 
+typedef enum st_Terminal_SelectionState_ {
+  ST_TERMINAL_SELECTION_BETWEEN_CELLS,
+  ST_TERMINAL_SELECTION_STARTED,
+} st_Terminal_SelectionState;
+
 /* Internal data structure */
 struct st_Terminal_Internal {
   st_TextRenderer textRenderer;
   st_BackgroundRenderer backgroundRenderer;
   st_GlyphRendererRef *glyphRenderer;
   st_Profile *profile;
+  int beginSelection[2];
+  st_Terminal_SelectionState selectionState;
 };
 
 /* Private methods */
@@ -64,6 +71,12 @@ void st_Terminal_calculateScreenSize(
     st_Terminal *self,
     int *columns,
     int *rows);
+void st_Terminal_calculateCell(
+    const st_Terminal *self,
+    int x,
+    int y,
+    int *cellColumn,
+    int *cellRow);
 
 void st_Terminal_tsmLogCallback(
     st_Terminal *self,
@@ -207,6 +220,18 @@ void st_Terminal_calculateScreenSize(
    * the terminal window */
   *columns = self->width / self->cellWidth;
   *rows = self->height / self->cellHeight;
+}
+
+void st_Terminal_calculateCell(
+    const st_Terminal *self,
+    int x,
+    int y,
+    int *cellColumn,
+    int *cellRow)
+{
+  /* Calculate the position of the cell containing the given screen position */
+  *cellColumn = x / self->cellWidth;
+  *cellRow = y / self->cellHeight;
 }
 
 void st_Terminal_init(
@@ -538,6 +563,134 @@ void st_Terminal_keyInput(
     /* FIXME: It's not clear what result signifies or what
      * tsm_screen_sb_reset() actually does. */
     tsm_screen_sb_reset(self->screen);
+  }
+}
+
+void st_Terminal_mouseButton(
+    st_Terminal *self,
+    const SDL_MouseButtonEvent *event)
+{
+  fprintf(stderr, "inside st_Terminal_mouseButton\n");
+  switch (event->button) {
+    case SDL_BUTTON_LEFT:
+      if (event->state == SDL_PRESSED) {
+        /* Begin the selection (no cells are selected until dragging starts) */
+        self->internal->beginSelection[0] = event->x;
+        self->internal->beginSelection[1] = event->y;
+        self->internal->selectionState = ST_TERMINAL_SELECTION_BETWEEN_CELLS;
+      } else {
+        assert(event->state == SDL_RELEASED);
+      }
+      break;
+  }
+}
+
+void st_Terminal_mouseMotion(
+    st_Terminal *self,
+    const SDL_MouseMotionEvent *event)
+{
+  if (event->state & SDL_BUTTON_LMASK) {
+    int beginSelection[2], endSelection[2], beginCell[2], endCell[2],
+        beginCellHalf, endCellHalf, beginPos, endPos;
+    beginSelection[0] = self->internal->beginSelection[0];
+    beginSelection[1] = self->internal->beginSelection[1];
+    endSelection[0] = event->x;
+    endSelection[1] = event->y;
+    /* Determine the cells in which the selection begins and ends */
+    st_Terminal_calculateCell(self,
+        beginSelection[0],  /* x */
+        beginSelection[1],  /* y */
+        &beginCell[0],  /* cellColumn */
+        &beginCell[1]  /* cellRow */
+        );
+    st_Terminal_calculateCell(self,
+        endSelection[0],  /* x */
+        endSelection[1],  /* y */
+        &endCell[0],  /* cellColumn */
+        &endCell[1]  /* cellRow */
+        );
+    /* Determine which half of each cell the selection begins at and ends
+     * at respectively */
+    beginCellHalf = ((2 * beginSelection[0]) / self->cellWidth) % 2;
+    endCellHalf = ((2 * endSelection[0]) / self->cellWidth) % 2;
+    beginPos = (beginCell[0] << 1) + beginCellHalf;
+    endPos = (endCell[0] << 1) + endCellHalf;
+    switch (self->internal->selectionState) {
+      case ST_TERMINAL_SELECTION_BETWEEN_CELLS:
+        if (beginCell[1] == endCell[1]) {
+#define ROUND_FIXED_POINT(a) (((a) >> 1) + ((a) & 1))
+          /* The selection is within a single row */
+          if (ROUND_FIXED_POINT(beginPos) == ROUND_FIXED_POINT(endPos)) {
+            /* The selection is between cells; nothing is selected */
+            break;
+          }
+          if (beginPos < endPos) {
+            /* Selection from left to right */
+            tsm_screen_selection_start(
+                self->screen,  /* con */
+                ROUND_FIXED_POINT(beginPos),  /* posx */
+                beginCell[1]  /* posy */
+                );
+          } else if (endPos < beginPos) {
+            /* Selection from right to left */
+            tsm_screen_selection_start(
+                self->screen,  /* con */
+                ROUND_FIXED_POINT(beginPos) - 1,  /* posx */
+                beginCell[1]  /* posy */
+                );
+          }
+        } else {
+          /* TODO: Selection across multiple rows */
+        }
+        self->internal->selectionState = ST_TERMINAL_SELECTION_STARTED;
+      case ST_TERMINAL_SELECTION_STARTED:
+        {
+          /* int selectionTarget[2]; */
+          /* TODO: Calculate the selection target */
+          /* TODO: Cache the selection target until the next event so that we
+           * can avoid updating the screen at every mouse event */
+          if (beginCell[1] == endCell[1]) {
+            /* The selection is within a single row */
+            if (ROUND_FIXED_POINT(beginPos) == ROUND_FIXED_POINT(endPos)) {
+              /* The selection is between cells; nothing is selected */
+              tsm_screen_selection_reset(self->screen);
+              /* Update the screen */
+              st_TextRenderer_updateScreen(&self->internal->textRenderer,
+                  self->screen,  /* screen */
+                  self->cellWidth,  /* cellWidth */
+                  self->cellHeight  /* cellHeight */
+                  );
+              self->internal->selectionState =
+                ST_TERMINAL_SELECTION_BETWEEN_CELLS;
+              break;
+            }
+            if (beginPos < endPos) {
+              /* Selection from left to right */
+              tsm_screen_selection_target(
+                  self->screen,  /* con */
+                  ROUND_FIXED_POINT(endPos) - 1,  /* posx */
+                  endCell[1]  /* posy */
+                  );
+            } else if (endPos < beginPos) {
+              /* Selection from right to left */
+              tsm_screen_selection_target(
+                  self->screen,  /* con */
+                  ROUND_FIXED_POINT(endPos),  /* posx */
+                  endCell[1]  /* posy */
+                  );
+            }
+          }
+        }
+        /* Update the screen */
+        st_TextRenderer_updateScreen(&self->internal->textRenderer,
+            self->screen,  /* screen */
+            self->cellWidth,  /* cellWidth */
+            self->cellHeight  /* cellHeight */
+            );
+        break;
+      default:
+        assert(0);
+    }
   }
 }
 

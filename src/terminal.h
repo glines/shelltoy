@@ -69,6 +69,13 @@ void st_Terminal_keyInput(
     SDL_Keycode keycode,
     uint16_t modifiers);
 
+void st_Terminal_mouseButton(
+    st_Terminal *self,
+    const SDL_MouseButtonEvent *event);
+void st_Terminal_mouseMotion(
+    st_Terminal *self,
+    const SDL_MouseMotionEvent *event);
+
 st_ErrorCode
 st_Terminal_increaseFontSize(
     st_Terminal *self);
