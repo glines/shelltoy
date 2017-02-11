@@ -46,6 +46,7 @@ struct st_Terminal_Internal {
   st_GlyphRendererRef *glyphRenderer;
   st_Profile *profile;
   int beginSelection[2];
+  int selectionTargetCell[2];
   st_Terminal_SelectionState selectionState;
 };
 
@@ -618,9 +619,9 @@ void st_Terminal_mouseMotion(
     switch (self->internal->selectionState) {
       case ST_TERMINAL_SELECTION_BETWEEN_CELLS:
         if (beginCell[1] == endCell[1]) {
-#define ROUND_FIXED_POINT(a) (((a) >> 1) + ((a) & 1))
+#define ROUND_CELL(a) (((a) >> 1) + ((a) & 1))
           /* The selection is within a single row */
-          if (ROUND_FIXED_POINT(beginPos) == ROUND_FIXED_POINT(endPos)) {
+          if (ROUND_CELL(beginPos) == ROUND_CELL(endPos)) {
             /* The selection is between cells; nothing is selected */
             break;
           }
@@ -628,14 +629,14 @@ void st_Terminal_mouseMotion(
             /* Selection from left to right */
             tsm_screen_selection_start(
                 self->screen,  /* con */
-                ROUND_FIXED_POINT(beginPos),  /* posx */
+                ROUND_CELL(beginPos),  /* posx */
                 beginCell[1]  /* posy */
                 );
           } else if (endPos < beginPos) {
             /* Selection from right to left */
             tsm_screen_selection_start(
                 self->screen,  /* con */
-                ROUND_FIXED_POINT(beginPos) - 1,  /* posx */
+                ROUND_CELL(beginPos) - 1,  /* posx */
                 beginCell[1]  /* posy */
                 );
           }
@@ -645,13 +646,13 @@ void st_Terminal_mouseMotion(
         self->internal->selectionState = ST_TERMINAL_SELECTION_STARTED;
       case ST_TERMINAL_SELECTION_STARTED:
         {
-          /* int selectionTarget[2]; */
+          int newSelectionTarget[2];
           /* TODO: Calculate the selection target */
           /* TODO: Cache the selection target until the next event so that we
            * can avoid updating the screen at every mouse event */
           if (beginCell[1] == endCell[1]) {
             /* The selection is within a single row */
-            if (ROUND_FIXED_POINT(beginPos) == ROUND_FIXED_POINT(endPos)) {
+            if (ROUND_CELL(beginPos) == ROUND_CELL(endPos)) {
               /* The selection is between cells; nothing is selected */
               tsm_screen_selection_reset(self->screen);
               /* Update the screen */
@@ -666,27 +667,39 @@ void st_Terminal_mouseMotion(
             }
             if (beginPos < endPos) {
               /* Selection from left to right */
-              tsm_screen_selection_target(
-                  self->screen,  /* con */
-                  ROUND_FIXED_POINT(endPos) - 1,  /* posx */
-                  endCell[1]  /* posy */
-                  );
-            } else if (endPos < beginPos) {
+              newSelectionTarget[0] = ROUND_CELL(endPos) - 1;
+              newSelectionTarget[1] = endCell[1];
+            } else {
+              assert(endPos < beginPos);
               /* Selection from right to left */
-              tsm_screen_selection_target(
-                  self->screen,  /* con */
-                  ROUND_FIXED_POINT(endPos),  /* posx */
-                  endCell[1]  /* posy */
-                  );
+              newSelectionTarget[0] = ROUND_CELL(endPos);
+              newSelectionTarget[1] = endCell[1];
             }
+          } else {
+            /* TODO: Handle selection across multiple rows */
+              newSelectionTarget[0] = 42;
+              newSelectionTarget[1] = 42;
+          }
+          /* Check for changes to the selection target */
+          if (newSelectionTarget[0] != self->internal->selectionTargetCell[0]
+              || newSelectionTarget[1] != self->internal->selectionTargetCell[1])
+          {
+            /* Update the selection target */
+            tsm_screen_selection_target(
+                self->screen,  /* con */
+                newSelectionTarget[0],  /* posx */
+                newSelectionTarget[1]  /* posy */
+                );
+            self->internal->selectionTargetCell[0] = newSelectionTarget[0];
+            self->internal->selectionTargetCell[1] = newSelectionTarget[1];
+            /* Update the screen */
+            st_TextRenderer_updateScreen(&self->internal->textRenderer,
+                self->screen,  /* screen */
+                self->cellWidth,  /* cellWidth */
+                self->cellHeight  /* cellHeight */
+                );
           }
         }
-        /* Update the screen */
-        st_TextRenderer_updateScreen(&self->internal->textRenderer,
-            self->screen,  /* screen */
-            self->cellWidth,  /* cellWidth */
-            self->cellHeight  /* cellHeight */
-            );
         break;
       default:
         assert(0);
