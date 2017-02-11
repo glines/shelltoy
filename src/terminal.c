@@ -241,7 +241,6 @@ void st_Terminal_init(
     int argc,
     char **argv)
 {
-  int ptyWidth, ptyHeight;
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
@@ -274,12 +273,12 @@ void st_Terminal_init(
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
   st_Terminal_calculateScreenSize(self,
-      &ptyWidth,  /* ptyWidth */
-      &ptyHeight  /* ptyHeight */
+      &self->columns,  /* columns */
+      &self->rows  /* rows */
       );
   st_PTY_init(&self->pty,
-      ptyWidth,  /* width */
-      ptyHeight  /* height */
+      self->columns,  /* width */
+      self->rows  /* height */
       );
   /* TODO: Construct a st_MonospaceFont object that combines multiple font
    * faces into one font that supports normal, bold, and wide glyphs */
@@ -652,21 +651,26 @@ void st_Terminal_mouseMotion(
         } else {
           assert(endCell[1] < beginCell[1]);
           /* Selection from the bottom up */
-          /* FIXME: Check for selecting cell at column -1, which is possible
-           * here */
+          /* Note that we are careful to avoid selecting a cell at column -1 */
           tsm_screen_selection_start(
               self->screen,  /* con */
-              ROUND_CELL(beginPos) - 1,  /* posx */
-              beginCell[1]  /* posy */
+              ROUND_CELL(beginPos) - 1 < 0 ?
+                self->columns - 1
+                : ROUND_CELL(beginPos) - 1,  /* posx */
+              ROUND_CELL(beginPos) - 1 < 0 ?
+                beginCell[1] - 1 : beginCell[1]  /* posy */
               );
         }
         self->internal->selectionState = ST_TERMINAL_SELECTION_STARTED;
       case ST_TERMINAL_SELECTION_STARTED:
         {
           int newSelectionTarget[2];
-          /* TODO: Calculate the selection target */
-          /* TODO: Cache the selection target until the next event so that we
-           * can avoid updating the screen at every mouse event */
+          /* Calculate the new selection target */
+          /* FIXME: If the selection transitions from top down to bottom up or
+           * vice versa, we must restart the selection with the appropriate
+           * starting cell. The current solution where the selection only
+           * restarts when the user returns the cursor to the initial cell of
+           * the selection is not very robust. */
           if (beginCell[1] == endCell[1]) {
             /* The selection is within a single row */
             if (ROUND_CELL(beginPos) == ROUND_CELL(endPos)) {
@@ -694,10 +698,14 @@ void st_Terminal_mouseMotion(
             }
           } else if (beginCell[1] < endCell[1]) {
             /* Selection from the top down */
-            /* FIXME: Check for selecting cell at column -1, which is possible
-             * here */
-            newSelectionTarget[0] = ROUND_CELL(endPos) - 1;
-            newSelectionTarget[1] = endCell[1];
+            /* Note that we are careful to avoid selecting a cell at column -1 */
+            newSelectionTarget[0] =
+              ROUND_CELL(endPos) - 1 < 0 ?
+                self->columns - 1
+                : ROUND_CELL(endPos) - 1;
+            newSelectionTarget[1] =
+              ROUND_CELL(endPos) - 1 < 0 ?
+                endCell[1] - 1 : endCell[1];
           } else {
             assert(endCell[1] < beginCell[1]);
             /* Selection from the bottom up */
