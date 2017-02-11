@@ -640,8 +640,25 @@ void st_Terminal_mouseMotion(
                 beginCell[1]  /* posy */
                 );
           }
+        } else if (beginCell[1] < endCell[1]) {
+          /* Selection from the top down */
+          /* FIXME: Check for selecting cell at a column past the number of
+           * columns on the screen, which is possible here */
+          tsm_screen_selection_start(
+              self->screen,  /* con */
+              ROUND_CELL(beginPos),  /* posx */
+              beginCell[1]  /* posy */
+              );
         } else {
-          /* TODO: Selection across multiple rows */
+          assert(endCell[1] < beginCell[1]);
+          /* Selection from the bottom up */
+          /* FIXME: Check for selecting cell at column -1, which is possible
+           * here */
+          tsm_screen_selection_start(
+              self->screen,  /* con */
+              ROUND_CELL(beginPos) - 1,  /* posx */
+              beginCell[1]  /* posy */
+              );
         }
         self->internal->selectionState = ST_TERMINAL_SELECTION_STARTED;
       case ST_TERMINAL_SELECTION_STARTED:
@@ -675,10 +692,19 @@ void st_Terminal_mouseMotion(
               newSelectionTarget[0] = ROUND_CELL(endPos);
               newSelectionTarget[1] = endCell[1];
             }
+          } else if (beginCell[1] < endCell[1]) {
+            /* Selection from the top down */
+            /* FIXME: Check for selecting cell at column -1, which is possible
+             * here */
+            newSelectionTarget[0] = ROUND_CELL(endPos) - 1;
+            newSelectionTarget[1] = endCell[1];
           } else {
-            /* TODO: Handle selection across multiple rows */
-              newSelectionTarget[0] = 42;
-              newSelectionTarget[1] = 42;
+            assert(endCell[1] < beginCell[1]);
+            /* Selection from the bottom up */
+            /* FIXME: Check for selecting cell at a column past the number of
+             * columns on the screen, which is possible here */
+            newSelectionTarget[0] = ROUND_CELL(endPos);
+            newSelectionTarget[1] = endCell[1];
           }
           /* Check for changes to the selection target */
           if (newSelectionTarget[0] != self->internal->selectionTargetCell[0]
