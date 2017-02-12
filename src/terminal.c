@@ -570,7 +570,6 @@ void st_Terminal_mouseButton(
     st_Terminal *self,
     const SDL_MouseButtonEvent *event)
 {
-  fprintf(stderr, "inside st_Terminal_mouseButton\n");
   switch (event->button) {
     case SDL_BUTTON_LEFT:
       if (event->state == SDL_PRESSED) {
@@ -595,7 +594,20 @@ void st_Terminal_mouseButton(
           /* TODO: Begin line selection mode */
         }
       } else {
+        char *selection;
         assert(event->state == SDL_RELEASED);
+        /* TODO: If there was a selection, then copy it to the clipboard */
+        /* FIXME: The screen selection implementation in libtsm is supposedly
+         * just a "proof-of-concept". We might want to improve upon it. */
+        tsm_screen_selection_copy(
+            self->screen,  /* conn */
+            &selection  /* out */
+            );
+        /* FIXME: Printing this string it appears that we can only copy the
+         * first line. This probably has something to do with the encoding of
+         * the string. I do not know how to get the length of this string. */
+        fprintf(stderr, "Would have copied string: %s\n",
+            selection);
       }
       break;
   }

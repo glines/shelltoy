@@ -111,11 +111,10 @@ void st_dispatchEvents() {
       /* TODO: Handle SDL_WINDOWEVENT_CLOSE events if we ever have more than
        * one terminal at a time. */
       case SDL_MOUSEBUTTONDOWN:
+      case SDL_MOUSEBUTTONUP:
         st_Terminal_mouseButton(&shelltoy.terminal,
             &event.button  /* event */
             );
-        break;
-      case SDL_MOUSEBUTTONUP:
         break;
       case SDL_MOUSEMOTION:
         st_Terminal_mouseMotion(&shelltoy.terminal,
