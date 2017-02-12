@@ -32,6 +32,7 @@ find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(libtsm REQUIRED)
 find_package(Jansson REQUIRED)
+find_package(X11 REQUIRED)
 # FIXME: I might need to use the ${FONTCONFIG_DEFINITIONS} variable somewhere
 find_package(Fontconfig REQUIRED)
 
@@ -43,6 +44,7 @@ include_directories(SYSTEM
     ${JANSSON_INCLUDE_DIRS}
     ${LIBTSM_INCLUDE_DIR}
     ${SDL2_INCLUDE_DIR}
+    ${X11_INCLUDE_DIR}
     )
 
 # Use the Shelltoy header files in this project

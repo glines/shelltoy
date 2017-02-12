@@ -84,4 +84,9 @@ st_ErrorCode
 st_Terminal_decreaseFontSize(
     st_Terminal *self);
 
+st_ErrorCode
+st_Terminal_setSelectionClipboard(
+    st_Terminal *self,
+    const char *selection);
+
 #endif

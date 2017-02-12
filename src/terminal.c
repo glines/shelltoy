@@ -21,6 +21,8 @@
  * IN THE SOFTWARE.
  */
 
+#include <SDL_syswm.h>
+#include <X11/Xlib.h>
 #include <assert.h>
 
 #include "../extern/xkbcommon-keysyms.h"
@@ -35,6 +37,7 @@
 #include "terminal.h"
 
 typedef enum st_Terminal_SelectionState_ {
+  ST_TERMINAL_NO_SELECTION,
   ST_TERMINAL_SELECTION_BETWEEN_CELLS,
   ST_TERMINAL_SELECTION_STARTED,
 } st_Terminal_SelectionState;
@@ -244,6 +247,7 @@ void st_Terminal_init(
   /* Allocate memory for internal data structures */
   self->internal = (struct st_Terminal_Internal *)malloc(
       sizeof(struct st_Terminal_Internal));
+  self->internal->selectionState = ST_TERMINAL_NO_SELECTION;
   self->internal->profile = profile;
   /* Initialize the SDL window */
   st_Terminal_initWindow(self);
@@ -594,20 +598,37 @@ void st_Terminal_mouseButton(
           /* TODO: Begin line selection mode */
         }
       } else {
-        char *selection;
-        assert(event->state == SDL_RELEASED);
-        /* TODO: If there was a selection, then copy it to the clipboard */
-        /* FIXME: The screen selection implementation in libtsm is supposedly
-         * just a "proof-of-concept". We might want to improve upon it. */
-        tsm_screen_selection_copy(
-            self->screen,  /* conn */
-            &selection  /* out */
-            );
-        /* FIXME: Printing this string it appears that we can only copy the
-         * first line. This probably has something to do with the encoding of
-         * the string. I do not know how to get the length of this string. */
-        fprintf(stderr, "Would have copied string: %s\n",
-            selection);
+        if (self->internal->selectionState == ST_TERMINAL_SELECTION_STARTED) {
+          char *selection;
+          int len;
+          assert(event->state == SDL_RELEASED);
+          /* TODO: If there was a selection, then copy it to the clipboard */
+          /* FIXME: The screen selection implementation in libtsm is supposedly
+           * just a "proof-of-concept" according to the comments within the
+           * libtsm source code. We might want to improve upon it. */
+          /* FIXME: The screen selection implementation in libtsm will copy a
+           * large amount of trailing whitespace that we do not want in our
+           * clipboard. */
+          len = tsm_screen_selection_copy(
+              self->screen,  /* conn */
+              &selection  /* out */
+              );
+          assert(len > 0);
+          /* Replace the '\0' null values within the selection string with
+           * spaces. I am not entirely sure why there are null values. */
+          for (size_t i = 0; i < len - 1; ++i) {
+            if (selection[i] == '\0') {
+              selection[i] = ' ';
+            }
+          }
+          assert(selection[len] == '\0');
+          /* NOTE: SDL sets both the X11 primary selection and clipboard
+           * selection. It would be ideal to only set the primary selection in
+           * this routine. */
+          /* TODO: Avoid setting the clipboard selection for X11 here */
+          SDL_SetClipboardText(selection);
+          free(selection);  /* NOTE: libtsm has malloc'ed the selection */
+        }
       }
       break;
   }
@@ -618,6 +639,8 @@ void st_Terminal_mouseMotion(
     const SDL_MouseMotionEvent *event)
 {
   if (event->state & SDL_BUTTON_LMASK) {
+    /* TODO: Support selection dragging even when the cursor is dragged outside
+     * of the window */
     int beginSelection[2], endSelection[2], beginCell[2], endCell[2],
         beginCellHalf, endCellHalf, beginPos, endPos;
     beginSelection[0] = self->internal->beginSelection[0];
@@ -644,6 +667,7 @@ void st_Terminal_mouseMotion(
     beginPos = (beginCell[0] << 1) + beginCellHalf;
     endPos = (endCell[0] << 1) + endCellHalf;
     switch (self->internal->selectionState) {
+      case ST_TERMINAL_NO_SELECTION:
       case ST_TERMINAL_SELECTION_BETWEEN_CELLS:
         if (beginCell[1] == endCell[1]) {
 #define ROUND_CELL(a) (((a) >> 1) + ((a) & 1))
@@ -889,4 +913,38 @@ st_Terminal_decreaseFontSize(
   /* TODO: Do we need an error code for not being able to increase the font
    * size? */
   return error;
+}
+
+st_ErrorCode
+st_Terminal_setSelectionClipboard(
+    st_Terminal *self,
+    const char *selection)
+{
+  /* TODO: The st_Terminal_setSelectionClipboard() routine is written in an
+   * attempt to support setting the X11 primary selection without setting the
+   * clipboard selection. This might not actually be possible to achieve with
+   * SDL, since SDL is ultimately responsible for responding to the window
+   * system events that request the contents of the primary and clipboard
+   * selections. We might need to patch SDL in order to support this. */
+  SDL_SysWMinfo windowInfo;
+  SDL_bool sdlResult;
+  Window window;
+  Display *display;
+  Atom primarySelection;
+  /* Get the X11 Window associated with our SDL window */
+  sdlResult = SDL_GetWindowWMInfo(self->window, &windowInfo);
+  if (sdlResult != SDL_TRUE) {
+    /* TODO: Get the SDL-specific error message */
+    return ST_ERROR_SDL_ERROR;
+  }
+  window = windowInfo.info.x11.window;
+  display = windowInfo.info.x11.display;
+  /* TODO: Get the X11 atom associated with the selection buffer in our
+   * window */
+  primarySelection = XInternAtom(display, "PRIMARY", 0);  /* XXX */
+  /* TODO: Set the clipboard to our selection buffer */
+  if (XGetSelectionOwner(display, primarySelection) != window) {
+    XSetSelectionOwner(display, primarySelection, window, CurrentTime);
+  }
+  return ST_NO_ERROR;
 }

@@ -35,6 +35,7 @@ target_link_libraries(shelltoy
     ${JANSSON_LIBRARIES}
     ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
+    ${X11_LIBRARIES}
     )
 set_property(TARGET shelltoy PROPERTY C_STANDARD 11)
 install(TARGETS shelltoy
