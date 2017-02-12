@@ -574,10 +574,26 @@ void st_Terminal_mouseButton(
   switch (event->button) {
     case SDL_BUTTON_LEFT:
       if (event->state == SDL_PRESSED) {
-        /* Begin the selection (no cells are selected until dragging starts) */
-        self->internal->beginSelection[0] = event->x;
-        self->internal->beginSelection[1] = event->y;
-        self->internal->selectionState = ST_TERMINAL_SELECTION_BETWEEN_CELLS;
+        if (event->clicks == 1) {
+          /* Clear the old selection */
+          tsm_screen_selection_reset(self->screen);
+          /* Update the screen */
+          st_TextRenderer_updateScreen(&self->internal->textRenderer,
+              self->screen,  /* screen */
+              self->cellWidth,  /* cellWidth */
+              self->cellHeight  /* cellHeight */
+              );
+          /* Begin the selection (no cells are selected until dragging starts) */
+          self->internal->beginSelection[0] = event->x;
+          self->internal->beginSelection[1] = event->y;
+          self->internal->selectionState = ST_TERMINAL_SELECTION_BETWEEN_CELLS;
+        } else if (event->clicks == 2) {
+          /* TODO: Select the word under the cursor */
+          /* TODO: Begin word selection mode */
+        } else if (event->clicks == 3) {
+          /* TODO: Select the line under the cursor */
+          /* TODO: Begin line selection mode */
+        }
       } else {
         assert(event->state == SDL_RELEASED);
       }
