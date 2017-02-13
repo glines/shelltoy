@@ -631,6 +631,29 @@ void st_Terminal_mouseButton(
         }
       }
       break;
+    case SDL_BUTTON_MIDDLE:
+      if (!SDL_HasClipboardText()) {
+        break;
+      }
+      {
+        char *clipboardText;
+        /* Retrieve the clipboard text */
+        /* FIXME: SDL only supports the clipboard selection. We should really be
+         * using the primary selection with X11. */
+        clipboardText = SDL_GetClipboardText();
+        if (clipboardText == NULL) {
+          ST_LOG_ERROR_CODE(ST_ERROR_OUT_OF_MEMORY);
+          break;
+        }
+        /* Paste the clipboard text to the terminal */
+        tsm_vte_input(
+            self->vte,  /* vte */
+            clipboardText,  /* u8 */
+            strlen(clipboardText)  /* len */
+            );
+        SDL_free(clipboardText);
+      }
+      break;
   }
 }
 
