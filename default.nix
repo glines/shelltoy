@@ -2,12 +2,12 @@
 
 stdenv.mkDerivation rec {
   name = "shelltoy-${version}";
-  version = "0.0.6";
+  version = "0.0.7";
 
   src = fetchgit {
     url = "file:///home/auntieneo/code/shelltoy";
     rev = "refs/tags/${version}";
-    sha256 = "0ddxbr4900pq08hc9kqr9552ihpn5hrlbhwx4w7fyfrviqznlyg7";
+    sha256 = "18xswv9g1d4hzbyighzximg4bc00izb443wmq5vn226ryclgr34l";
     leaveDotGit = true;  /* Needed for version tags */
     deepClone = true;
   };
