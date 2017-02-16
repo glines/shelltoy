@@ -632,9 +632,7 @@ void st_Terminal_mouseButton(
       }
       break;
     case SDL_BUTTON_MIDDLE:
-      if (!SDL_HasClipboardText()) {
-        break;
-      }
+      if (event->state == SDL_PRESSED && SDL_HasClipboardText())
       {
         char *clipboardText;
         /* Retrieve the clipboard text */
@@ -646,10 +644,8 @@ void st_Terminal_mouseButton(
           break;
         }
         /* Paste the clipboard text to the terminal */
-        tsm_vte_input(
-            self->vte,  /* vte */
-            clipboardText,  /* u8 */
-            strlen(clipboardText)  /* len */
+        st_Terminal_textInput(self,
+            clipboardText  /* text */
             );
         SDL_free(clipboardText);
       }
