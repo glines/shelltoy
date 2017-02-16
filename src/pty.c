@@ -193,6 +193,9 @@ void st_PTY_prepareChild(st_PTY *self) {
   int result;
   struct winsize ws;
   struct termios attr;
+  /* Set TERM environment variable to xterm-256color, since libtsm approximates
+   * the functionality of xterm */
+  setenv("TERM", "xterm-256color", 1);
   /* Allow the child to access the pseudo terminal */
   if (grantpt(self->master_fd) < 0) {
     perror("grantpt");
