@@ -329,117 +329,123 @@ int st_Config_buildConfig(
 
   /* Retrieve the array of plugins */
   plugins = json_object_get(root, "plugins");
-  if (!json_is_array(plugins)) {
+  if (plugins == NULL || json_is_null(plugins)) {
+    /* No plugins specified; this is okay */
+  } else if (!json_is_array(plugins)) {
     ST_LOG_ERROR("%s", "Config error: plugins is not an array");
     return ST_ERROR_CONFIG_FILE_FORMAT;
-  }
-  /* Iterate to register each plugin with the toy factory */
-  for (size_t i = 0; i < json_array_size(plugins); ++i) {
-    json_t *plugin_json, *name_json, *file_json;
-    plugin_json = json_array_get(plugins, i);
-    if (!json_is_object(plugin_json)) {
-      ST_LOG_ERROR("%s", "Config error: each plugin must be a JSON object");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
+  } else {
+    /* Iterate to register each plugin with the toy factory */
+    for (size_t i = 0; i < json_array_size(plugins); ++i) {
+      json_t *plugin_json, *name_json, *file_json;
+      plugin_json = json_array_get(plugins, i);
+      if (!json_is_object(plugin_json)) {
+        ST_LOG_ERROR("%s", "Config error: each plugin must be a JSON object");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      name_json = json_object_get(plugin_json, "name");
+      if (json_is_null(name_json)) {
+        ST_LOG_ERROR("%s", "Config error: each plugin must have a name");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      } else if (!json_is_string(name_json)) {
+        ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      file_json = json_object_get(plugin_json, "file");
+      if (json_is_null(file_json)) {
+        ST_LOG_ERROR("%s", "Config error: each plugin must have a file");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      } else if (!json_is_string(file_json)) {
+        ST_LOG_ERROR("%s", "Config error: plugin file must be given as a string");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      st_ToyFactory_registerPlugin(
+          &self->internal->toyFactory,
+          json_string_value(name_json),  /* name */
+          json_string_value(file_json)  /* dlPath */
+          );
     }
-    name_json = json_object_get(plugin_json, "name");
-    if (json_is_null(name_json)) {
-      ST_LOG_ERROR("%s", "Config error: each plugin must have a name");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    } else if (!json_is_string(name_json)) {
-      ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    file_json = json_object_get(plugin_json, "file");
-    if (json_is_null(file_json)) {
-      ST_LOG_ERROR("%s", "Config error: each plugin must have a file");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    } else if (!json_is_string(file_json)) {
-      ST_LOG_ERROR("%s", "Config error: plugin file must be given as a string");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    st_ToyFactory_registerPlugin(
-        &self->internal->toyFactory,
-        json_string_value(name_json),  /* name */
-        json_string_value(file_json)  /* dlPath */
-        );
   }
 
   /* Retrieve the array of toys */
   toys = json_object_get(root, "toys");
-  if (!json_is_array(toys)) {
+  if (toys == NULL || json_is_null(toys)) {
+    /* No toys specified; this is okay */
+  } else if (!json_is_array(toys)) {
     ST_LOG_ERROR("%s", "Config error: toys is not an array");
     return ST_ERROR_CONFIG_FILE_FORMAT;
-  }
-  /* Iterate to build each toy with the toy factory */
-  for (size_t i = 0; i < json_array_size(toys); ++i) {
-    json_t *toy_json, *pluginName_json, *toyName_json, *toyType_json,
-           *toyConfig_json;
+  } else {
+    /* Iterate to build each toy with the toy factory */
+    for (size_t i = 0; i < json_array_size(toys); ++i) {
+      json_t *toy_json, *pluginName_json, *toyName_json, *toyType_json,
+             *toyConfig_json;
 
-    toy_json = json_array_get(toys, i);
-    if (!json_is_object(toy_json)) {
-      ST_LOG_ERROR("%s", "Config error: each toy must be a JSON object");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
+      toy_json = json_array_get(toys, i);
+      if (!json_is_object(toy_json)) {
+        ST_LOG_ERROR("%s", "Config error: each toy must be a JSON object");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      pluginName_json = json_object_get(toy_json, "plugin");
+      if (!json_is_string(pluginName_json)) {
+        ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      toyName_json = json_object_get(toy_json, "name");
+      if (!json_is_string(toyName_json)) {
+        ST_LOG_ERROR("%s", "Config error: toy name must be a string");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      toyType_json = json_object_get(toy_json, "type");
+      if (!json_is_string(toyType_json)) {
+        ST_LOG_ERROR("%s", "Config error: toy type must be a string");
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      toyConfig_json = json_object_get(toy_json, "config");
+      if (strcmp(json_string_value(toyType_json), "background") == 0) {
+        st_BackgroundToy *toy;
+        /* This is a background toy */
+        error = st_ToyFactory_buildBackgroundToy(
+            &self->internal->toyFactory,
+            json_string_value(pluginName_json),  /* pluginName */
+            json_string_value(toyName_json),  /* toyName */
+            toyConfig_json,  /* config */
+            &toy  /* toy */
+            );
+        /* Insert this toy into our background toy dictionary */
+        st_BackgroundToyDictionary_insert(
+            &self->internal->backgroundToys,
+            json_string_value(toyName_json),  /* key */
+            toy  /* value */
+            );
+      } else if (strcmp(json_string_value(toyType_json), "text") == 0) {
+        st_TextToy *toy;
+        /* This is a text toy */
+        error = st_ToyFactory_buildTextToy(
+            &self->internal->toyFactory,
+            json_string_value(pluginName_json),  /* pluginName */
+            json_string_value(toyName_json),  /* toyName */
+            toyConfig_json,  /* config */
+            &toy  /* toy */
+            );
+        /* Insert this toy into our text toy dictionary */
+        st_TextToyDictionary_insert(
+            &self->internal->textToys,
+            json_string_value(toyName_json),  /* key */
+            toy  /* value */
+            );
+      } else {
+        ST_LOG_ERROR("Config error: Unknown toy type '%s'",
+            json_string_value(toyType_json));
+        return ST_ERROR_CONFIG_FILE_FORMAT;
+      }
+      if (error != ST_NO_ERROR) {
+        ST_LOG_ERROR_CODE(error);
+        return error;
+      }
     }
-    pluginName_json = json_object_get(toy_json, "plugin");
-    if (!json_is_string(pluginName_json)) {
-      ST_LOG_ERROR("%s", "Config error: plugin name must be a string");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    toyName_json = json_object_get(toy_json, "name");
-    if (!json_is_string(toyName_json)) {
-      ST_LOG_ERROR("%s", "Config error: toy name must be a string");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    toyType_json = json_object_get(toy_json, "type");
-    if (!json_is_string(toyType_json)) {
-      ST_LOG_ERROR("%s", "Config error: toy type must be a string");
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    toyConfig_json = json_object_get(toy_json, "config");
-    if (strcmp(json_string_value(toyType_json), "background") == 0) {
-      st_BackgroundToy *toy;
-      /* This is a background toy */
-      error = st_ToyFactory_buildBackgroundToy(
-          &self->internal->toyFactory,
-          json_string_value(pluginName_json),  /* pluginName */
-          json_string_value(toyName_json),  /* toyName */
-          toyConfig_json,  /* config */
-          &toy  /* toy */
-          );
-      /* Insert this toy into our background toy dictionary */
-      st_BackgroundToyDictionary_insert(
-          &self->internal->backgroundToys,
-          json_string_value(toyName_json),  /* key */
-          toy  /* value */
-          );
-    } else if (strcmp(json_string_value(toyType_json), "text") == 0) {
-      st_TextToy *toy;
-      /* This is a text toy */
-      error = st_ToyFactory_buildTextToy(
-          &self->internal->toyFactory,
-          json_string_value(pluginName_json),  /* pluginName */
-          json_string_value(toyName_json),  /* toyName */
-          toyConfig_json,  /* config */
-          &toy  /* toy */
-          );
-      /* Insert this toy into our text toy dictionary */
-      st_TextToyDictionary_insert(
-          &self->internal->textToys,
-          json_string_value(toyName_json),  /* key */
-          toy  /* value */
-          );
-    } else {
-      ST_LOG_ERROR("Config error: Unknown toy type '%s'",
-          json_string_value(toyType_json));
-      return ST_ERROR_CONFIG_FILE_FORMAT;
-    }
-    if (error != ST_NO_ERROR) {
-      ST_LOG_ERROR_CODE(error);
-      return error;
-    }
+    /* TODO: Should we prohibit background toys with the same names as text
+     * toys? */
   }
-  /* TODO: Should we prohibit background toys with the same names as text
-   * toys? */
 
   /* Retrieve the array of profiles */
   profiles = json_object_get(root, "profiles");
