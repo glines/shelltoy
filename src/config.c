@@ -359,11 +359,22 @@ int st_Config_buildConfig(
         ST_LOG_ERROR("%s", "Config error: plugin file must be given as a string");
         return ST_ERROR_CONFIG_FILE_FORMAT;
       }
-      st_ToyFactory_registerPlugin(
+      error = st_ToyFactory_registerPlugin(
           &self->internal->toyFactory,
           json_string_value(name_json),  /* name */
           json_string_value(file_json)  /* dlPath */
           );
+      if (error == ST_ERROR_PLUGIN_DL_FAILED_TO_LOAD) {
+        ST_LOG_ERROR(
+            "Config error: Failed to load dynamic library '%s' for plugin '%s'",
+            json_string_value(file_json),
+            json_string_value(name_json));
+      } else if (error != ST_NO_ERROR) {
+        ST_LOG_ERROR(
+            "Config error: Failed to load plugin '%s'",
+            json_string_value(name_json));
+        ST_LOG_ERROR_CODE(error);
+      }
     }
   }
 
@@ -411,12 +422,15 @@ int st_Config_buildConfig(
             toyConfig_json,  /* config */
             &toy  /* toy */
             );
+        if (error == ST_ERROR_PLUGIN_NOT_FOUND) {
+        } else {
         /* Insert this toy into our background toy dictionary */
         st_BackgroundToyDictionary_insert(
             &self->internal->backgroundToys,
             json_string_value(toyName_json),  /* key */
             toy  /* value */
             );
+        }
       } else if (strcmp(json_string_value(toyType_json), "text") == 0) {
         st_TextToy *toy;
         /* This is a text toy */
@@ -427,20 +441,28 @@ int st_Config_buildConfig(
             toyConfig_json,  /* config */
             &toy  /* toy */
             );
-        /* Insert this toy into our text toy dictionary */
-        st_TextToyDictionary_insert(
-            &self->internal->textToys,
-            json_string_value(toyName_json),  /* key */
-            toy  /* value */
-            );
+        if (error == ST_ERROR_PLUGIN_DL_FAILED_TO_LOAD) {
+          ST_LOG_ERROR(
+              "Config error: Could not find plugin '%s' for toy '%s'",
+              json_string_value(pluginName_json),
+              json_string_value(toyName_json));
+        } else if (error != ST_NO_ERROR) {
+          ST_LOG_ERROR(
+              "Config error: Failed to load toy '%s'",
+              json_string_value(toyName_json));
+          ST_LOG_ERROR_CODE(error);
+        } else {
+          /* Insert this toy into our text toy dictionary */
+          st_TextToyDictionary_insert(
+              &self->internal->textToys,
+              json_string_value(toyName_json),  /* key */
+              toy  /* value */
+              );
+        }
       } else {
         ST_LOG_ERROR("Config error: Unknown toy type '%s'",
             json_string_value(toyType_json));
         return ST_ERROR_CONFIG_FILE_FORMAT;
-      }
-      if (error != ST_NO_ERROR) {
-        ST_LOG_ERROR_CODE(error);
-        return error;
       }
     }
     /* TODO: Should we prohibit background toys with the same names as text
