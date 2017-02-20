@@ -295,6 +295,10 @@ int main(int argc, char** argv) {
         print_version();
         return EXIT_SUCCESS;
         break;
+      case '?':
+      case ':':
+        print_help();
+        return EXIT_FAILURE;
       default:
         assert(longindex >= 0);  /* FIXME: I'm not sure what longindex is set
                                     to in case the option does not exist */

@@ -6,6 +6,7 @@ add_executable(shelltoy
     collisionDetection.c
     config.c
     error.c
+    fileWatcher.c
     font.c
     fontRef.c
     fontRefArray.c
@@ -27,6 +28,11 @@ add_executable(shelltoy
     toyFactory.c
     )
 add_dependencies(shelltoy shelltoy_version)
+# The --dynamic-list linker flag tells the linker which symbols need to be
+# exported for use in plugins loaded with dlopen(3).
+set_target_properties(shelltoy
+    PROPERTIES LINK_FLAGS "-Wl,--dynamic-list=${CMAKE_CURRENT_SOURCE_DIR}/dynamic_list.txt"
+    )
 target_link_libraries(shelltoy
     common
     ${FONTCONFIG_LIBRARIES}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,35 +21,36 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_LOGGING_H_
-#define SHELLTOY_LOGGING_H_
+#ifndef SHELLTOY_FILE_WATCHER_H_
+#define SHELLTOY_FILE_WATCHER_H_
 
-#include <assert.h>
-#include <string.h>
+#include <shelltoy/error.h>
 
-#include "error.h"
+typedef void (*st_FileWatcher_FileChangedCallback)(
+    void *data,
+    const char *filePath
+    );
 
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__ )
+struct st_FileWatcher_Internal_;
+typedef struct st_FileWatcher_Internal_ st_FileWatcher_Internal;
 
-#define ST_LOG_ERROR(format, ...) \
-  st_logError(__FILENAME__, __LINE__, \
-      format, ##__VA_ARGS__)
+typedef struct st_FileWatcher_ {
+  st_FileWatcher_Internal *internal;
+} st_FileWatcher;
 
-#define ST_LOG_ERROR_CODE(error) \
-  ST_LOG_ERROR("%s", st_ErrorString(error))
+void
+st_FileWatcher_init(
+    st_FileWatcher *self);
 
-#define ST_ASSERT_ERROR_CODE(error) \
-  do { \
-    if (error != ST_NO_ERROR) { \
-      ST_LOG_ERROR("%s", st_ErrorString(error)); \
-    } \
-    assert(error == ST_NO_ERROR); \
-  } while (0)
+void
+st_FileWatcher_setCallback(
+    st_FileWatcher *self,
+    st_FileWatcher_FileChangedCallback callback,
+    void *data);
 
-void st_logError(
-  const char *file,
-  int line,
-  const char *format,
-  ...);
+st_ErrorCode
+st_FileWatcher_watchFile(
+    st_FileWatcher *self,
+    const char *filePath);
 
 #endif

@@ -151,12 +151,12 @@ st_Profile_setPrimaryFont(
     goto setPrimaryFont_cleanup2;
   }
 
-  /* XXX: Print out all of the matching fonts */
-  for (int i = 0; i < resultFontSet->nfont; ++i) {
-    FcPattern *font;
-    font = resultFontSet->fonts[i];
-    FcPatternPrint(font);
-  }
+//  /* XXX: Print out all of the matching fonts */
+//  for (int i = 0; i < resultFontSet->nfont; ++i) {
+//    FcPattern *font;
+//    font = resultFontSet->fonts[i];
+//    FcPatternPrint(font);
+//  }
 
   /* Select the first font matching our criteria */
   if (resultFontSet->nfont > 0) {

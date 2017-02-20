@@ -31,6 +31,10 @@
 struct st_Array_Internal_;
 typedef struct st_Array_Internal_ st_Array_Internal;
 
+/* FIXME: Rename st_Array to st_List and then create a new st_Array that does
+ * not use so much pointer indirection. This will require refactoring all code
+ * that currently uses st_Array and chosing the structure depending on their
+ * need for pointer indirection. */
 typedef struct st_Array_ {
   st_Array_Internal *internal;
 } st_Array;

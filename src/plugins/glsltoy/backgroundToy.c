@@ -25,6 +25,8 @@
 #include <SDL.h>
 #include <string.h>
 
+#include <shelltoy/fileWatcher.h>
+
 #include "../../common/glError.h"
 #include "../../common/shader.h"
 
@@ -41,6 +43,10 @@ SHELLTOY_BACKGROUND_TOY_DISPATCH(
     )
 
 /* Private methods */
+void st_Glsltoy_BackgroundToy_readConfig(
+    st_Glsltoy_BackgroundToy *self,
+    json_t *config);
+
 float st_Glsltoy_BackgroundToy_getTime(
     st_Glsltoy_BackgroundToy *self);
 
@@ -53,12 +59,18 @@ void st_Glsltoy_BackgroundToy_initQuad(
 void st_Glsltoy_BackgroundToy_drawShader(
     st_Glsltoy_BackgroundToy *self);
 
+void st_Glsltoy_BackgroundToy_shaderFileChanged(
+    st_Glsltoy_BackgroundToy *self,
+    const char *filePath);
+
 typedef struct st_Glsltoy_BackgroundToy_QuadVertex_ {
   GLfloat pos[3], texCoord[2];
 } st_Glsltoy_BackgroundToy_QuadVertex;
 
 struct st_Glsltoy_BackgroundToy_Internal_ {
+  st_FileWatcher shaderWatcher;
   st_Shader shader;
+  char *shaderPath;
   GLuint quadVertexBuffer, quadIndexBuffer, vao;
   GLuint timeLocation, mouseLocation, resolutionLocation;
   int initializedDrawObjects;
@@ -75,7 +87,52 @@ void st_Glsltoy_BackgroundToy_init(
       sizeof(st_Glsltoy_BackgroundToy_Internal));
   self->internal->initializedDrawObjects = 0;
   self->internal->startTicks = SDL_GetTicks();
+  self->internal->shaderPath = NULL;
+  /* TODO: Somehow register a callback that can listen for changes to our
+   * fragment shader source file */
+  st_FileWatcher_init(
+      &self->internal->shaderWatcher);
+  st_FileWatcher_setCallback(&self->internal->shaderWatcher,
+      (st_FileWatcher_FileChangedCallback)
+      st_Glsltoy_BackgroundToy_shaderFileChanged,  /* callback */
+      self  /* data */
+      );
   /* TODO: Read the config */
+  /* FIXME: We might want to move the readConfig method outside of init, for
+   * better handling of error codes. */
+  st_Glsltoy_BackgroundToy_readConfig(self, config);
+}
+
+void st_Glsltoy_BackgroundToy_readConfig(
+    st_Glsltoy_BackgroundToy *self,
+    json_t *config)
+{
+  json_t *shaderPath_json;
+
+  /* Traverse the config, which is represented as a JSON object */
+  if (config == NULL || !json_is_object(config)) {
+    fprintf(stderr, "glsltoy background config must be a JSON object\n");
+    return;
+  }
+  /* Store the shader path */
+  shaderPath_json = json_object_get(config, "shaderPath");
+  if (shaderPath_json == NULL) {
+    fprintf(stderr, "glsltoy background config missing shaderPath\n");
+    return;
+  } else if (!json_is_string(shaderPath_json)) {
+    fprintf(stderr, "glsltoy background shaderPath must be a JSON string\n");
+    return;
+  }
+  free(self->internal->shaderPath);
+  self->internal->shaderPath = (char *)malloc(
+      strlen(json_string_value(shaderPath_json)) + 1);
+  strcpy(self->internal->shaderPath, json_string_value(shaderPath_json));
+  /* XXX: Register the shader file with our file watcher */
+  fprintf(stderr, "glsltoy registering file to watch: '%s'\n",
+      self->internal->shaderPath);
+  st_FileWatcher_watchFile(&self->internal->shaderWatcher,
+      self->internal->shaderPath  /* filePath */
+      );
 }
 
 void st_Glsltoy_BackgroundToy_destroy(
@@ -85,6 +142,7 @@ void st_Glsltoy_BackgroundToy_destroy(
     /* TODO: Clean up the GL objects that we initialized */
   }
   /* Free allocated memory */
+  free(self->internal->shaderPath);
   free(self->internal);
 }
 
@@ -336,4 +394,13 @@ void st_Glsltoy_BackgroundToy_draw(
 
   /* Render our shader to the current framebuffer */
   st_Glsltoy_BackgroundToy_drawShader(self);
+}
+
+void st_Glsltoy_BackgroundToy_shaderFileChanged(
+    st_Glsltoy_BackgroundToy *self,
+    const char *filePath)
+{
+  /* TODO: Attempt to re-compile the shader? We actually need to notify the
+   * main thread, since we cannot compile shaders outside of the GL thread. */
+  fprintf(stderr, "st_Glsltoy_BackgroundToy_shaderFileChanged\n");
 }
