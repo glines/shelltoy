@@ -23,25 +23,18 @@
 
 #include <shelltoy/error.h>
 
-const char *st_ErrorString(
-    st_ErrorCode error)
-{
-  /* TODO: Add support for translations of these strings */
-  switch (error) {
-    case ST_NO_ERROR:
-      return "No error";
-    case ST_ERROR_CONFIG:
-      return "Unspecified configuration error";
-    case ST_ERROR_CONFIG_FILE_READ:
-      return "Error reading config file";
-    case ST_ERROR_CONFIG_FILE_FORMAT:
-      return "Invalid config file format";
-    case ST_ERROR_OUT_OF_MEMORY:
-      return "Out of memory";
-    case ST_ERROR_PROFILE_NOT_FOUND:
-      return "Profile not found";
-    default:
-      return "Unknown error";
-      break;
-  };
-}
+#define ST_START_ERROR_CODES \
+  const char *st_ErrorString( \
+      st_ErrorCode error) \
+  { \
+    switch (error) {
+#define ST_DECLARE_ERROR_CODE(code,string) \
+      /* TODO: Add support for translations of these strings */ \
+      case code: \
+        return #code ": " string;
+#define ST_END_ERROR_CODES \
+    }; \
+    return "Unknown error code"; \
+  }
+#undef SHELLTOY_ERROR_CODES_H_
+#include <shelltoy/errorCodes.h>

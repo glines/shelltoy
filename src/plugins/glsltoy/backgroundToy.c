@@ -23,12 +23,14 @@
 
 #include <GL/glew.h>
 #include <SDL.h>
+#include <SDL_mutex.h>
 #include <string.h>
 
 #include <shelltoy/fileWatcher.h>
 
 #include "../../common/glError.h"
 #include "../../common/shader.h"
+#include "../../logging.h"
 
 #include "backgroundToy.h"
 
@@ -50,7 +52,9 @@ void st_Glsltoy_BackgroundToy_readConfig(
 float st_Glsltoy_BackgroundToy_getTime(
     st_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_initShader(
+static
+st_ErrorCode
+st_Glsltoy_BackgroundToy_initShader(
     st_Glsltoy_BackgroundToy *self);
 
 void st_Glsltoy_BackgroundToy_initQuad(
@@ -63,6 +67,13 @@ void st_Glsltoy_BackgroundToy_shaderFileChanged(
     st_Glsltoy_BackgroundToy *self,
     const char *filePath);
 
+int st_Glsltoy_BackgroundToy_checkShaderChanges(
+    st_Glsltoy_BackgroundToy *self);
+
+st_ErrorCode
+st_Glsltoy_BackgroundToy_recompileShader(
+    st_Glsltoy_BackgroundToy *self);
+
 typedef struct st_Glsltoy_BackgroundToy_QuadVertex_ {
   GLfloat pos[3], texCoord[2];
 } st_Glsltoy_BackgroundToy_QuadVertex;
@@ -70,6 +81,8 @@ typedef struct st_Glsltoy_BackgroundToy_QuadVertex_ {
 struct st_Glsltoy_BackgroundToy_Internal_ {
   st_FileWatcher shaderWatcher;
   st_Shader shader;
+  SDL_mutex *shaderChangedMutex;
+  uint32_t shaderChanged, shaderChangedThreshold;
   char *shaderPath;
   GLuint quadVertexBuffer, quadIndexBuffer, vao;
   GLuint timeLocation, mouseLocation, resolutionLocation;
@@ -88,8 +101,14 @@ void st_Glsltoy_BackgroundToy_init(
   self->internal->initializedDrawObjects = 0;
   self->internal->startTicks = SDL_GetTicks();
   self->internal->shaderPath = NULL;
-  /* TODO: Somehow register a callback that can listen for changes to our
-   * fragment shader source file */
+  /* Initialize timestamp and mutex for signaling shader file changes to the
+   * main thread */
+  self->internal->shaderChanged = 0;
+  self->internal->shaderChangedMutex = SDL_CreateMutex();
+  /* TODO: Allow the user to specify the shader changed threshold (in
+   * milliseconds) */
+  self->internal->shaderChangedThreshold = 500;
+  /* Watch for changes to our fragment shader source file */
   st_FileWatcher_init(
       &self->internal->shaderWatcher);
   st_FileWatcher_setCallback(&self->internal->shaderWatcher,
@@ -141,6 +160,8 @@ void st_Glsltoy_BackgroundToy_destroy(
   if (self->internal->initializedDrawObjects) {
     /* TODO: Clean up the GL objects that we initialized */
   }
+  /* Destroy and free our mutex */
+  SDL_DestroyMutex(self->internal->shaderChangedMutex);
   /* Free allocated memory */
   free(self->internal->shaderPath);
   free(self->internal);
@@ -167,38 +188,61 @@ static const char *vert =
   "  gl_Position = vec4(vertPos, 1.0);\n"
   "}\n";
 
-/* XXX: Example copied from glslsandbox.com */
-static const char *frag =
-  "#version 330\n"
-  "\n"
-  "uniform float time;\n"
-  "uniform vec2 mouse;\n"
-  "uniform vec2 resolution;\n"
-  "\n"
-  "void main( void ) {\n"
-  "\n"
-  "  vec2 position = ( gl_FragCoord.xy / resolution.xy ) + mouse / 4.0;\n"
-  "\n"
-  "  float color = 0.0;\n"
-  "  color += sin( position.x * cos( time / 15.0 ) * 80.0 ) + cos( position.y * cos( time / 15.0 ) * 10.0 );\n"
-  "  color += sin( position.y * sin( time / 10.0 ) * 40.0 ) + cos( position.x * sin( time / 25.0 ) * 40.0 );\n"
-  "  color += sin( position.x * sin( time / 5.0 ) * 10.0 ) + sin( position.y * sin( time / 35.0 ) * 80.0 );\n"
-  "  color *= sin( time / 10.0 ) * 0.5;\n"
-  "\n"
-  "  gl_FragColor = vec4( vec3( color, color * 0.5, sin( color + time / 3.0 ) * 0.75 ), 1.0 );\n"
-  "}\n";
-
-void st_Glsltoy_BackgroundToy_initShader(
+st_ErrorCode
+st_Glsltoy_BackgroundToy_initShader(
     st_Glsltoy_BackgroundToy *self)
 {
+  st_ErrorCode error;
   /* XXX: Initialize our shader with the test shader program */
-  st_Shader_init(
-      &self->internal->shader,
-      vert,  /* vert */
-      strlen(vert),  /* vert_len */
-      frag,  /* frag */
-      strlen(frag)  /* frag_len */
+  st_Shader_init(&self->internal->shader);
+
+  /* Compile our internal vertex shader */
+  error = st_Shader_compileShaderFromString(&self->internal->shader,
+      vert,  /* code */
+      strlen(vert),  /* length */
+      GL_VERTEX_SHADER  /* type */
       );
+  if (error == ST_ERROR_SHADER_COMPILATION_FAILED) {
+    /* TODO: Pass the compilation log up to st_Terminal and display it to the
+     * user. It is probably best to use the ST_LOG_ERROR facility. */
+    /* NOTE: This is a fatal error, since the user has no hope of editing the
+     * vertex shader. */
+    return error;
+  } else if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+    return error;
+  }
+  /* Compile the user-provided fragment shader */
+  error = st_Shader_compileShaderFromFile(&self->internal->shader,
+      self->internal->shaderPath,  /* filePath */
+      GL_FRAGMENT_SHADER  /* type */
+      );
+  if (error == ST_ERROR_SHADER_COMPILATION_FAILED) {
+    /* TODO: Pass the compilation log up to st_Terminal and display it to the
+     * user. It is probably best to use the ST_LOG_ERROR facility. */
+    return error;
+  } else if (error == ST_ERROR_SHADER_FILE_NOT_FOUND) {
+    /* TODO: Pass this error up to the st_Terminal and display it to the user
+     * through the GUI. */
+    return error;
+  } else if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+    return error;
+  }
+  /* Link the shader program */
+  error = st_Shader_linkProgram(&self->internal->shader);
+  if (error == ST_ERROR_SHADER_LINKING_FAILED) {
+    /* TODO: Pass the linking log up to st_Terminal and display it to the user.
+     * It is probably best to use the ST_LOG_ERROR facility. */
+    return error;
+  } else if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+    return error;
+  }
+
+  /* FIXME: If the user provided shader is invalid, we need to provide a dummy
+   * shader? Or perhaps inform Shelltoy that we do not need to render a
+   * background toy texture? */
 
   /* Get the uniform locations we are interested in */
 #define GET_UNIFORM(NAME) \
@@ -211,6 +255,8 @@ void st_Glsltoy_BackgroundToy_initShader(
   GET_UNIFORM(time)
   GET_UNIFORM(mouse)
   GET_UNIFORM(resolution)
+
+  return ST_NO_ERROR;
 }
 
 void st_Glsltoy_BackgroundToy_initQuad(
@@ -392,6 +438,12 @@ void st_Glsltoy_BackgroundToy_draw(
     self->internal->initializedDrawObjects = 1;
   }
 
+  /* Check for pending shader changes */
+  if (st_Glsltoy_BackgroundToy_checkShaderChanges(self)) {
+    fprintf(stderr, "\033[1mRecompiling shader...\033[0m\n");
+    st_Glsltoy_BackgroundToy_recompileShader(self);
+  }
+
   /* Render our shader to the current framebuffer */
   st_Glsltoy_BackgroundToy_drawShader(self);
 }
@@ -403,4 +455,73 @@ void st_Glsltoy_BackgroundToy_shaderFileChanged(
   /* TODO: Attempt to re-compile the shader? We actually need to notify the
    * main thread, since we cannot compile shaders outside of the GL thread. */
   fprintf(stderr, "st_Glsltoy_BackgroundToy_shaderFileChanged\n");
+  /* TODO: Flag the main thread to re-compile the shader */
+  /* NOTE: Since shaders must be compiled on the main graphics thread with
+   * OpenGL, we use a timestamp to limit the adverse effect on terminal
+   * interactivity. */
+  assert(strcmp(filePath, self->internal->shaderPath) == 0);
+  SDL_LockMutex(self->internal->shaderChangedMutex);
+  /* FIXME: The value of shaderChanged will wrap after ~49 days of uptime. */
+  self->internal->shaderChanged= SDL_GetTicks();
+  SDL_UnlockMutex(self->internal->shaderChangedMutex);
+}
+
+int st_Glsltoy_BackgroundToy_checkShaderChanges(
+    st_Glsltoy_BackgroundToy *self)
+{
+  int result;
+
+  SDL_LockMutex(self->internal->shaderChangedMutex);
+  if (self->internal->shaderChanged == 0) {
+    result = 0;
+  } else {
+    uint32_t delta;
+    delta = SDL_GetTicks() - self->internal->shaderChanged;
+    if (delta >= self->internal->shaderChangedThreshold) {
+      result = 1;
+      self->internal->shaderChanged = 0;
+    } else {
+      result = 0;
+    }
+  }
+  SDL_UnlockMutex(self->internal->shaderChangedMutex);
+  return result;
+}
+
+st_ErrorCode
+st_Glsltoy_BackgroundToy_recompileShader(
+    st_Glsltoy_BackgroundToy *self)
+{
+  st_ErrorCode error;
+
+  /* Compile the user-provided fragment shader */
+  error = st_Shader_compileShaderFromFile(&self->internal->shader,
+      self->internal->shaderPath,  /* filePath */
+      GL_FRAGMENT_SHADER  /* type */
+      );
+  if (error == ST_ERROR_SHADER_COMPILATION_FAILED) {
+    /* TODO: Pass the compilation log up to st_Terminal and display it to the
+     * user. It is probably best to use the ST_LOG_ERROR facility. */
+    return error;
+  } else if (error == ST_ERROR_SHADER_FILE_NOT_FOUND) {
+    /* TODO: Pass this error up to the st_Terminal and display it to the user
+     * through the GUI. */
+    return error;
+  } else if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+    return error;
+  }
+
+  /* Link the shader program */
+  error = st_Shader_linkProgram(&self->internal->shader);
+  if (error == ST_ERROR_SHADER_LINKING_FAILED) {
+    /* TODO: Pass the linking log up to st_Terminal and display it to the user.
+     * It is probably best to use the ST_LOG_ERROR facility. */
+    return error;
+  } else if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+    return error;
+  }
+
+  return ST_NO_ERROR;
 }

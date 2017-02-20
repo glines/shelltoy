@@ -3,25 +3,42 @@
 
 #include <GL/glew.h>
 
+#include <shelltoy/error.h>
+
+struct st_Shader_Internal_;
+typedef struct st_Shader_Internal_ st_Shader_Internal;
+
 typedef struct {
-  GLuint vert, frag, program;
+  st_Shader_Internal *internal;
+  GLuint program;
 } st_Shader;
 
 void st_Shader_init(
-    st_Shader *self,
-    const char *vert,
-    unsigned int vert_len,
-    const char *frag,
-    unsigned int frag_len);
+    st_Shader *self);
+
 void st_Shader_destroy(
     st_Shader *self);
 
-GLuint st_Shader_compileShader(
-    const char *code,
-    int code_len,
+st_ErrorCode
+st_Shader_compileShaderFromString(
+    st_Shader *self,
+    const GLchar *code,
+    GLint length,
     GLenum type);
 
-void st_Shader_linkProgram(
+st_ErrorCode
+st_Shader_compileShaderFromFile(
+    st_Shader *self,
+    const char *filePath,
+    GLenum type);
+
+st_ErrorCode
+st_Shader_linkProgram(
     st_Shader *self);
+
+void
+st_Shader_getLog(
+    st_Shader *self,
+    const char **log);
 
 #endif

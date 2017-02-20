@@ -27,6 +27,7 @@
 
 #include "./common/glError.h"
 #include "./common/shader.h"
+#include "logging.h"
 
 #include "backgroundRenderer.h"
 
@@ -93,14 +94,42 @@ static const char *frag_shader =
 void st_BackgroundRenderer_initShader(
     st_BackgroundRenderer *self)
 {
+  st_ErrorCode error;
   /* Compile and link our shader for drawing the toy texture */
-  st_Shader_init(
+  st_Shader_init(&self->internal->shader);
+  /* Compile the vertex shader, which prepares a simple texture quad */
+  error = st_Shader_compileShaderFromString(
       &self->internal->shader,
-      vert_shader,  /* vert */
-      strlen(vert_shader),  /* vert_len */
-      frag_shader,  /* frag */
-      strlen(frag_shader)  /* frag_len */
+      vert_shader,  /* code */
+      strlen(vert_shader),  /* length */
+      GL_VERTEX_SHADER  /* type */
       );
+  if (error != ST_NO_ERROR) {
+    /* TODO: Make this error fatal? */
+    ST_LOG_ERROR("%s", "Background renderer failed to compile vertex shader");
+    return;
+  }
+  /* Compile the fragment shader, which draws our toy texture */
+  error = st_Shader_compileShaderFromString(
+      &self->internal->shader,
+      frag_shader,  /* code */
+      strlen(frag_shader),  /* length */
+      GL_FRAGMENT_SHADER  /* type */
+      );
+  if (error != ST_NO_ERROR) {
+    /* TODO: Make this error fatal? */
+    ST_LOG_ERROR("%s",
+        "Background renderer failed to compile fragment shader");
+    return;
+  }
+  /* Link the shader program */
+  error = st_Shader_linkProgram(&self->internal->shader);
+  if (error != ST_NO_ERROR) {
+    /* TODO: Make this error fatal? */
+    ST_LOG_ERROR("%s",
+        "Background renderer failed to link shader program");
+    return;
+  }
 
   /* Get the uniform locations we are interested in */
 #define GET_UNIFORM(NAME) \

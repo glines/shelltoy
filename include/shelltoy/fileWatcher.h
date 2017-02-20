@@ -28,8 +28,7 @@
 
 typedef void (*st_FileWatcher_FileChangedCallback)(
     void *data,
-    const char *filePath
-    );
+    const char *filePath);
 
 struct st_FileWatcher_Internal_;
 typedef struct st_FileWatcher_Internal_ st_FileWatcher_Internal;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2016-2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,36 +24,18 @@
 #ifndef SHELLTOY_ERROR_H_
 #define SHELLTOY_ERROR_H_
 
-typedef enum st_ErrorCode_ {
-  ST_NO_ERROR = 0,
-  ST_ERROR_ATLAS_GLYPH_NOT_FOUND,
-  ST_ERROR_CONFIG,
-  ST_ERROR_CONFIG_FAILED_TO_SERIALIZE,
-  ST_ERROR_CONFIG_FILE_FORMAT,
-  ST_ERROR_CONFIG_FILE_NOT_FOUND,
-  ST_ERROR_CONFIG_FILE_PATH_NOT_SET,
-  ST_ERROR_CONFIG_FILE_READ,
-  ST_ERROR_DUPLICATE_PLUGIN_NAME,
-  ST_ERROR_FAILED_TO_CREATE_CONFIG_FILE,
-  ST_ERROR_FAILED_TO_CREATE_DIRECTORY,
-  ST_ERROR_FAILED_TO_LOAD_FONT,
-  ST_ERROR_FONTCONFIG_ERROR,
-  ST_ERROR_FONT_GLYPH_NOT_FOUND,
-  ST_ERROR_FONT_NOT_FOUND,
-  ST_ERROR_FREETYPE_ERROR,
-  ST_ERROR_MISSING_FONT,
-  ST_ERROR_MISSING_FONT_FOR_CHARACTER_CODE,
-  ST_ERROR_NEGATIVE_FONT_SIZE,
-  ST_ERROR_OUT_OF_MEMORY,
-  ST_ERROR_PLUGIN_DL_FAILED_TO_LOAD,
-  ST_ERROR_PLUGIN_MISSING_SYMBOL,
-  ST_ERROR_PLUGIN_NOT_FOUND,
-  ST_ERROR_PLUGIN_VERSION_MISMATCH,
-  ST_ERROR_PROFILE_NOT_FOUND,
-  ST_ERROR_PROFILE_NO_PRIMARY_FONT,
-  ST_ERROR_SDL_ERROR,
-  ST_ERROR_UNKNOWN_COLOR_CODE,
-} st_ErrorCode;
+/* Create an enum type for all of our error codes */
+#define ST_START_ERROR_CODES \
+  typedef enum st_ErrorCode_ {
+#define ST_DECLARE_ERROR_CODE(code,string) \
+    code,
+#define ST_END_ERROR_CODES \
+  } st_ErrorCode;
+#undef SHELLTOY_ERROR_CODES_H_
+#include <shelltoy/errorCodes.h>
+#undef ST_START_ERROR_CODES
+#undef ST_DECLARE_ERROR_CODE
+#undef ST_END_ERROR_CODES
 
 const char *st_ErrorString(
     st_ErrorCode error);

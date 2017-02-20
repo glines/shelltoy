@@ -76,13 +76,17 @@ void st_GlyphRenderer_init(
       &self->internal->cellSize[0],  /* width */
       &self->internal->cellSize[1]  /* height */
       );
-  ST_LOG_ERROR_CODE(error);
+  if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+  }
 
   /* Calculate the underline offset for the given fonts */
   error = st_GlyphRenderer_calculateUnderlineOffset(self,
       &self->internal->underlineOffset  /* offset */
       );
-  ST_LOG_ERROR_CODE(error);
+  if (error != ST_NO_ERROR) {
+    ST_LOG_ERROR_CODE(error);
+  }
 
   /* Store the font size */
   self->internal->fontSize = profile->fontSize;

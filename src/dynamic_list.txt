@@ -9,4 +9,6 @@
   st_FileWatcher_init;
   st_FileWatcher_setCallback;
   st_FileWatcher_watchFile;
+  st_logError;
+  st_ErrorString;
 };
