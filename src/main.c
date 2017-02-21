@@ -74,6 +74,8 @@ void st_dispatchEvents() {
             );
         break;
       case SDL_KEYDOWN:
+        if (event.key.repeat)
+          break;
         {
           int modifier = 0;
           /* Stop receiving text input events while certain modifier keys are
