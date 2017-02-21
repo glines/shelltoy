@@ -74,14 +74,20 @@ void st_dispatchEvents() {
             );
         break;
       case SDL_KEYDOWN:
-        /* Stop receiving text input events while certain modifier keys are
-         * pressed */
-        switch (event.key.keysym.sym) {
-          case SDLK_LALT:
-          case SDLK_LCTRL:
-          case SDLK_RALT:
-          case SDLK_RCTRL:
-            SDL_StopTextInput();
+        {
+          int modifier = 0;
+          /* Stop receiving text input events while certain modifier keys are
+           * pressed */
+          switch (event.key.keysym.sym) {
+            case SDLK_LALT:
+            case SDLK_LCTRL:
+            case SDLK_RALT:
+            case SDLK_RCTRL:
+              SDL_StopTextInput();
+              modifier = 1;
+              break;
+          }
+          if (modifier)
             break;
         }
         st_Terminal_keyInput(&shelltoy.terminal,
