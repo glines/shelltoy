@@ -1,0 +1,6 @@
+Next thing to do: Have shelltoy close on shell exit.
+Add shortcuts to increase and decrease the font size.
+
+I got this assertion at exit once:
+shelltoy: /home/auntieneo/code/shelltoy/src/pty.c:67: st_PTY_pushEvent: Assertion `0' failed.
+Aborted (core dumped)
