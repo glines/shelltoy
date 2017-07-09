@@ -1,6 +1,11 @@
 # Build files
 /build
+/install
+/result
 
 # VIM files
 .*.swo
 .*.swp
+
+# Miscellaneous files
+/sandbox
