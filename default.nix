@@ -2,15 +2,9 @@
 
 stdenv.mkDerivation rec {
   name = "shelltoy-${version}";
-  version = "0.0.7";
+  version = "dev";
 
-  src = fetchgit {
-    url = "file:///home/auntieneo/code/shelltoy";
-    rev = "refs/tags/${version}";
-    sha256 = "18xswv9g1d4hzbyighzximg4bc00izb443wmq5vn226ryclgr34l";
-    leaveDotGit = true;  /* Needed for version tags */
-    deepClone = true;
-  };
+  src = ./.;
 
   buildInputs = [ cmake libtsm SDL2 glew freetype dejavu_fonts pkgconfig check
     jansson fontconfig expat doxygen
