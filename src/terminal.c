@@ -199,6 +199,7 @@ void st_Terminal_initWindow(st_Terminal *self) {
 }
 
 void st_Terminal_initTSM(st_Terminal *self) {
+  int result;
   /* Initialize the screen and state machine provided by libtsm */
   tsm_screen_new(
       &self->screen,  /* out */
@@ -213,6 +214,17 @@ void st_Terminal_initTSM(st_Terminal *self) {
       (tsm_log_t)st_Terminal_tsmLogCallback,  /* log */
       self  /* log_data */
       );
+  /* Set the screen size */
+  result = tsm_screen_resize(
+      self->screen,  /* con */
+      self->columns,  /* x */
+      self->rows  /* y */
+      );
+  if (result < 0) {
+    fprintf(stderr, "Failed to resize libtsm screen\n");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
 }
 
 void st_Terminal_calculateScreenSize(
@@ -263,6 +275,10 @@ void st_Terminal_init(
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
+  st_Terminal_calculateScreenSize(self,
+      &self->columns,  /* columns */
+      &self->rows  /* rows */
+      );
   /* Initialize the text renderer */
   st_TextRenderer_init(&self->internal->textRenderer,
       self->internal->glyphRenderer,  /* glyphRenderer */
@@ -276,10 +292,6 @@ void st_Terminal_init(
   /* Initialize the terminal state machine */
   st_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
-  st_Terminal_calculateScreenSize(self,
-      &self->columns,  /* columns */
-      &self->rows  /* rows */
-      );
   st_PTY_init(&self->pty,
       self->columns,  /* width */
       self->rows  /* height */
