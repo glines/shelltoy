@@ -193,9 +193,20 @@ void st_PTY_prepareChild(st_PTY *self) {
   int result;
   struct winsize ws;
   struct termios attr;
+  int i;
+  pid_t pid;
   /* Set TERM environment variable to xterm-256color, since libtsm approximates
    * the functionality of xterm */
   setenv("TERM", "xterm-256color", 1);
+  /* Disable the SIGCHLD signal handler before calling grantpt(3) */
+  /* FIXME: I'm not sure if this signal handler business is necessary */
+  sigset_t sigset;
+  sigemptyset(&sigset);
+  result = sigprocmask(SIG_SETMASK, &sigset, NULL);
+  /* TODO: Fail gracefully */
+  if (result < 0) assert(0);
+  for (i = 1; i < SIGUNUSED; ++i)
+    signal(i, SIG_DFL);
   /* Allow the child to access the pseudo terminal */
   if (grantpt(self->master_fd) < 0) {
     perror("grantpt");
@@ -223,7 +234,7 @@ void st_PTY_prepareChild(st_PTY *self) {
   strncpy(slave_name, temp, len);
   slave_name[len] = '\0';
   /* Open the pseudo terminal slave */
-  slave_fd = open(slave_name, O_RDWR);
+  slave_fd = open(slave_name, O_RDWR | O_NOCTTY);
   if (slave_fd < 0) {
     perror("open");
     fprintf(stderr, "Failed to open pseudo terminal slave: %s\n",
@@ -232,6 +243,22 @@ void st_PTY_prepareChild(st_PTY *self) {
     assert(0);
   }
   free(slave_name);
+  /* Create new session and relinquish the controlling terminal */
+  pid = setsid();
+  if (pid < 0) {
+    perror("setsid");
+    fprintf(stderr, "Failed to create child process group");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
+  /* Set the controlling terminal */
+  result = ioctl(slave_fd, TIOCSCTTY, NULL);
+  if (result < 0) {
+    perror("ioctl");
+    fprintf(stderr, "Failed to set controlling terminal of child");
+    /* TODO: Fail gracefully */
+    assert(0);
+  }
   /* Get the terminal attributes */
   if (tcgetattr(slave_fd, &attr) < 0) {
     fprintf(stderr, "Failed to get pseudo terminal attributes");
@@ -244,8 +271,6 @@ void st_PTY_prepareChild(st_PTY *self) {
     /* TODO: Fail gracefully */
     assert(0);
   }
-  /* Create a new process group session for the child */
-  setsid();
   /* Redirect stdin, stdout, and stderr to the pseudo terminal slave */
   /* TODO: Check for errors here */
   dup2(slave_fd, STDIN_FILENO);
