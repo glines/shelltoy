@@ -1056,6 +1056,8 @@ st_Config_createDefaultConfigFile(
   char *path;
   st_ErrorCode error;
 
+  /* FIXME: Support the XDG_CONFIG_HOME environment variable */
+
   /* Check for existence of $HOME directory */
   home = getenv("HOME");
   if (home == NULL) {
