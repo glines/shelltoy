@@ -271,20 +271,22 @@ void st_PTY_prepareChild(st_PTY *self) {
     /* TODO: Fail gracefully */
     assert(0);
   }
-  /* Redirect stdin, stdout, and stderr to the pseudo terminal slave */
-  /* TODO: Check for errors here */
-  dup2(slave_fd, STDIN_FILENO);
-  dup2(slave_fd, STDOUT_FILENO);
-  dup2(slave_fd, STDERR_FILENO);
   /* Send the window size to the pty */
   memset(&ws, 0, sizeof(ws));
   ws.ws_col = self->width;
   ws.ws_row = self->height;
   result = ioctl(slave_fd, TIOCSWINSZ, &ws);
   if (result != 0) {
-    ST_LOG_ERROR("Unable to set pseudo terminal window size: %s",
-        strerror(errno));
+    perror("ioctl");
+    fprintf(stderr, "Unable to set pseudo terminal window size");
+    /* TODO: Fail gracefully */
+    assert(0);
   }
+  /* Redirect stdin, stdout, and stderr to the pseudo terminal slave */
+  /* TODO: Check for errors here */
+  dup2(slave_fd, STDIN_FILENO);
+  dup2(slave_fd, STDOUT_FILENO);
+  dup2(slave_fd, STDERR_FILENO);
 }
 
 void st_PTY_startChild(
