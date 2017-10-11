@@ -13,4 +13,11 @@ stdenv.mkDerivation rec {
     git
     xorg.libX11
   ];
+
+  preConfigure = ''
+    # NOTE: The default nix hooks for cmake also use the ./build
+    # directory...  we just remove this directory in advance so the
+    # build is not contaminated.
+    rm -rf ./build
+  '';
 }
