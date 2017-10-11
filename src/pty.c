@@ -177,6 +177,7 @@ void st_PTY_init(
   self->height = height;
   self->master_fd = -1;
   st_PTY_openPTY(self);
+  st_PTY_resize(self, width, height);
 }
 
 void st_PTY_destroy(st_PTY *self) {
@@ -191,7 +192,6 @@ void st_PTY_prepareChild(st_PTY *self) {
   size_t len;
   char *slave_name, *temp;
   int result;
-  struct winsize ws;
   struct termios attr;
   int i;
   pid_t pid;
@@ -268,17 +268,6 @@ void st_PTY_prepareChild(st_PTY *self) {
   /* Set the terminal attributes */
   if (tcsetattr(slave_fd, TCSANOW, &attr) < 0) {
     fprintf(stderr, "Failed to set pseudo terminal attributes");
-    /* TODO: Fail gracefully */
-    assert(0);
-  }
-  /* Send the window size to the pty */
-  memset(&ws, 0, sizeof(ws));
-  ws.ws_col = self->width;
-  ws.ws_row = self->height;
-  result = ioctl(slave_fd, TIOCSWINSZ, &ws);
-  if (result != 0) {
-    perror("ioctl");
-    fprintf(stderr, "Unable to set pseudo terminal window size");
     /* TODO: Fail gracefully */
     assert(0);
   }
