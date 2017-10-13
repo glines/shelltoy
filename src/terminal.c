@@ -36,6 +36,8 @@
 
 #include "terminal.h"
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
 typedef enum st_Terminal_SelectionState_ {
   ST_TERMINAL_NO_SELECTION,
   ST_TERMINAL_SELECTION_BETWEEN_CELLS,
@@ -242,6 +244,9 @@ void st_Terminal_calculateScreenSize(
    * the terminal window */
   *columns = self->width / self->cellWidth;
   *rows = self->height / self->cellHeight;
+  /* At least one character must fit on the screen */
+  *columns = MAX(*columns, 1);
+  *rows = MAX(*rows, 1);
 }
 
 void st_Terminal_calculateWindowSize(
@@ -373,6 +378,8 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
     if (result < 0) {
       fprintf(stderr, "Failed to resize libtsm screen\n");
       /* TODO: Fail gracefully */
+      /* NOTE: This might fail if libtsm cannot allocate memory for the
+       * screen */
       assert(0);
     }
     st_PTY_resize(&self->pty,
