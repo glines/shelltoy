@@ -345,7 +345,6 @@ void st_Terminal_windowSizeChanged(
   /* Store the new window width and height */
   self->width = width;
   self->height = height;
-  fprintf(stderr, "new window dimensions: %dx%d\n", width, height);
   /* Update the screen size based on the new width and height */
   st_Terminal_updateScreenSize(self);
   /* Update the GL viewport size */
@@ -365,7 +364,6 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
   {
     self->columns = newColumns;
     self->rows = newRows;
-    fprintf(stderr, "new size: %dx%d\n", self->columns, self->rows);
     /* Change the pseudo terminal screen size */
     result = tsm_screen_resize(
         self->screen,  /* con */
