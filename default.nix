@@ -14,6 +14,8 @@ stdenv.mkDerivation rec {
     xorg.libX11
   ];
 
+  separateDebugInfo = true;
+
   preConfigure = ''
     # NOTE: The default nix hooks for cmake also use the ./build
     # directory...  we just remove this directory in advance so the
