@@ -75,6 +75,10 @@ void st_Terminal_calculateScreenSize(
     st_Terminal *self,
     int *columns,
     int *rows);
+void st_Terminal_calculateWindowSize(
+    st_Terminal *self,
+    int *width,
+    int *height);
 void st_Terminal_calculateCell(
     const st_Terminal *self,
     int x,
@@ -122,13 +126,18 @@ void st_Terminal_ptyReadCallback(
 }
 
 void st_Terminal_initWindow(st_Terminal *self) {
+  /* Calculate the window size based on the desired screen size */
+  st_Terminal_calculateWindowSize(self,
+      &self->width,  /* columns */
+      &self->height  /* rows */
+      );
   /* Create the SDL window */
   self->window = SDL_CreateWindow(
       "Shelltoy",  /* title */
       SDL_WINDOWPOS_UNDEFINED,  /* x */
       SDL_WINDOWPOS_UNDEFINED,  /* y */
-      640,  /* w */
-      480,  /* w */
+      self->width,  /* w */
+      self->height,  /* h */
       SDL_WINDOW_OPENGL
       | SDL_WINDOW_RESIZABLE  /* flags */
       );
@@ -138,9 +147,6 @@ void st_Terminal_initWindow(st_Terminal *self) {
     /* TODO: Fail gracefully */
     assert(0);
   }
-  /* Store the window dimensions */
-  self->width = 640;
-  self->height = 480;
 
   /* The terminal emulator recieves all text through the operating system's IME
    * interface. See: <https://wiki.libsdl.org/Tutorials/TextInput> */
@@ -238,6 +244,16 @@ void st_Terminal_calculateScreenSize(
   *rows = self->height / self->cellHeight;
 }
 
+void st_Terminal_calculateWindowSize(
+    st_Terminal *self,
+    int *width,
+    int *height)
+{
+  /* The window size is a multiple of the (halfwidth) glyph cell size */
+  *width = self->columns * self->cellWidth;
+  *height = self->rows * self->cellHeight;
+}
+
 void st_Terminal_calculateCell(
     const st_Terminal *self,
     int x,
@@ -261,8 +277,9 @@ void st_Terminal_init(
       sizeof(struct st_Terminal_Internal));
   self->internal->selectionState = ST_TERMINAL_NO_SELECTION;
   self->internal->profile = profile;
-  /* Initialize the SDL window */
-  st_Terminal_initWindow(self);
+  /* TODO: The default columns and rows should be configurable */
+  self->columns = 80;
+  self->rows = 25;
   /* Initialize the glyph renderer */
   st_GlyphRendererRef_init(&self->internal->glyphRenderer);
   st_GlyphRenderer_init(
@@ -275,10 +292,8 @@ void st_Terminal_init(
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
-  st_Terminal_calculateScreenSize(self,
-      &self->columns,  /* columns */
-      &self->rows  /* rows */
-      );
+  /* Initialize the SDL window */
+  st_Terminal_initWindow(self);
   /* Initialize the text renderer */
   st_TextRenderer_init(&self->internal->textRenderer,
       self->internal->glyphRenderer,  /* glyphRenderer */
