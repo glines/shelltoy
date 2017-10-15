@@ -28,35 +28,35 @@
 #include "array.h"
 
 /* Fit the array in at most two cache lines? Ehh... */
-#define ST_INIT_ARRAY_SIZE 64 / sizeof(void *)
+#define TTOY_INIT_ARRAY_SIZE 64 / sizeof(void *)
 
-struct st_Array_Internal_ {
+struct ttoy_Array_Internal_ {
   void **values;
   size_t sizeValues, numValues;
 };
 
-void st_Array_init(
-    st_Array *self)
+void ttoy_Array_init(
+    ttoy_Array *self)
 {
   /* Initialize internal memory */
-  self->internal = (st_Array_Internal *)malloc(sizeof(st_Array_Internal));
+  self->internal = (ttoy_Array_Internal *)malloc(sizeof(ttoy_Array_Internal));
   self->internal->values = (void **)malloc(
-      sizeof(void *) * ST_INIT_ARRAY_SIZE);
-  self->internal->sizeValues = ST_INIT_ARRAY_SIZE;
+      sizeof(void *) * TTOY_INIT_ARRAY_SIZE);
+  self->internal->sizeValues = TTOY_INIT_ARRAY_SIZE;
   self->internal->numValues = 0;
 }
 
-void st_Array_destroy(
-    st_Array *self)
+void ttoy_Array_destroy(
+    ttoy_Array *self)
 {
   /* Free internal memory */
   free(self->internal->values);
   free(self->internal);
 }
 
-st_ErrorCode
-st_Array_append(
-    st_Array *self,
+ttoy_ErrorCode
+ttoy_Array_append(
+    ttoy_Array *self,
     void *value)
 {
   /* Ensure we have enough memory to hold an additional value */
@@ -65,7 +65,7 @@ st_Array_append(
     /* Double the size of our internal memory */
     newValues = (void **)malloc(self->internal->sizeValues * 2);
     if (newValues == NULL) {
-      return ST_ERROR_OUT_OF_MEMORY;
+      return TTOY_ERROR_OUT_OF_MEMORY;
     }
     memcpy(
         newValues,
@@ -79,11 +79,11 @@ st_Array_append(
   /* Add the new value to the end of the values array */
   self->internal->values[self->internal->numValues++] = value;
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-void *st_Array_get(
-    st_Array *self,
+void *ttoy_Array_get(
+    ttoy_Array *self,
     size_t index)
 {
   assert(index < self->internal->numValues);
@@ -91,14 +91,14 @@ void *st_Array_get(
   return self->internal->values[index];
 }
 
-size_t st_Array_size(
-    const st_Array *self)
+size_t ttoy_Array_size(
+    const ttoy_Array *self)
 {
   return self->internal->numValues;
 }
 
-void st_Array_clear(
-    st_Array *self)
+void ttoy_Array_clear(
+    ttoy_Array *self)
 {
   self->internal->numValues = 0;
 }

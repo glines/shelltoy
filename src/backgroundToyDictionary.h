@@ -21,13 +21,13 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_BACKGROUND_TOY_DICTIONARY_H_
-#define SHELLTOY_BACKGROUND_TOY_DICTIONARY_H_
+#ifndef TTOY_BACKGROUND_TOY_DICTIONARY_H_
+#define TTOY_BACKGROUND_TOY_DICTIONARY_H_
 
-#include <shelltoy/backgroundToy.h>
+#include <ttoy/backgroundToy.h>
 
 #include "./common/dictionary.h"
 
-ST_DECLARE_DICTIONARY(st_BackgroundToy)
+TTOY_DECLARE_DICTIONARY(ttoy_BackgroundToy)
 
 #endif

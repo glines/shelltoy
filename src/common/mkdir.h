@@ -21,13 +21,13 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_COMMON_MKDIR_H_
-#define SHELLTOY_COMMON_MKDIR_H_
+#ifndef TTOY_COMMON_MKDIR_H_
+#define TTOY_COMMON_MKDIR_H_
 
-#include <shelltoy/error.h>
+#include <ttoy/error.h>
 
-st_ErrorCode
-st_mkdir(
+ttoy_ErrorCode
+ttoy_mkdir(
     const char *workingDir,
     const char *dir);
 

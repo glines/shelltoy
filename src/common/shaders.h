@@ -1,13 +1,13 @@
-#ifndef ST_COMMON_SHADERS_H_
-#define ST_COMMON_SHADERS_H_
+#ifndef TTOY_COMMON_SHADERS_H_
+#define TTOY_COMMON_SHADERS_H_
 
 #include <GL/glew.h>
 
-#define ST_DECLARE_SHADER(name) \
-  GLuint st_Shaders_ ## name ## Shader();
+#define TTOY_DECLARE_SHADER(name) \
+  GLuint ttoy_Shaders_ ## name ## Shader();
 
-ST_DECLARE_SHADER(glyph)
-ST_DECLARE_SHADER(background)
-ST_DECLARE_SHADER(underline)
+TTOY_DECLARE_SHADER(glyph)
+TTOY_DECLARE_SHADER(background)
+TTOY_DECLARE_SHADER(underline)
 
 #endif

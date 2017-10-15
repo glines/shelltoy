@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_LOGGING_H_
-#define SHELLTOY_LOGGING_H_
+#ifndef TTOY_LOGGING_H_
+#define TTOY_LOGGING_H_
 
 #include <assert.h>
 #include <string.h>
@@ -31,22 +31,22 @@
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__ )
 
-#define ST_LOG_ERROR(format, ...) \
-  st_logError(__FILENAME__, __LINE__, \
+#define TTOY_LOG_ERROR(format, ...) \
+  ttoy_logError(__FILENAME__, __LINE__, \
       format, ##__VA_ARGS__)
 
-#define ST_LOG_ERROR_CODE(error) \
-  ST_LOG_ERROR("%s", st_ErrorString(error))
+#define TTOY_LOG_ERROR_CODE(error) \
+  TTOY_LOG_ERROR("%s", ttoy_ErrorString(error))
 
-#define ST_ASSERT_ERROR_CODE(error) \
+#define TTOY_ASSERT_ERROR_CODE(error) \
   do { \
-    if (error != ST_NO_ERROR) { \
-      ST_LOG_ERROR("%s", st_ErrorString(error)); \
+    if (error != TTOY_NO_ERROR) { \
+      TTOY_LOG_ERROR("%s", ttoy_ErrorString(error)); \
     } \
-    assert(error == ST_NO_ERROR); \
+    assert(error == TTOY_NO_ERROR); \
   } while (0)
 
-void st_logError(
+void ttoy_logError(
   const char *file,
   int line,
   const char *format,

@@ -1,4 +1,4 @@
-add_executable(shelltoy
+add_executable(ttoy
     backgroundRenderer.c
     backgroundToy.c
     backgroundToyDictionary.c
@@ -27,13 +27,13 @@ add_executable(shelltoy
     textToyDictionary.c
     toyFactory.c
     )
-add_dependencies(shelltoy shelltoy_version)
+add_dependencies(ttoy ttoy_version)
 # The --dynamic-list linker flag tells the linker which symbols need to be
 # exported for use in plugins loaded with dlopen(3).
-set_target_properties(shelltoy
+set_target_properties(ttoy
     PROPERTIES LINK_FLAGS "-Wl,--dynamic-list=${CMAKE_CURRENT_SOURCE_DIR}/dynamic_list.txt"
     )
-target_link_libraries(shelltoy
+target_link_libraries(ttoy
     common
     ${FONTCONFIG_LIBRARIES}
     ${FREETYPE_LIBRARIES}
@@ -43,8 +43,8 @@ target_link_libraries(shelltoy
     ${SDL2_LIBRARY}
     ${X11_LIBRARIES}
     )
-set_property(TARGET shelltoy PROPERTY C_STANDARD 11)
-install(TARGETS shelltoy
+set_property(TARGET ttoy PROPERTY C_STANDARD 11)
+install(TARGETS ttoy
     RUNTIME DESTINATION "bin"
     INCLUDES DESTINATION "include")
 

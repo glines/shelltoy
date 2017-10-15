@@ -23,4 +23,4 @@
 
 #include "backgroundToyDictionary.h"
 
-ST_DEFINE_DICTIONARY(st_BackgroundToy)
+TTOY_DEFINE_DICTIONARY(ttoy_BackgroundToy)

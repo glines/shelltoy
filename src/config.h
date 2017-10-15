@@ -23,73 +23,73 @@
 
 #include "error.h"
 #include "profile.h"
-#include <shelltoy/backgroundToy.h>
+#include <ttoy/backgroundToy.h>
 
-struct st_Config_Internal;
+struct ttoy_Config_Internal;
 
-typedef struct st_Config {
-  struct st_Config_Internal *internal;
+typedef struct ttoy_Config {
+  struct ttoy_Config_Internal *internal;
   char *configFilePath;
-} st_Config;
+} ttoy_Config;
 
-void st_Config_init(
-    st_Config *self);
+void ttoy_Config_init(
+    ttoy_Config *self);
 
-void st_Config_destroy(
-    st_Config *self);
+void ttoy_Config_destroy(
+    ttoy_Config *self);
 
-void st_Config_setPluginPath(
-    st_Config *self,
+void ttoy_Config_setPluginPath(
+    ttoy_Config *self,
     const char *pluginPath);
 
 /**
  * This routine looks for a config file in the default locations, and stores
  * that path in the config object.
  *
- * If a config file is found, then ST_NO_ERROR is returned and the
- * configFilePath member of the st_Config object then contains a pointer to a
+ * If a config file is found, then TTOY_NO_ERROR is returned and the
+ * configFilePath member of the ttoy_Config object then contains a pointer to a
  * nul-terminated string representing the path to that file.
  *
- * If a config file is not found, then ST_ERROR_CONFIG_FILE_NOT_FOUND.
+ * If a config file is not found, then TTOY_ERROR_CONFIG_FILE_NOT_FOUND.
  *
  * Note that the config file is not read or parsed until
- * st_Config_readConfigFile() is called at a later time.
+ * ttoy_Config_readConfigFile() is called at a later time.
  *
  * At the moment, the only config file location searched is
- * "$HOME/.config/shelltoy/config.json".
+ * "$HOME/.config/ttoy/config.json".
  *
- * \sa st_Config_readConfigFile()
+ * \sa ttoy_Config_readConfigFile()
  */
-st_ErrorCode st_Config_findConfigFile(
-    st_Config *self);
+ttoy_ErrorCode ttoy_Config_findConfigFile(
+    ttoy_Config *self);
 
 /**
  * This routine copies the path from 
  *
  * Nothing is done to 
  */
-st_ErrorCode st_Config_setConfigFilePath(
-    st_Config *self,
+ttoy_ErrorCode ttoy_Config_setConfigFilePath(
+    ttoy_Config *self,
     const char *path);
 
 /**
  * Gets the address of the profile with the given name and stores it in
  * *profile.
  *
- * If no such profile is found, then ST_ERROR_PROFILE_NOT_FOUND is returned and
+ * If no such profile is found, then TTOY_ERROR_PROFILE_NOT_FOUND is returned and
  * *profile is set to NULL.
  */
-st_ErrorCode
-st_Config_getProfile(
-    st_Config *self,
+ttoy_ErrorCode
+ttoy_Config_getProfile(
+    ttoy_Config *self,
     const char *name,
-    st_Profile **profile);
+    ttoy_Profile **profile);
 
-st_ErrorCode
-st_Config_getDefaultProfile(
-    st_Config *self,
-    st_Profile **profile);
+ttoy_ErrorCode
+ttoy_Config_getDefaultProfile(
+    ttoy_Config *self,
+    ttoy_Profile **profile);
 
-st_ErrorCode
-st_Config_createDefaultConfigFile(
-    const st_Config *self);
+ttoy_ErrorCode
+ttoy_Config_createDefaultConfigFile(
+    const ttoy_Config *self);

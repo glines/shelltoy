@@ -31,8 +31,8 @@
 
 #include "mkdir.h"
 
-st_ErrorCode
-st_mkdir(
+ttoy_ErrorCode
+ttoy_mkdir(
     const char *workingDir,
     const char *dir)
 {
@@ -49,7 +49,7 @@ st_mkdir(
   /* Concatenate the directory paths into a temporary buffer */
   path = (char *)malloc(len + 1);
   if (path == NULL) {
-    return ST_ERROR_OUT_OF_MEMORY;
+    return TTOY_ERROR_OUT_OF_MEMORY;
   }
   strcpy(path, workingDir);
   path[workingDirLen] = '/';
@@ -75,25 +75,25 @@ st_mkdir(
         /* Check for an existing file/directory */
         result = stat(path, &sbuf);
         if (result < 0) {
-          ST_LOG_ERROR(
+          TTOY_LOG_ERROR(
               "Failed to create '%s' directory: %s",
               path,
               strerror(EEXIST));
-          return ST_ERROR_FAILED_TO_CREATE_DIRECTORY;
+          return TTOY_ERROR_FAILED_TO_CREATE_DIRECTORY;
         } else if (!S_ISDIR(sbuf.st_mode)) {
-          ST_LOG_ERROR(
+          TTOY_LOG_ERROR(
               "Tried to create '%s' directory because '%s' is not a directory",
               dir,
               path);
-          return ST_ERROR_FAILED_TO_CREATE_DIRECTORY;
+          return TTOY_ERROR_FAILED_TO_CREATE_DIRECTORY;
         }
         /* The directory already existed */
       } else {
-        ST_LOG_ERROR(
+        TTOY_LOG_ERROR(
             "Failed to create '%s' directory: %s",
             path,
             strerror(errno));
-        return ST_ERROR_FAILED_TO_CREATE_DIRECTORY;
+        return TTOY_ERROR_FAILED_TO_CREATE_DIRECTORY;
       }
     }
     if (j < len) {
@@ -107,5 +107,5 @@ st_mkdir(
     }
   }
   free(path);
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }

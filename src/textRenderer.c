@@ -28,49 +28,49 @@
 
 #include "textRenderer.h"
 
-#define ST_TEXT_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
-#define ST_TEXT_RENDERER_INIT_SIZE_BACKGROUND_CELLS (80 * 24 * 2)
-#define ST_TEXT_RENDERER_INIT_SIZE_UNDERLINES (128)
+#define TTOY_TEXT_RENDERER_INIT_SIZE_GLYPHS (80 * 24 * 2)
+#define TTOY_TEXT_RENDERER_INIT_SIZE_BACKGROUND_CELLS (80 * 24 * 2)
+#define TTOY_TEXT_RENDERER_INIT_SIZE_UNDERLINES (128)
 
 /* Private internal structures */
-typedef struct st_TextRenderer_QuadVertex_ {
+typedef struct ttoy_TextRenderer_QuadVertex_ {
   float pos[2];
-} st_TextRenderer_QuadVertex;
+} ttoy_TextRenderer_QuadVertex;
 
-typedef struct st_TextRenderer_GlyphInstance_ {
+typedef struct ttoy_TextRenderer_GlyphInstance_ {
   float atlasPos[2];
   float atlasGlyphSize[2];
   float glyphSize[2];
   float offset[2];
   int cell[2];
   uint8_t fgColor[3];
-} st_TextRenderer_GlyphInstance;
+} ttoy_TextRenderer_GlyphInstance;
 
-typedef struct st_TextRenderer_BackgroundInstance_ {
+typedef struct ttoy_TextRenderer_BackgroundInstance_ {
   int cell[2];
   uint8_t bgColor[4];
-} st_TextRenderer_BackgroundInstance;
+} ttoy_TextRenderer_BackgroundInstance;
 
-typedef struct st_TextRenderer_UnderlineInstance_ {
+typedef struct ttoy_TextRenderer_UnderlineInstance_ {
   int cell[2];
   uint8_t fgColor[3];
-} st_TextRenderer_UnderlineInstance;
+} ttoy_TextRenderer_UnderlineInstance;
 
-typedef struct st_TextRenderer_ScreenDrawCallbackData_ {
-  st_TextRenderer *self;
+typedef struct ttoy_TextRenderer_ScreenDrawCallbackData_ {
+  ttoy_TextRenderer *self;
   int cellWidth, cellHeight;
-} st_TextRenderer_ScreenDrawCallbackData;
+} ttoy_TextRenderer_ScreenDrawCallbackData;
 
-struct st_TextRenderer_Internal {
-  st_TextToy *textToy;
-  st_GlyphRendererRef *glyphRenderer;
-  st_GlyphAtlas *atlas;
-  st_Profile *profile;
-  st_TextRenderer_GlyphInstance *glyphs;
+struct ttoy_TextRenderer_Internal {
+  ttoy_TextToy *textToy;
+  ttoy_GlyphRendererRef *glyphRenderer;
+  ttoy_GlyphAtlas *atlas;
+  ttoy_Profile *profile;
+  ttoy_TextRenderer_GlyphInstance *glyphs;
   size_t numGlyphs, sizeGlyphs;
-  st_TextRenderer_BackgroundInstance *backgroundCells;
+  ttoy_TextRenderer_BackgroundInstance *backgroundCells;
   size_t numBackgroundCells, sizeBackgroundCells;
-  st_TextRenderer_UnderlineInstance *underlines;
+  ttoy_TextRenderer_UnderlineInstance *underlines;
   size_t numUnderlines, sizeUnderlines;
   GLuint quadVertexBuffer, quadIndexBuffer;
   GLuint glyphInstanceBuffer, glyphInstanceVAO;
@@ -81,19 +81,19 @@ struct st_TextRenderer_Internal {
 };
 
 /* Private method declarations */
-void st_TextRenderer_initShaders(
-    st_TextRenderer *self);
-void st_TextRenderer_initBuffers(
-    st_TextRenderer *self);
-void st_TextRenderer_initVAO(
-    st_TextRenderer *self);
-void st_TextRenderer_initGlyphInstanceVAO(
-    st_TextRenderer *self);
-void st_TextRenderer_initBackgroundInstanceVAO(
-    st_TextRenderer *self);
-void st_TextRenderer_initUnderlineInstanceVAO(
-    st_TextRenderer *self);
-void st_TextRenderer_screenDrawCallback(
+void ttoy_TextRenderer_initShaders(
+    ttoy_TextRenderer *self);
+void ttoy_TextRenderer_initBuffers(
+    ttoy_TextRenderer *self);
+void ttoy_TextRenderer_initVAO(
+    ttoy_TextRenderer *self);
+void ttoy_TextRenderer_initGlyphInstanceVAO(
+    ttoy_TextRenderer *self);
+void ttoy_TextRenderer_initBackgroundInstanceVAO(
+    ttoy_TextRenderer *self);
+void ttoy_TextRenderer_initUnderlineInstanceVAO(
+    ttoy_TextRenderer *self);
+void ttoy_TextRenderer_screenDrawCallback(
     struct tsm_screen *con,
     uint32_t id,
     const uint32_t *ch,
@@ -103,102 +103,102 @@ void st_TextRenderer_screenDrawCallback(
     unsigned int posy,
     const struct tsm_screen_attr *attr,
     tsm_age_t age,
-    st_TextRenderer_ScreenDrawCallbackData *data);
-void st_TextRenderer_addBackgroundCellInstance(
-    st_TextRenderer *self,
+    ttoy_TextRenderer_ScreenDrawCallbackData *data);
+void ttoy_TextRenderer_addBackgroundCellInstance(
+    ttoy_TextRenderer *self,
     int posx,
     int posy,
     const struct tsm_screen_attr *attr);
-void st_TextRenderer_addGlyphInstance(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_addGlyphInstance(
+    ttoy_TextRenderer *self,
     uint32_t ch,
     int posx,
     int posy,
     const struct tsm_screen_attr *attr,
     int cellWidth,
     int cellHeight);
-void st_TextRenderer_addUnderlineInstance(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_addUnderlineInstance(
+    ttoy_TextRenderer *self,
     int posx,
     int posy,
     const struct tsm_screen_attr *attr);
-st_ErrorCode
-st_TextRenderer_colorCodeToRGB(
-    const st_TextRenderer *self,
+ttoy_ErrorCode
+ttoy_TextRenderer_colorCodeToRGB(
+    const ttoy_TextRenderer *self,
     int8_t code,
     uint8_t *rgb);
 
-void st_TextRenderer_drawBackgroundCells(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_drawBackgroundCells(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight);
-void st_TextRenderer_drawUnderlines(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_drawUnderlines(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int underlineOffset,
     int viewportWidth, int viewportHeight);
-void st_TextRenderer_drawGlyphs(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_drawGlyphs(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight);
 
-void st_TextRenderer_init(
-    st_TextRenderer *self,
-    st_GlyphRendererRef *glyphRenderer,
-    st_Profile *profile)
+void ttoy_TextRenderer_init(
+    ttoy_TextRenderer *self,
+    ttoy_GlyphRendererRef *glyphRenderer,
+    ttoy_Profile *profile)
 {
   /* Allocate memory for internal data structures */
-  self->internal = (struct st_TextRenderer_Internal*)malloc(
-      sizeof(struct st_TextRenderer_Internal));
+  self->internal = (struct ttoy_TextRenderer_Internal*)malloc(
+      sizeof(struct ttoy_TextRenderer_Internal));
   /* TODO: Consolidate initialization of these dynamic arrays */
-  self->internal->sizeGlyphs = ST_TEXT_RENDERER_INIT_SIZE_GLYPHS;
-  self->internal->glyphs = (st_TextRenderer_GlyphInstance *)malloc(
-      sizeof(st_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs);
+  self->internal->sizeGlyphs = TTOY_TEXT_RENDERER_INIT_SIZE_GLYPHS;
+  self->internal->glyphs = (ttoy_TextRenderer_GlyphInstance *)malloc(
+      sizeof(ttoy_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs);
   self->internal->numGlyphs = 0;
   self->internal->sizeBackgroundCells =
-    ST_TEXT_RENDERER_INIT_SIZE_BACKGROUND_CELLS;
+    TTOY_TEXT_RENDERER_INIT_SIZE_BACKGROUND_CELLS;
   self->internal->backgroundCells =
-    (st_TextRenderer_BackgroundInstance*)malloc(
-      sizeof(st_TextRenderer_BackgroundInstance)
+    (ttoy_TextRenderer_BackgroundInstance*)malloc(
+      sizeof(ttoy_TextRenderer_BackgroundInstance)
       * self->internal->sizeBackgroundCells);
   self->internal->numBackgroundCells = 0;
-  self->internal->sizeUnderlines = ST_TEXT_RENDERER_INIT_SIZE_UNDERLINES;
-  self->internal->underlines = (st_TextRenderer_UnderlineInstance *)malloc(
-      sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
+  self->internal->sizeUnderlines = TTOY_TEXT_RENDERER_INIT_SIZE_UNDERLINES;
+  self->internal->underlines = (ttoy_TextRenderer_UnderlineInstance *)malloc(
+      sizeof(ttoy_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
   self->internal->numUnderlines = 0;
   /* Store a reference to the glyph renderer */
   self->internal->glyphRenderer = glyphRenderer;
-  st_GlyphRendererRef_increment(glyphRenderer);
+  ttoy_GlyphRendererRef_increment(glyphRenderer);
   /* Store a pointer to the profile */
   self->internal->profile = profile;
   /* Store a pointer to the text toy, for fancy text rendering */
-  self->internal->textToy = st_Profile_getTextToy(profile);
+  self->internal->textToy = ttoy_Profile_getTextToy(profile);
   /* Initialize our GL resources */
-  st_TextRenderer_initShaders(self);
-  st_TextRenderer_initBuffers(self);
-  st_TextRenderer_initVAO(self);
+  ttoy_TextRenderer_initShaders(self);
+  ttoy_TextRenderer_initBuffers(self);
+  ttoy_TextRenderer_initVAO(self);
   /* Initialize the glyph atlas */
-  self->internal->atlas = (st_GlyphAtlas *)malloc(sizeof(st_GlyphAtlas));
-  st_GlyphAtlas_init(self->internal->atlas);
+  self->internal->atlas = (ttoy_GlyphAtlas *)malloc(sizeof(ttoy_GlyphAtlas));
+  ttoy_GlyphAtlas_init(self->internal->atlas);
   /* Render glyphs to the atlas representative of ASCII terminals */
-  st_GlyphAtlas_renderASCIIGlyphs(self->internal->atlas,
-      st_GlyphRendererRef_get(
+  ttoy_GlyphAtlas_renderASCIIGlyphs(self->internal->atlas,
+      ttoy_GlyphRendererRef_get(
         self->internal->glyphRenderer)  /* glyphRenderer */
       );
 }
 
-void st_TextRenderer_initShaders(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_initShaders(
+    ttoy_TextRenderer *self)
 {
-  self->internal->glyphShader = st_Shaders_glyphShader();
-  self->internal->backgroundShader = st_Shaders_backgroundShader();
-  self->internal->underlineShader = st_Shaders_underlineShader();
+  self->internal->glyphShader = ttoy_Shaders_glyphShader();
+  self->internal->backgroundShader = ttoy_Shaders_backgroundShader();
+  self->internal->underlineShader = ttoy_Shaders_underlineShader();
 }
 
-void st_TextRenderer_initBuffers(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_initBuffers(
+    ttoy_TextRenderer *self)
 {
-  static const st_TextRenderer_QuadVertex quadVertices[] = {
+  static const ttoy_TextRenderer_QuadVertex quadVertices[] = {
     { .pos = { 0.0f, 0.0f } },
     { .pos = { 1.0f, 0.0f } },
     { .pos = { 0.0f, 1.0f } },
@@ -247,16 +247,16 @@ void st_TextRenderer_initBuffers(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_initVAO(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_initVAO(
+    ttoy_TextRenderer *self)
 {
-  st_TextRenderer_initGlyphInstanceVAO(self);
-  st_TextRenderer_initBackgroundInstanceVAO(self);
-  st_TextRenderer_initUnderlineInstanceVAO(self);
+  ttoy_TextRenderer_initGlyphInstanceVAO(self);
+  ttoy_TextRenderer_initBackgroundInstanceVAO(self);
+  ttoy_TextRenderer_initUnderlineInstanceVAO(self);
 }
 
-void st_TextRenderer_initGlyphInstanceVAO(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_initGlyphInstanceVAO(
+    ttoy_TextRenderer *self)
 {
   GLuint vertPosLocation, atlasPosLocation, atlasGlyphSizeLocation,
          glyphSizeLocation, offsetLocation, cellLocation, fgColorLocation;
@@ -281,8 +281,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       GL_FALSE,  /* normalized */
-      sizeof(st_TextRenderer_QuadVertex),  /* stride */
-      (void *)offsetof(st_TextRenderer_QuadVertex, pos)  /* pointer */
+      sizeof(ttoy_TextRenderer_QuadVertex),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_QuadVertex, pos)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
 
@@ -301,8 +301,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_GlyphInstance, atlasPos)  /* pointer */
+      sizeof(ttoy_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_GlyphInstance, atlasPos)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(atlasPosLocation, 1);
@@ -319,8 +319,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_GlyphInstance, atlasGlyphSize)  /* pointer */
+      sizeof(ttoy_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_GlyphInstance, atlasGlyphSize)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(atlasGlyphSizeLocation, 1);
@@ -337,8 +337,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_GlyphInstance, glyphSize)  /* pointer */
+      sizeof(ttoy_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_GlyphInstance, glyphSize)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(glyphSizeLocation, 1);
@@ -355,8 +355,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_GlyphInstance, offset)  /* pointer */
+      sizeof(ttoy_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_GlyphInstance, offset)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(offsetLocation, 1);
@@ -372,8 +372,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       cellLocation,  /* index */
       2,  /* size */
       GL_INT,  /* type */
-      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_GlyphInstance, cell)  /* pointer */
+      sizeof(ttoy_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_GlyphInstance, cell)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(cellLocation, 1);
@@ -390,8 +390,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
       3,  /* size */
       GL_UNSIGNED_BYTE,  /* type */
       1,  /* normalized */
-      sizeof(st_TextRenderer_GlyphInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_GlyphInstance, fgColor)  /* pointer */
+      sizeof(ttoy_TextRenderer_GlyphInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_GlyphInstance, fgColor)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(fgColorLocation, 1);
@@ -405,8 +405,8 @@ void st_TextRenderer_initGlyphInstanceVAO(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_initBackgroundInstanceVAO(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_initBackgroundInstanceVAO(
+    ttoy_TextRenderer *self)
 {
   GLuint vertPosLocation, cellLocation, bgColorLocation;
 
@@ -430,8 +430,8 @@ void st_TextRenderer_initBackgroundInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       GL_FALSE,  /* normalized */
-      sizeof(st_TextRenderer_QuadVertex),  /* stride */
-      (void *)offsetof(st_TextRenderer_QuadVertex, pos)  /* pointer */
+      sizeof(ttoy_TextRenderer_QuadVertex),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_QuadVertex, pos)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
 
@@ -449,8 +449,8 @@ void st_TextRenderer_initBackgroundInstanceVAO(
       cellLocation,  /* index */
       2,  /* size */
       GL_INT,  /* type */
-      sizeof(st_TextRenderer_BackgroundInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_BackgroundInstance, cell)  /* pointer */
+      sizeof(ttoy_TextRenderer_BackgroundInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_BackgroundInstance, cell)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(cellLocation, 1);
@@ -467,8 +467,8 @@ void st_TextRenderer_initBackgroundInstanceVAO(
       4,  /* size */
       GL_UNSIGNED_BYTE,  /* type */
       1,  /* normalized */
-      sizeof(st_TextRenderer_BackgroundInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_BackgroundInstance, bgColor)  /* pointer */
+      sizeof(ttoy_TextRenderer_BackgroundInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_BackgroundInstance, bgColor)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(bgColorLocation, 1);
@@ -482,8 +482,8 @@ void st_TextRenderer_initBackgroundInstanceVAO(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_initUnderlineInstanceVAO(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_initUnderlineInstanceVAO(
+    ttoy_TextRenderer *self)
 {
   GLuint vertPosLocation, cellLocation, fgColorLocation;
 
@@ -507,8 +507,8 @@ void st_TextRenderer_initUnderlineInstanceVAO(
       2,  /* size */
       GL_FLOAT,  /* type */
       GL_FALSE,  /* normalized */
-      sizeof(st_TextRenderer_QuadVertex),  /* stride */
-      (void *)offsetof(st_TextRenderer_QuadVertex, pos)  /* pointer */
+      sizeof(ttoy_TextRenderer_QuadVertex),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_QuadVertex, pos)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
 
@@ -526,8 +526,8 @@ void st_TextRenderer_initUnderlineInstanceVAO(
       cellLocation,  /* index */
       2,  /* size */
       GL_INT,  /* type */
-      sizeof(st_TextRenderer_UnderlineInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_UnderlineInstance, cell)  /* pointer */
+      sizeof(ttoy_TextRenderer_UnderlineInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_UnderlineInstance, cell)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(cellLocation, 1);
@@ -544,8 +544,8 @@ void st_TextRenderer_initUnderlineInstanceVAO(
       3,  /* size */
       GL_UNSIGNED_BYTE,  /* type */
       1,  /* normalized */
-      sizeof(st_TextRenderer_UnderlineInstance),  /* stride */
-      (void *)offsetof(st_TextRenderer_UnderlineInstance, fgColor)  /* pointer */
+      sizeof(ttoy_TextRenderer_UnderlineInstance),  /* stride */
+      (void *)offsetof(ttoy_TextRenderer_UnderlineInstance, fgColor)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   glVertexAttribDivisor(fgColorLocation, 1);
@@ -559,14 +559,14 @@ void st_TextRenderer_initUnderlineInstanceVAO(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_destroy(
-    st_TextRenderer *self)
+void ttoy_TextRenderer_destroy(
+    ttoy_TextRenderer *self)
 {
   /* Destroy the glyph atlas */
-  st_GlyphAtlas_destroy(self->internal->atlas);
+  ttoy_GlyphAtlas_destroy(self->internal->atlas);
   free(self->internal->atlas);
   /* Disown our glyph renderer */
-  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  ttoy_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   /* Free internal data structures */
   free(self->internal->underlines);
   free(self->internal->backgroundCells);
@@ -574,39 +574,39 @@ void st_TextRenderer_destroy(
   free(self->internal);
 }
 
-void st_TextRenderer_setGlyphRenderer(
-    st_TextRenderer *self,
-    st_GlyphRendererRef *glyphRenderer)
+void ttoy_TextRenderer_setGlyphRenderer(
+    ttoy_TextRenderer *self,
+    ttoy_GlyphRendererRef *glyphRenderer)
 {
-  st_GlyphAtlas *newAtlas;
+  ttoy_GlyphAtlas *newAtlas;
 
   /* TODO: Convert this serial implementation into a parallel implementation
    * with a thread to prepare a stagingAtlas with a
    * stagingGlyphRenderer. */
   /* Construct a new glyph atlas with the given glyph renderer */
-  newAtlas = (st_GlyphAtlas *)malloc(sizeof(st_GlyphAtlas));
-  st_GlyphAtlas_init(newAtlas);
-  st_GlyphAtlas_renderASCIIGlyphs(newAtlas,
-      st_GlyphRendererRef_get(glyphRenderer)  /* glyphRenderer */
+  newAtlas = (ttoy_GlyphAtlas *)malloc(sizeof(ttoy_GlyphAtlas));
+  ttoy_GlyphAtlas_init(newAtlas);
+  ttoy_GlyphAtlas_renderASCIIGlyphs(newAtlas,
+      ttoy_GlyphRendererRef_get(glyphRenderer)  /* glyphRenderer */
       );
 
   /* Destroy our old atlas and replace it with the new one */
-  st_GlyphAtlas_destroy(self->internal->atlas);
+  ttoy_GlyphAtlas_destroy(self->internal->atlas);
   free(self->internal->atlas);
   self->internal->atlas = newAtlas;
 
   /* Disown our old glyph renderer and use the new one */
-  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  ttoy_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   self->internal->glyphRenderer = glyphRenderer;
 }
 
-void st_TextRenderer_updateScreen(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_updateScreen(
+    ttoy_TextRenderer *self,
     struct tsm_screen *screen,
     int cellWidth,
     int cellHeight)
 {
-  st_TextRenderer_ScreenDrawCallbackData data;
+  ttoy_TextRenderer_ScreenDrawCallbackData data;
 
   /* Disown the old buffers to avoid synchronization cost. See:
    * <https://www.opengl.org/wiki/Buffer_Object_Streaming> */
@@ -617,7 +617,7 @@ void st_TextRenderer_updateScreen(
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numGlyphs
-      * sizeof(st_TextRenderer_GlyphInstance),  /* size */
+      * sizeof(ttoy_TextRenderer_GlyphInstance),  /* size */
       NULL,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
@@ -627,7 +627,7 @@ void st_TextRenderer_updateScreen(
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numBackgroundCells
-      * sizeof(st_TextRenderer_BackgroundInstance),  /* size */
+      * sizeof(ttoy_TextRenderer_BackgroundInstance),  /* size */
       NULL,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
@@ -643,7 +643,7 @@ void st_TextRenderer_updateScreen(
   self->internal->numUnderlines = 0;
   tsm_screen_draw(
       screen,  /* con */
-      (tsm_screen_draw_cb)st_TextRenderer_screenDrawCallback,  /* draw_cb */
+      (tsm_screen_draw_cb)ttoy_TextRenderer_screenDrawCallback,  /* draw_cb */
       &data  /* data */
       );
 
@@ -653,7 +653,7 @@ void st_TextRenderer_updateScreen(
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numGlyphs
-      * sizeof(st_TextRenderer_GlyphInstance),  /* size */
+      * sizeof(ttoy_TextRenderer_GlyphInstance),  /* size */
       self->internal->glyphs,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
@@ -665,7 +665,7 @@ void st_TextRenderer_updateScreen(
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numBackgroundCells
-      * sizeof(st_TextRenderer_BackgroundInstance),  /* size */
+      * sizeof(ttoy_TextRenderer_BackgroundInstance),  /* size */
       self->internal->backgroundCells,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
@@ -677,7 +677,7 @@ void st_TextRenderer_updateScreen(
   glBufferData(
       GL_ARRAY_BUFFER,  /* target */
       self->internal->numUnderlines
-      * sizeof(st_TextRenderer_UnderlineInstance),  /* size */
+      * sizeof(ttoy_TextRenderer_UnderlineInstance),  /* size */
       self->internal->underlines,  /* data */
       GL_STREAM_DRAW  /* usage */
       );
@@ -687,7 +687,7 @@ void st_TextRenderer_updateScreen(
 /** This routine "draws" the each glyph by adding an instance of the glyph to
  * our buffer of glyph instances. The glyphs are not actually drawn
  * immediately, but the GL glyph instances are updated. */
-void st_TextRenderer_screenDrawCallback(
+void ttoy_TextRenderer_screenDrawCallback(
   struct tsm_screen *con,
   uint32_t id,
   const uint32_t *ch,
@@ -697,9 +697,9 @@ void st_TextRenderer_screenDrawCallback(
   unsigned int posy,
   const struct tsm_screen_attr *attr,
   tsm_age_t age,
-  st_TextRenderer_ScreenDrawCallbackData *data)
+  ttoy_TextRenderer_ScreenDrawCallbackData *data)
 {
-  st_TextRenderer *self;
+  ttoy_TextRenderer *self;
 
   self = data->self;
 
@@ -708,7 +708,7 @@ void st_TextRenderer_screenDrawCallback(
    * color codes 16 or 17. */
   /* FIXME: Support background on inverse colors? */
   if (attr->bccode != 17 || attr->inverse) {
-    st_TextRenderer_addBackgroundCellInstance(self,
+    ttoy_TextRenderer_addBackgroundCellInstance(self,
         posx,  /* posx */
         posy,  /* posy */
         attr  /* attr */
@@ -718,7 +718,7 @@ void st_TextRenderer_screenDrawCallback(
   /* Add glyph instances for non-whitespace characters */
   /* FIXME: Better detection for whitespace characters here? */
   if ((*ch) && (*ch != 0x20)) {
-    st_TextRenderer_addGlyphInstance(self,
+    ttoy_TextRenderer_addGlyphInstance(self,
         *ch,  /* ch */
         posx,  /* posx */
         posy,  /* posx */
@@ -731,7 +731,7 @@ void st_TextRenderer_screenDrawCallback(
   /* Add an underline instance for characters with underlines */
   /* FIXME: Support full-width underlines */
   if (attr->underline) {
-    st_TextRenderer_addUnderlineInstance(self,
+    ttoy_TextRenderer_addUnderlineInstance(self,
         posx,  /* posx */
         posy,  /* posy */
         attr  /* attr */
@@ -739,14 +739,14 @@ void st_TextRenderer_screenDrawCallback(
   }
 }
 
-void st_TextRenderer_addBackgroundCellInstance(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_addBackgroundCellInstance(
+    ttoy_TextRenderer *self,
     int posx,
     int posy,
     const struct tsm_screen_attr *attr)
 {
-  st_TextRenderer_BackgroundInstance backgroundInstance;
-  st_ErrorCode result;
+  ttoy_TextRenderer_BackgroundInstance backgroundInstance;
+  ttoy_ErrorCode result;
   int8_t code;
 
   /* Set up the background instance data structure */
@@ -755,7 +755,7 @@ void st_TextRenderer_addBackgroundCellInstance(
 
   /* Determine the background color */
   code = attr->inverse ? attr->fccode : attr->bccode;
-  if (code == ST_COLOR_BACKGROUND)
+  if (code == TTOY_COLOR_BACKGROUND)
     return;  /* transparent background */
   backgroundInstance.bgColor[3] = 255;  /* Assume background alpha of one */
   if (code < 0) {
@@ -764,11 +764,11 @@ void st_TextRenderer_addBackgroundCellInstance(
     backgroundInstance.bgColor[1] = attr->inverse ? attr->fg : attr->bg;
     backgroundInstance.bgColor[2] = attr->inverse ? attr->fb : attr->bb;
   } else {
-    result = st_TextRenderer_colorCodeToRGB(self,
+    result = ttoy_TextRenderer_colorCodeToRGB(self,
         code,  /* code */
         backgroundInstance.bgColor  /* rgb */
         );
-    if (result != ST_NO_ERROR) {
+    if (result != TTOY_NO_ERROR) {
       /* Set the color to magenta for debugging */
       backgroundInstance.bgColor[0] = 255;
       backgroundInstance.bgColor[1] = 0;
@@ -780,14 +780,14 @@ void st_TextRenderer_addBackgroundCellInstance(
   /* TODO: Consolidate array appending code for the background cell instances */
   /* Make sure we have memory allocated for the new background instance */
   if (self->internal->numBackgroundCells + 1 > self->internal->sizeBackgroundCells) {
-    st_TextRenderer_BackgroundInstance *newBackgroundCells;
+    ttoy_TextRenderer_BackgroundInstance *newBackgroundCells;
 
     /* Double the number of background cells to ensure we have enough space */
-    newBackgroundCells = (st_TextRenderer_BackgroundInstance*)malloc(
-        sizeof(st_TextRenderer_BackgroundInstance)
+    newBackgroundCells = (ttoy_TextRenderer_BackgroundInstance*)malloc(
+        sizeof(ttoy_TextRenderer_BackgroundInstance)
         * self->internal->sizeBackgroundCells * 2);
     memcpy(newBackgroundCells, self->internal->backgroundCells,
-        sizeof(st_TextRenderer_BackgroundInstance)
+        sizeof(ttoy_TextRenderer_BackgroundInstance)
         * self->internal->sizeBackgroundCells);
     free(self->internal->backgroundCells);
     self->internal->backgroundCells = newBackgroundCells;
@@ -798,11 +798,11 @@ void st_TextRenderer_addBackgroundCellInstance(
   memcpy(
       &self->internal->backgroundCells[self->internal->numBackgroundCells++],
       &backgroundInstance,
-      sizeof(st_TextRenderer_BackgroundInstance));
+      sizeof(ttoy_TextRenderer_BackgroundInstance));
 }
 
-void st_TextRenderer_addGlyphInstance(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_addGlyphInstance(
+    ttoy_TextRenderer *self,
     uint32_t ch,
     int posx,
     int posy,
@@ -810,28 +810,28 @@ void st_TextRenderer_addGlyphInstance(
     int cellWidth,
     int cellHeight)
 {
-  st_GlyphRenderer *glyphRenderer;
-  st_TextRenderer_GlyphInstance glyphInstance;
-  st_BoundingBox bbox;
+  ttoy_GlyphRenderer *glyphRenderer;
+  ttoy_TextRenderer_GlyphInstance glyphInstance;
+  ttoy_BoundingBox bbox;
   float xOffset, yOffset, glyphWidth, glyphHeight;
   int result;
   int fontIndex;
   int8_t code;
-  st_ErrorCode error;
+  ttoy_ErrorCode error;
 
-  glyphRenderer = st_GlyphRendererRef_get(self->internal->glyphRenderer);
-  error = st_GlyphRenderer_getFontIndex(glyphRenderer,
+  glyphRenderer = ttoy_GlyphRendererRef_get(self->internal->glyphRenderer);
+  error = ttoy_GlyphRenderer_getFontIndex(glyphRenderer,
       ch,  /* character */
       attr->bold,  /* bold */
       &fontIndex  /* fontIndex */
       );
-  if (error != ST_NO_ERROR) {
+  if (error != TTOY_NO_ERROR) {
     /* No fonts provide a glyph for this character code */
     return;
   }
 
   /* Look for this glyph in our atlas */
-  error = st_GlyphAtlas_getGlyph(self->internal->atlas,
+  error = ttoy_GlyphAtlas_getGlyph(self->internal->atlas,
       ch,  /* character */
       fontIndex,  /* fontIndex */
       cellWidth,  /* cellWidth */
@@ -842,7 +842,7 @@ void st_TextRenderer_addGlyphInstance(
       &glyphWidth,  /* glyphWidth */
       &glyphHeight  /* glyphHeight */
       );
-  if (error != ST_NO_ERROR) {
+  if (error != TTOY_NO_ERROR) {
     /* A glyph for the given character could not be found in the atlas */
     /* TODO: Try to add a glyph for this character */
     /* fprintf(stderr, "Could not find glyph for '0x%08x'\n", ch); */
@@ -870,11 +870,11 @@ void st_TextRenderer_addGlyphInstance(
     glyphInstance.fgColor[1] = attr->inverse ? attr->bg : attr->fg;
     glyphInstance.fgColor[2] = attr->inverse ? attr->bb : attr->fb;
   } else {
-    result = st_TextRenderer_colorCodeToRGB(self,
+    result = ttoy_TextRenderer_colorCodeToRGB(self,
         code,  /* code */
         glyphInstance.fgColor  /* rgb */
         );
-    if (result != ST_NO_ERROR) {
+    if (result != TTOY_NO_ERROR) {
       /* Set the color to cyan for debugging */
       glyphInstance.fgColor[0] = 0;
       glyphInstance.fgColor[1] = 255;
@@ -888,13 +888,13 @@ void st_TextRenderer_addGlyphInstance(
   /* TODO: Consolidate array appending code for the glyph instances */
   /* Make sure we have memory allocated for the new glyph instance */
   if (self->internal->numGlyphs + 1 > self->internal->sizeGlyphs) {
-    st_TextRenderer_GlyphInstance *newGlyphs;
+    ttoy_TextRenderer_GlyphInstance *newGlyphs;
 
     /* Double the number of glyphs to ensure we have enough space */
-    newGlyphs = (st_TextRenderer_GlyphInstance*)malloc(
-        sizeof(st_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs * 2);
+    newGlyphs = (ttoy_TextRenderer_GlyphInstance*)malloc(
+        sizeof(ttoy_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs * 2);
     memcpy(newGlyphs, self->internal->glyphs,
-        sizeof(st_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs);
+        sizeof(ttoy_TextRenderer_GlyphInstance) * self->internal->sizeGlyphs);
     free(self->internal->glyphs);
     self->internal->glyphs = newGlyphs;
     self->internal->sizeGlyphs *= 2;
@@ -902,17 +902,17 @@ void st_TextRenderer_addGlyphInstance(
 
   /* Append the glyph instance data structure to our buffer */
   memcpy(&self->internal->glyphs[self->internal->numGlyphs++], &glyphInstance,
-      sizeof(st_TextRenderer_GlyphInstance));
+      sizeof(ttoy_TextRenderer_GlyphInstance));
 }
 
-void st_TextRenderer_addUnderlineInstance(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_addUnderlineInstance(
+    ttoy_TextRenderer *self,
     int posx,
     int posy,
     const struct tsm_screen_attr *attr)
 {
-  st_TextRenderer_UnderlineInstance underlineInstance;
-  st_ErrorCode result;
+  ttoy_TextRenderer_UnderlineInstance underlineInstance;
+  ttoy_ErrorCode result;
   int8_t code;
 
   /* Set up the underline instance data structure */
@@ -927,11 +927,11 @@ void st_TextRenderer_addUnderlineInstance(
     underlineInstance.fgColor[1] = attr->inverse ? attr->bg : attr->fg;
     underlineInstance.fgColor[2] = attr->inverse ? attr->bb : attr->fb;
   } else {
-    result = st_TextRenderer_colorCodeToRGB(self,
+    result = ttoy_TextRenderer_colorCodeToRGB(self,
         code,  /* code */
         underlineInstance.fgColor  /* rgb */
         );
-    if (result != ST_NO_ERROR) {
+    if (result != TTOY_NO_ERROR) {
       /* Set the color to cyan for debugging */
       underlineInstance.fgColor[0] = 0;
       underlineInstance.fgColor[1] = 255;
@@ -942,13 +942,13 @@ void st_TextRenderer_addUnderlineInstance(
   /* TODO: Consolidate array appending code for the underline instances */
   /* Make sure we have memory allocated for the new underline instance */
   if (self->internal->numUnderlines + 1 > self->internal->sizeUnderlines) {
-    st_TextRenderer_UnderlineInstance *newUnderlines;
+    ttoy_TextRenderer_UnderlineInstance *newUnderlines;
 
     /* Double the number of underlines to ensure we have enough space */
-    newUnderlines = (st_TextRenderer_UnderlineInstance*)malloc(
-        sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines * 2);
+    newUnderlines = (ttoy_TextRenderer_UnderlineInstance*)malloc(
+        sizeof(ttoy_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines * 2);
     memcpy(newUnderlines, self->internal->underlines,
-        sizeof(st_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
+        sizeof(ttoy_TextRenderer_UnderlineInstance) * self->internal->sizeUnderlines);
     free(self->internal->underlines);
     self->internal->underlines = newUnderlines;
     self->internal->sizeUnderlines *= 2;
@@ -956,48 +956,48 @@ void st_TextRenderer_addUnderlineInstance(
 
   /* Append the underline instance data structure to our buffer */
   memcpy(&self->internal->underlines[self->internal->numUnderlines++], &underlineInstance,
-      sizeof(st_TextRenderer_UnderlineInstance));
+      sizeof(ttoy_TextRenderer_UnderlineInstance));
 }
 
-st_ErrorCode
-st_TextRenderer_colorCodeToRGB(
-    const st_TextRenderer *self,
+ttoy_ErrorCode
+ttoy_TextRenderer_colorCodeToRGB(
+    const ttoy_TextRenderer *self,
     int8_t code,
     uint8_t *rgb)
 {
   /* Retrieve the RGB color from our color scheme */
   switch (code) {
-    case ST_COLOR_0:
-    case ST_COLOR_1:
-    case ST_COLOR_2:
-    case ST_COLOR_3:
-    case ST_COLOR_4:
-    case ST_COLOR_5:
-    case ST_COLOR_6:
-    case ST_COLOR_7:
-    case ST_COLOR_8:
-    case ST_COLOR_9:
-    case ST_COLOR_10:
-    case ST_COLOR_11:
-    case ST_COLOR_12:
-    case ST_COLOR_13:
-    case ST_COLOR_14:
-    case ST_COLOR_15:
-    case ST_COLOR_FOREGROUND:
-    case ST_COLOR_BACKGROUND:
+    case TTOY_COLOR_0:
+    case TTOY_COLOR_1:
+    case TTOY_COLOR_2:
+    case TTOY_COLOR_3:
+    case TTOY_COLOR_4:
+    case TTOY_COLOR_5:
+    case TTOY_COLOR_6:
+    case TTOY_COLOR_7:
+    case TTOY_COLOR_8:
+    case TTOY_COLOR_9:
+    case TTOY_COLOR_10:
+    case TTOY_COLOR_11:
+    case TTOY_COLOR_12:
+    case TTOY_COLOR_13:
+    case TTOY_COLOR_14:
+    case TTOY_COLOR_15:
+    case TTOY_COLOR_FOREGROUND:
+    case TTOY_COLOR_BACKGROUND:
       memcpy(
           rgb,
           &self->internal->profile->colorScheme.colors[code],
-          sizeof(st_Color));
-      return ST_NO_ERROR;
+          sizeof(ttoy_Color));
+      return TTOY_NO_ERROR;
     default:
-      ST_LOG_ERROR("Unknown color code: '%d'\n", code);
+      TTOY_LOG_ERROR("Unknown color code: '%d'\n", code);
   }
-  return ST_ERROR_UNKNOWN_COLOR_CODE;
+  return TTOY_ERROR_UNKNOWN_COLOR_CODE;
 }
 
-void st_TextRenderer_drawBackgroundCells(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_drawBackgroundCells(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight)
 {
@@ -1048,8 +1048,8 @@ void st_TextRenderer_drawBackgroundCells(
   ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_drawUnderlines(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_drawUnderlines(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int underlineOffset,
     int viewportWidth, int viewportHeight)
@@ -1110,8 +1110,8 @@ void st_TextRenderer_drawUnderlines(
   ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_drawGlyphs(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_drawGlyphs(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight)
 {
@@ -1123,8 +1123,8 @@ void st_TextRenderer_drawGlyphs(
   };
   /* Note that OpenGL 3.x specifies that at least 16 texture units must be
    * available. */
-  assert(ST_GLYPH_ATLAS_MAX_NUM_TEXTURES <= 16);
-  GLuint atlasTextures[ST_GLYPH_ATLAS_MAX_NUM_TEXTURES];
+  assert(TTOY_GLYPH_ATLAS_MAX_NUM_TEXTURES <= 16);
+  GLuint atlasTextures[TTOY_GLYPH_ATLAS_MAX_NUM_TEXTURES];
   int numAtlasTextures, atlasSize;
   GLuint atlasLocation, cellSizeLocation, viewportSizeLocation,
          atlasSizeLocation;
@@ -1134,7 +1134,7 @@ void st_TextRenderer_drawGlyphs(
   ASSERT_GL_ERROR();
 
   /* Configure the texture samplers */
-  st_GlyphAtlas_getTextures(self->internal->atlas,
+  ttoy_GlyphAtlas_getTextures(self->internal->atlas,
       atlasTextures,  /* textures */
       &numAtlasTextures  /* numTextures */
       );
@@ -1186,7 +1186,7 @@ void st_TextRenderer_drawGlyphs(
       self->internal->glyphShader,
       "atlasSize");
   ASSERT_GL_ERROR();
-  atlasSize = st_GlyphAtlas_getTextureSize(self->internal->atlas);
+  atlasSize = ttoy_GlyphAtlas_getTextureSize(self->internal->atlas);
   glUniform1i(atlasSizeLocation,
       atlasSize);
   ASSERT_GL_ERROR();
@@ -1206,8 +1206,8 @@ void st_TextRenderer_drawGlyphs(
   ASSERT_GL_ERROR();
 }
 
-void st_TextRenderer_draw(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_draw(
+    const ttoy_TextRenderer *self,
     int cellWidth, int cellHeight,
     int viewportWidth, int viewportHeight)
 {
@@ -1223,7 +1223,7 @@ void st_TextRenderer_draw(
   ASSERT_GL_ERROR();
 
   /* Draw the background cells */
-  st_TextRenderer_drawBackgroundCells(self,
+  ttoy_TextRenderer_drawBackgroundCells(self,
       cellWidth,  /* cellWidth */
       cellHeight,  /* cellHeight */
       viewportWidth,  /* viewportWidth */
@@ -1233,7 +1233,7 @@ void st_TextRenderer_draw(
   /* Draw the underlines on top of the background cells */
   int underlineOffset = 2;  /* FIXME: The glyph renderer needs to calculate the
                                underline offset */
-  st_TextRenderer_drawUnderlines(self,
+  ttoy_TextRenderer_drawUnderlines(self,
       cellWidth,  /* cellWidth */
       cellHeight,  /* cellHeight */
       underlineOffset,  /* underlineOffset */
@@ -1242,7 +1242,7 @@ void st_TextRenderer_draw(
       );
 
   /* Draw the glyphs on top of everything */
-  st_TextRenderer_drawGlyphs(self,
+  ttoy_TextRenderer_drawGlyphs(self,
       cellWidth,  /* cellWidth */
       cellHeight,  /* cellHeight */
       viewportWidth,  /* viewportWidth */

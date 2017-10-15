@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_TERMINAL_H_
-#define SHELLTOY_TERMINAL_H_
+#ifndef TTOY_TERMINAL_H_
+#define TTOY_TERMINAL_H_
 
 #include <SDL.h>
 #include <libtsm.h>
@@ -30,63 +30,63 @@
 #include "profile.h"
 #include "pty.h"
 
-struct st_Terminal_Internal;
+struct ttoy_Terminal_Internal;
 
 typedef struct {
   SDL_Window *window;
   SDL_GLContext glContext;
-  st_PTY pty;
+  ttoy_PTY pty;
   struct tsm_screen *screen;
   struct tsm_vte *vte;
   int width, height;
   int cellWidth, cellHeight;
   int columns, rows;
 
-  struct st_Terminal_Internal *internal;
-} st_Terminal;
+  struct ttoy_Terminal_Internal *internal;
+} ttoy_Terminal;
 
-void st_Terminal_init(
-    st_Terminal *self,
-    st_Profile *profile,
+void ttoy_Terminal_init(
+    ttoy_Terminal *self,
+    ttoy_Profile *profile,
     int argc,
     char **argv);
-void st_Terminal_destroy(st_Terminal *self);
+void ttoy_Terminal_destroy(ttoy_Terminal *self);
 
-void st_Terminal_windowSizeChanged(
-    st_Terminal *self,
+void ttoy_Terminal_windowSizeChanged(
+    ttoy_Terminal *self,
     int width,
     int height);
 
-void st_Terminal_updateScreen(st_Terminal *self);
+void ttoy_Terminal_updateScreen(ttoy_Terminal *self);
 
-void st_Terminal_draw(st_Terminal *self);
+void ttoy_Terminal_draw(ttoy_Terminal *self);
 
-void st_Terminal_textInput(
-    st_Terminal *self,
+void ttoy_Terminal_textInput(
+    ttoy_Terminal *self,
     const char *text);
-void st_Terminal_keyInput(
-    st_Terminal *self,
+void ttoy_Terminal_keyInput(
+    ttoy_Terminal *self,
     SDL_Keycode keycode,
     uint16_t modifiers);
 
-void st_Terminal_mouseButton(
-    st_Terminal *self,
+void ttoy_Terminal_mouseButton(
+    ttoy_Terminal *self,
     const SDL_MouseButtonEvent *event);
-void st_Terminal_mouseMotion(
-    st_Terminal *self,
+void ttoy_Terminal_mouseMotion(
+    ttoy_Terminal *self,
     const SDL_MouseMotionEvent *event);
 
-st_ErrorCode
-st_Terminal_increaseFontSize(
-    st_Terminal *self);
+ttoy_ErrorCode
+ttoy_Terminal_increaseFontSize(
+    ttoy_Terminal *self);
 
-st_ErrorCode
-st_Terminal_decreaseFontSize(
-    st_Terminal *self);
+ttoy_ErrorCode
+ttoy_Terminal_decreaseFontSize(
+    ttoy_Terminal *self);
 
-st_ErrorCode
-st_Terminal_setSelectionClipboard(
-    st_Terminal *self,
+ttoy_ErrorCode
+ttoy_Terminal_setSelectionClipboard(
+    ttoy_Terminal *self,
     const char *selection);
 
 #endif

@@ -23,4 +23,4 @@
 
 #include "textToyDictionary.h"
 
-ST_DEFINE_DICTIONARY(st_TextToy)
+TTOY_DEFINE_DICTIONARY(ttoy_TextToy)

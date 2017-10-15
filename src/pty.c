@@ -39,7 +39,7 @@
 #include "logging.h"
 #include "pty.h"
 
-int st_PTY_eventType() {
+int ttoy_PTY_eventType() {
   static int eventType = -1;
 
   /* Register the event type with SDL, if we have not done so already */
@@ -56,10 +56,10 @@ int st_PTY_eventType() {
   return eventType;
 }
 
-void st_PTY_pushEvent(st_PTY *self) {
+void ttoy_PTY_pushEvent(ttoy_PTY *self) {
   SDL_Event event;
   memset(&event, 0, sizeof(event));
-  event.type = st_PTY_eventType();
+  event.type = ttoy_PTY_eventType();
   event.user.data1 = self;
   if (SDL_PushEvent(&event) < 0) {
     fprintf(stderr,
@@ -70,14 +70,14 @@ void st_PTY_pushEvent(st_PTY *self) {
   }
 }
 
-/* TODO: Have st_PTY_watchPTY() opperate in a singleton capacity, since epoll
+/* TODO: Have ttoy_PTY_watchPTY() opperate in a singleton capacity, since epoll
  * is very good at servicing multiple file descriptors */
-void *st_PTY_watchPTY(st_PTY *self) {
+void *ttoy_PTY_watchPTY(ttoy_PTY *self) {
   struct epoll_event ev;
   int eventType;
   /* Thread routine for watching for input from the pseudo terminal master */
 
-  eventType = st_PTY_eventType();
+  eventType = ttoy_PTY_eventType();
 
   while (1) {
     /* TODO: Check for signal to join main thread */
@@ -106,13 +106,13 @@ void *st_PTY_watchPTY(st_PTY *self) {
     }
 
     /* Notify the main thread with an SDL event */
-    st_PTY_pushEvent(self);
+    ttoy_PTY_pushEvent(self);
   }
 
   return NULL;
 }
 
-void st_PTY_openPTY(st_PTY *self) {
+void ttoy_PTY_openPTY(ttoy_PTY *self) {
   struct epoll_event ev;
   int result;
   /* Open a pseudo terminal */
@@ -151,7 +151,7 @@ void st_PTY_openPTY(st_PTY *self) {
   result = pthread_create(
       &self->poll_thread,  /* thread */
       NULL,  /* attr */
-      (void *(*)(void*))st_PTY_watchPTY,  /* start_routine */
+      (void *(*)(void*))ttoy_PTY_watchPTY,  /* start_routine */
       self  /* arg */
       );
   if (result != 0) {
@@ -162,31 +162,31 @@ void st_PTY_openPTY(st_PTY *self) {
   }
 }
 
-void st_PTY_joinChildProcess(st_PTY *self) {
+void ttoy_PTY_joinChildProcess(ttoy_PTY *self) {
   /* TODO: Try killing the child nicely with SIGTERM first */
   kill(self->child, SIGKILL);
   /* TODO: Wait for the child process to exit */
 }
 
-void st_PTY_init(
-    st_PTY *self,
+void ttoy_PTY_init(
+    ttoy_PTY *self,
     int width,
     int height)
 {
   self->width = width;
   self->height = height;
   self->master_fd = -1;
-  st_PTY_openPTY(self);
-  st_PTY_resize(self, width, height);
+  ttoy_PTY_openPTY(self);
+  ttoy_PTY_resize(self, width, height);
 }
 
-void st_PTY_destroy(st_PTY *self) {
+void ttoy_PTY_destroy(ttoy_PTY *self) {
   /* TODO: Join the child process? */
-  st_PTY_joinChildProcess(self);
+  ttoy_PTY_joinChildProcess(self);
   /* TODO: Close the pty? */
 }
 
-void st_PTY_prepareChild(st_PTY *self) {
+void ttoy_PTY_prepareChild(ttoy_PTY *self) {
   /* NOTE: This is always called within the child process */
   int slave_fd;
   size_t len;
@@ -279,11 +279,11 @@ void st_PTY_prepareChild(st_PTY *self) {
   dup2(slave_fd, STDERR_FILENO);
 }
 
-void st_PTY_startChild(
-    st_PTY *self,
+void ttoy_PTY_startChild(
+    ttoy_PTY *self,
     const char *path,
     char *const argv[],
-    st_PTY_readCallback_t callback,
+    ttoy_PTY_readCallback_t callback,
     void *callback_data)
 {
   pid_t result;
@@ -296,7 +296,7 @@ void st_PTY_startChild(
     fprintf(stderr, "Failed to fork process.\n");
   } else if (result == 0) {
     /* Inside the child process */
-    st_PTY_prepareChild(self);
+    ttoy_PTY_prepareChild(self);
     /* Execute the shell (should not return) */
     execv(path, argv);
     perror("execv");
@@ -310,11 +310,11 @@ void st_PTY_startChild(
   self->child = result;
 }
 
-int st_PTY_read(st_PTY *self) {
+int ttoy_PTY_read(ttoy_PTY *self) {
   ssize_t len;
-#define ST_PTY_BUFF_SIZE 4096
-#define ST_PTY_MAX_READ 32
-  char buff[ST_PTY_BUFF_SIZE];
+#define TTOY_PTY_BUFF_SIZE 4096
+#define TTOY_PTY_MAX_READ 32
+  char buff[TTOY_PTY_BUFF_SIZE];
   int count;
   /* Loop to read data sent from the pseudo terminal */
   /* This read loop is limited (as with wlterm) so that we do not block the
@@ -329,12 +329,12 @@ int st_PTY_read(st_PTY *self) {
     if (len > 0) {
       self->callback(self->callback_data, buff, len);
     }
-  } while (len > 0 && count < ST_PTY_MAX_READ);
+  } while (len > 0 && count < TTOY_PTY_MAX_READ);
 
-  return count < ST_PTY_MAX_READ ? 0 : EWOULDBLOCK;
+  return count < TTOY_PTY_MAX_READ ? 0 : EWOULDBLOCK;
 }
 
-void st_PTY_write(st_PTY *self, const char *u8, size_t len) {
+void ttoy_PTY_write(ttoy_PTY *self, const char *u8, size_t len) {
   ssize_t bytes_written;
   /* TODO: wlterm uses some crazy ring buffer and writev(). We should look into
    * why they do that. */
@@ -346,7 +346,7 @@ void st_PTY_write(st_PTY *self, const char *u8, size_t len) {
   }
 }
 
-void st_PTY_resize(st_PTY *self, int width, int height) {
+void ttoy_PTY_resize(ttoy_PTY *self, int width, int height) {
   struct winsize ws;
   int result;
 
@@ -359,7 +359,7 @@ void st_PTY_resize(st_PTY *self, int width, int height) {
   ws.ws_row = height;
   result = ioctl(self->master_fd, TIOCSWINSZ, &ws);
   if (result != 0) {
-    ST_LOG_ERROR("Failed to resize pseudo terminal: %s",
+    TTOY_LOG_ERROR("Failed to resize pseudo terminal: %s",
         strerror(errno));
   }
 

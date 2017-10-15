@@ -21,93 +21,93 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PROFILE_H_
-#define SHELLTOY_PROFILE_H_
+#ifndef TTOY_PROFILE_H_
+#define TTOY_PROFILE_H_
 
 #include <inttypes.h>
 
-#include <shelltoy/backgroundToy.h>
-#include <shelltoy/error.h>
-#include <shelltoy/textToy.h>
+#include <ttoy/backgroundToy.h>
+#include <ttoy/error.h>
+#include <ttoy/textToy.h>
 
 #include "color.h"
 #include "fontRefArray.h"
 
-struct st_Profile_Internal_;
-typedef struct st_Profile_Internal_ st_Profile_Internal;
+struct ttoy_Profile_Internal_;
+typedef struct ttoy_Profile_Internal_ ttoy_Profile_Internal;
 
-typedef enum st_Profile_Flag_ {
-  ST_PROFILE_ANTIALIAS_FONT = 1 << 0,
-  ST_PROFILE_BRIGHT_IS_BOLD = 1 << 1,
-} st_Profile_Flag;
+typedef enum ttoy_Profile_Flag_ {
+  TTOY_PROFILE_ANTIALIAS_FONT = 1 << 0,
+  TTOY_PROFILE_BRIGHT_IS_BOLD = 1 << 1,
+} ttoy_Profile_Flag;
 
-typedef struct st_Profile_ {
+typedef struct ttoy_Profile_ {
   char *name;
   float fontSize;
   uint32_t flags;
-  st_ColorScheme colorScheme;
-  st_Profile_Internal *internal;
-} st_Profile;
+  ttoy_ColorScheme colorScheme;
+  ttoy_Profile_Internal *internal;
+} ttoy_Profile;
 
-void st_Profile_init(
-    st_Profile *self,
+void ttoy_Profile_init(
+    ttoy_Profile *self,
     const char *name);
 
-void st_Profile_destroy(
-    st_Profile *self);
+void ttoy_Profile_destroy(
+    ttoy_Profile *self);
 
-void st_Profile_setFlags(
-    st_Profile *self,
+void ttoy_Profile_setFlags(
+    ttoy_Profile *self,
     uint32_t flags);
 
 void
-st_Profile_clearFonts(
-    st_Profile *self);
+ttoy_Profile_clearFonts(
+    ttoy_Profile *self);
 
-st_Font *
-st_Profile_getPrimaryFont(
-    st_Profile *self);
+ttoy_Font *
+ttoy_Profile_getPrimaryFont(
+    ttoy_Profile *self);
 
-st_ErrorCode
-st_Profile_setPrimaryFont(
-    st_Profile *self,
+ttoy_ErrorCode
+ttoy_Profile_setPrimaryFont(
+    ttoy_Profile *self,
     const char *fontFace,
     float fontSize);
 
-st_ErrorCode
-st_Profile_addFallbackFont(
-    st_Profile *self,
+ttoy_ErrorCode
+ttoy_Profile_addFallbackFont(
+    ttoy_Profile *self,
     const char *fontFace);
 
 float
-st_Profile_getFontSize(
-    st_Profile *self);
+ttoy_Profile_getFontSize(
+    ttoy_Profile *self);
 
-st_ErrorCode
-st_Profile_setFontSize(
-    st_Profile *self,
+ttoy_ErrorCode
+ttoy_Profile_setFontSize(
+    ttoy_Profile *self,
     float fontSize);
 
-void st_Profile_getFonts(
-    st_Profile *self,
-    st_FontRefArray *fonts,
-    st_FontRefArray *boldFonts);
+void ttoy_Profile_getFonts(
+    ttoy_Profile *self,
+    ttoy_FontRefArray *fonts,
+    ttoy_FontRefArray *boldFonts);
 
-void st_Profile_setBackgroundToy(
-    st_Profile *self,
-    st_BackgroundToy *backgroundToy);
+void ttoy_Profile_setBackgroundToy(
+    ttoy_Profile *self,
+    ttoy_BackgroundToy *backgroundToy);
 
-st_BackgroundToy *
-st_Profile_getBackgroundToy(
-    st_Profile *self);
+ttoy_BackgroundToy *
+ttoy_Profile_getBackgroundToy(
+    ttoy_Profile *self);
 
-void st_Profile_setTextToy(
-    st_Profile *self,
-    st_TextToy *textToy);
+void ttoy_Profile_setTextToy(
+    ttoy_Profile *self,
+    ttoy_TextToy *textToy);
 
-st_TextToy *
-st_Profile_getTextToy(
-    st_Profile *self);
+ttoy_TextToy *
+ttoy_Profile_getTextToy(
+    ttoy_Profile *self);
 
 
 #endif

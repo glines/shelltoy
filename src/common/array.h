@@ -21,49 +21,50 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_COMMON_ARRAY_H_
-#define SHELLTOY_COMMON_ARRAY_H_
+#ifndef TTOY_COMMON_ARRAY_H_
+#define TTOY_COMMON_ARRAY_H_
 
-#include <shelltoy/error.h>
+#include <ttoy/error.h>
 
 #include <stddef.h>
 
-struct st_Array_Internal_;
-typedef struct st_Array_Internal_ st_Array_Internal;
+struct ttoy_Array_Internal_;
+typedef struct ttoy_Array_Internal_ ttoy_Array_Internal;
 
-/* FIXME: Rename st_Array to st_List and then create a new st_Array that does
- * not use so much pointer indirection. This will require refactoring all code
- * that currently uses st_Array and chosing the structure depending on their
- * need for pointer indirection. */
-typedef struct st_Array_ {
-  st_Array_Internal *internal;
-} st_Array;
+/* FIXME: Rename ttoy_Array to ttoy_List and then create a new
+ * ttoy_Array that does not use so much pointer indirection. This will
+ * require refactoring all code that currently uses ttoy_Array and
+ * chosing the structure depending on their need for pointer
+ * indirection. */
+typedef struct ttoy_Array_ {
+  ttoy_Array_Internal *internal;
+} ttoy_Array;
 
-void st_Array_init(
-    st_Array *self);
+void ttoy_Array_init(
+    ttoy_Array *self);
 
-void st_Array_destroy(
-    st_Array *self);
+void ttoy_Array_destroy(
+    ttoy_Array *self);
 
-st_ErrorCode
-st_Array_append(
-    st_Array *self,
+ttoy_ErrorCode
+ttoy_Array_append(
+    ttoy_Array *self,
     void *value);
 
-void *st_Array_get(
-    st_Array *self,
+void *ttoy_Array_get(
+    ttoy_Array *self,
     size_t index);
 
-size_t st_Array_size(
-    const st_Array *self);
+size_t ttoy_Array_size(
+    const ttoy_Array *self);
 
-void st_Array_clear(
-    st_Array *self);
+void ttoy_Array_clear(
+    ttoy_Array *self);
 
-#define ST_DECLARE_ARRAY( \
+#define TTOY_DECLARE_ARRAY( \
     VALUE_TYPE) \
-typedef struct st_ ## VALUE_TYPE ## Array_ { \
-  st_Array base; \
+typedef struct ttoy_ ## VALUE_TYPE ## Array_ { \
+  ttoy_Array base; \
 } VALUE_TYPE ## Array; \
 void VALUE_TYPE ## Array_init( \
     VALUE_TYPE ## Array *self); \
@@ -80,39 +81,39 @@ size_t VALUE_TYPE ## Array_size( \
 void VALUE_TYPE ## Array_clear( \
     VALUE_TYPE ## Array *self);
 
-#define ST_DEFINE_ARRAY( \
+#define TTOY_DEFINE_ARRAY( \
     VALUE_TYPE) \
 void VALUE_TYPE ## Array_init( \
     VALUE_TYPE ## Array *self) \
 { \
-  st_Array_init((st_Array *)self); \
+  ttoy_Array_init((ttoy_Array *)self); \
 } \
 void VALUE_TYPE ## Array_destroy( \
     VALUE_TYPE ## Array *self) \
 { \
-  st_Array_destroy((st_Array *)self); \
+  ttoy_Array_destroy((ttoy_Array *)self); \
 } \
 void VALUE_TYPE ## Array_append( \
     VALUE_TYPE ## Array *self, \
     VALUE_TYPE *value) \
 { \
-  st_Array_append((st_Array *)self, (void *)value); \
+  ttoy_Array_append((ttoy_Array *)self, (void *)value); \
 } \
 VALUE_TYPE *VALUE_TYPE ## Array_get( \
     VALUE_TYPE ## Array *self, \
     size_t index) \
 { \
-  return (VALUE_TYPE *)st_Array_get((st_Array *)self, index); \
+  return (VALUE_TYPE *)ttoy_Array_get((ttoy_Array *)self, index); \
 } \
 size_t VALUE_TYPE ## Array_size( \
     const VALUE_TYPE ## Array *self) \
 { \
-  return st_Array_size((st_Array *)self); \
+  return ttoy_Array_size((ttoy_Array *)self); \
 } \
 void VALUE_TYPE ## Array_clear( \
     VALUE_TYPE ## Array *self) \
 { \
-  st_Array_clear((st_Array *)self); \
+  ttoy_Array_clear((ttoy_Array *)self); \
 }
 
 #endif

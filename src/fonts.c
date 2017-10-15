@@ -30,45 +30,45 @@
 #include "fonts.h"
 
 /* Private methods */
-void st_Fonts_initFreetype();
-void st_Fonts_destroyFreetype();
-void st_Fonts_initFontconfig();
-void st_Fonts_destroyFontconfig();
+void ttoy_Fonts_initFreetype();
+void ttoy_Fonts_destroyFreetype();
+void ttoy_Fonts_initFontconfig();
+void ttoy_Fonts_destroyFontconfig();
 
-typedef struct st_Fonts_ {
-  st_MonospaceFontFace *monospaceFonts;
+typedef struct ttoy_Fonts_ {
+  ttoy_MonospaceFontFace *monospaceFonts;
   size_t numMonospaceFonts, sizeMonospaceFonts;
   FT_Library ft;
   FcConfig *fcConfig;
-} st_Fonts;
+} ttoy_Fonts;
 
-#define ST_FONTS_INIT_MONOSPACE_FONTS_SIZE 4
+#define TTOY_FONTS_INIT_MONOSPACE_FONTS_SIZE 4
 
-st_Fonts *st_Fonts_instance() {
-  static st_Fonts instance;
+ttoy_Fonts *ttoy_Fonts_instance() {
+  static ttoy_Fonts instance;
   return &instance;
 }
 
-void st_Fonts_init() {
-  st_Fonts *self = st_Fonts_instance();
+void ttoy_Fonts_init() {
+  ttoy_Fonts *self = ttoy_Fonts_instance();
 
-  /* Allocate internal buffers in st_Fonts */
-  self->monospaceFonts = (st_MonospaceFontFace*)malloc(
-      sizeof(void*) * ST_FONTS_INIT_MONOSPACE_FONTS_SIZE);
-  self->sizeMonospaceFonts = ST_FONTS_INIT_MONOSPACE_FONTS_SIZE;
+  /* Allocate internal buffers in ttoy_Fonts */
+  self->monospaceFonts = (ttoy_MonospaceFontFace*)malloc(
+      sizeof(void*) * TTOY_FONTS_INIT_MONOSPACE_FONTS_SIZE);
+  self->sizeMonospaceFonts = TTOY_FONTS_INIT_MONOSPACE_FONTS_SIZE;
   self->numMonospaceFonts = 0;
 
-  st_Fonts_initFreetype();
-  st_Fonts_initFontconfig();
+  ttoy_Fonts_initFreetype();
+  ttoy_Fonts_initFontconfig();
 }
 
-void st_Fonts_destroy() {
-  st_Fonts_destroyFontconfig();
-  st_Fonts_destroyFreetype();
+void ttoy_Fonts_destroy() {
+  ttoy_Fonts_destroyFontconfig();
+  ttoy_Fonts_destroyFreetype();
 }
 
-void st_Fonts_initFreetype() {
-  st_Fonts *self = st_Fonts_instance();
+void ttoy_Fonts_initFreetype() {
+  ttoy_Fonts *self = ttoy_Fonts_instance();
 
   /* Freetype library initialization */
   FT_Error error = FT_Init_FreeType(&self->ft);
@@ -78,8 +78,8 @@ void st_Fonts_initFreetype() {
   }
 }
 
-void st_Fonts_destroyFreetype() {
-  st_Fonts *self = st_Fonts_instance();
+void ttoy_Fonts_destroyFreetype() {
+  ttoy_Fonts *self = ttoy_Fonts_instance();
 
   FT_Error error = FT_Done_FreeType(self->ft);
   if (error != FT_Err_Ok) {
@@ -88,8 +88,8 @@ void st_Fonts_destroyFreetype() {
   }
 }
 
-void st_Fonts_initFontconfig() {
-  st_Fonts *self = st_Fonts_instance();
+void ttoy_Fonts_initFontconfig() {
+  ttoy_Fonts *self = ttoy_Fonts_instance();
 
   self->fcConfig = FcInitLoadConfig();
   /* TODO: We might want to re-enable Fontconfig's cache in the future, but for
@@ -97,24 +97,24 @@ void st_Fonts_initFontconfig() {
   FcConfigBuildFonts(self->fcConfig);
 }
 
-void st_Fonts_destroyFontconfig() {
+void ttoy_Fonts_destroyFontconfig() {
   /* Finalize fontconfig library */
   FcFini();
 }
 
-FT_Library st_Fonts_getFreeTypeInstance() {
-  st_Fonts *self = st_Fonts_instance();
+FT_Library ttoy_Fonts_getFreeTypeInstance() {
+  ttoy_Fonts *self = ttoy_Fonts_instance();
 
   return self->ft;
 }
 
-FcConfig *st_Fonts_getFontconfigInstance() {
-  st_Fonts *self = st_Fonts_instance();
+FcConfig *ttoy_Fonts_getFontconfigInstance() {
+  ttoy_Fonts *self = ttoy_Fonts_instance();
 
   return self->fcConfig;
 }
 
-void st_Fonts_calculateFacePixelBBox(
+void ttoy_Fonts_calculateFacePixelBBox(
     const FT_Face face,
     int *width, int *height)
 {
@@ -131,17 +131,17 @@ void st_Fonts_calculateFacePixelBBox(
       (double)(face->bbox.yMax - face->bbox.yMin) * y_pixels_per_unit);
 }
 
-#define ST_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS 256
+#define TTOY_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS 256
 
-void st_MonospaceFontFace_init(st_MonospaceFontFace *self) {
-  self->sizeGlyphs = ST_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS;
-  self->glyphs = (st_MonospaceGlyph*)malloc(
-      sizeof(st_MonospaceGlyph) * self->sizeGlyphs);
+void ttoy_MonospaceFontFace_init(ttoy_MonospaceFontFace *self) {
+  self->sizeGlyphs = TTOY_MONOSPACE_FONT_FACE_INIT_SIZE_GLYPHS;
+  self->glyphs = (ttoy_MonospaceGlyph*)malloc(
+      sizeof(ttoy_MonospaceGlyph) * self->sizeGlyphs);
   self->numGlyphs = 0;
 }
 
-void st_MonospaceFontFace_loadGlyph(
-    st_MonospaceFontFace *self,
+void ttoy_MonospaceFontFace_loadGlyph(
+    ttoy_MonospaceFontFace *self,
     FT_Face face,
     uint32_t ch)
 {
@@ -176,10 +176,10 @@ void st_MonospaceFontFace_loadGlyph(
         (char)ch);
   }
   /* Print out the glyph bitmap */
-  st_printGlyphDebug(&face->glyph->bitmap);
+  ttoy_printGlyphDebug(&face->glyph->bitmap);
 }
 
-void st_printGlyphDebug(const FT_Bitmap *bitmap) {
+void ttoy_printGlyphDebug(const FT_Bitmap *bitmap) {
   /* Print out the bitmap as ascii text */
   for (int row = 0; row < bitmap->rows; ++row) {
     for (int column = 0; column < bitmap->width; ++column) {
@@ -192,7 +192,7 @@ void st_printGlyphDebug(const FT_Bitmap *bitmap) {
   }
 }
 
-void st_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap) {
+void ttoy_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap) {
   /* Print out the bitmap as ascii text */
   for (int row = 0; row < bitmap->rows; ++row) {
     for (int column = 0; column < bitmap->width; ++column) {
@@ -204,8 +204,8 @@ void st_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap) {
   }
 }
 
-st_MonospaceGlyph *st_MonospaceFontFace_getGlyph(
-    st_MonospaceFontFace *self,
+ttoy_MonospaceGlyph *ttoy_MonospaceFontFace_getGlyph(
+    ttoy_MonospaceFontFace *self,
     uint32_t ch)
 {
   size_t i, a, b;

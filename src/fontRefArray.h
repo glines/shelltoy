@@ -21,13 +21,12 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_FONT_REF_ARRAY_H_
-#define SHELLTOY_FONT_REF_ARRAY_H_
+#ifndef TTOY_FONT_REF_ARRAY_H_
+#define TTOY_FONT_REF_ARRAY_H_
 
 #include "./common/array.h"
 #include "fontRef.h"
 
-ST_DECLARE_ARRAY(st_FontRef)
+TTOY_DECLARE_ARRAY(ttoy_FontRef)
 
 #endif
-

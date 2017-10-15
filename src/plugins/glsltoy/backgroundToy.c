@@ -26,7 +26,7 @@
 #include <SDL_mutex.h>
 #include <string.h>
 
-#include <shelltoy/fileWatcher.h>
+#include <ttoy/fileWatcher.h>
 
 #include "../../common/glError.h"
 #include "../../common/shader.h"
@@ -34,53 +34,53 @@
 
 #include "backgroundToy.h"
 
-SHELLTOY_BACKGROUND_TOY_DISPATCH(
-    st_Glsltoy_BackgroundToy,  /* BACKGROUND_TOY_STRUCT */
-    (st_BackgroundToy_Init)
-    st_Glsltoy_BackgroundToy_init,  /* INIT_CB */
-    (st_BackgroundToy_Destroy)
-    st_Glsltoy_BackgroundToy_destroy,  /* DESTROY_CB */
-    (st_BackgroundToy_Draw)
-    st_Glsltoy_BackgroundToy_draw  /* DRAW_CB */
+TTOY_BACKGROUND_TOY_DISPATCH(
+    ttoy_Glsltoy_BackgroundToy,  /* BACKGROUND_TOY_STRUCT */
+    (ttoy_BackgroundToy_Init)
+    ttoy_Glsltoy_BackgroundToy_init,  /* INIT_CB */
+    (ttoy_BackgroundToy_Destroy)
+    ttoy_Glsltoy_BackgroundToy_destroy,  /* DESTROY_CB */
+    (ttoy_BackgroundToy_Draw)
+    ttoy_Glsltoy_BackgroundToy_draw  /* DRAW_CB */
     )
 
 /* Private methods */
-void st_Glsltoy_BackgroundToy_readConfig(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_readConfig(
+    ttoy_Glsltoy_BackgroundToy *self,
     json_t *config);
 
-float st_Glsltoy_BackgroundToy_getTime(
-    st_Glsltoy_BackgroundToy *self);
+float ttoy_Glsltoy_BackgroundToy_getTime(
+    ttoy_Glsltoy_BackgroundToy *self);
 
 static
-st_ErrorCode
-st_Glsltoy_BackgroundToy_initShader(
-    st_Glsltoy_BackgroundToy *self);
+ttoy_ErrorCode
+ttoy_Glsltoy_BackgroundToy_initShader(
+    ttoy_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_initQuad(
-    st_Glsltoy_BackgroundToy *self);
+void ttoy_Glsltoy_BackgroundToy_initQuad(
+    ttoy_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_drawShader(
-    st_Glsltoy_BackgroundToy *self);
+void ttoy_Glsltoy_BackgroundToy_drawShader(
+    ttoy_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_shaderFileChanged(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_shaderFileChanged(
+    ttoy_Glsltoy_BackgroundToy *self,
     const char *filePath);
 
-int st_Glsltoy_BackgroundToy_checkShaderChanges(
-    st_Glsltoy_BackgroundToy *self);
+int ttoy_Glsltoy_BackgroundToy_checkShaderChanges(
+    ttoy_Glsltoy_BackgroundToy *self);
 
-st_ErrorCode
-st_Glsltoy_BackgroundToy_recompileShader(
-    st_Glsltoy_BackgroundToy *self);
+ttoy_ErrorCode
+ttoy_Glsltoy_BackgroundToy_recompileShader(
+    ttoy_Glsltoy_BackgroundToy *self);
 
-typedef struct st_Glsltoy_BackgroundToy_QuadVertex_ {
+typedef struct ttoy_Glsltoy_BackgroundToy_QuadVertex_ {
   GLfloat pos[3], texCoord[2];
-} st_Glsltoy_BackgroundToy_QuadVertex;
+} ttoy_Glsltoy_BackgroundToy_QuadVertex;
 
-struct st_Glsltoy_BackgroundToy_Internal_ {
-  st_FileWatcher shaderWatcher;
-  st_Shader shader;
+struct ttoy_Glsltoy_BackgroundToy_Internal_ {
+  ttoy_FileWatcher shaderWatcher;
+  ttoy_Shader shader;
   SDL_mutex *shaderChangedMutex;
   uint32_t shaderChanged, shaderChangedThreshold;
   char *shaderPath;
@@ -90,14 +90,14 @@ struct st_Glsltoy_BackgroundToy_Internal_ {
   uint32_t startTicks;
 };
 
-void st_Glsltoy_BackgroundToy_init(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_init(
+    ttoy_Glsltoy_BackgroundToy *self,
     const char *name,
     json_t *config)
 {
   /* Allocate memory for internal structures */
-  self->internal = (st_Glsltoy_BackgroundToy_Internal *)malloc(
-      sizeof(st_Glsltoy_BackgroundToy_Internal));
+  self->internal = (ttoy_Glsltoy_BackgroundToy_Internal *)malloc(
+      sizeof(ttoy_Glsltoy_BackgroundToy_Internal));
   self->internal->initializedDrawObjects = 0;
   self->internal->startTicks = SDL_GetTicks();
   self->internal->shaderPath = NULL;
@@ -109,21 +109,21 @@ void st_Glsltoy_BackgroundToy_init(
    * milliseconds) */
   self->internal->shaderChangedThreshold = 500;
   /* Watch for changes to our fragment shader source file */
-  st_FileWatcher_init(
+  ttoy_FileWatcher_init(
       &self->internal->shaderWatcher);
-  st_FileWatcher_setCallback(&self->internal->shaderWatcher,
-      (st_FileWatcher_FileChangedCallback)
-      st_Glsltoy_BackgroundToy_shaderFileChanged,  /* callback */
+  ttoy_FileWatcher_setCallback(&self->internal->shaderWatcher,
+      (ttoy_FileWatcher_FileChangedCallback)
+      ttoy_Glsltoy_BackgroundToy_shaderFileChanged,  /* callback */
       self  /* data */
       );
   /* TODO: Read the config */
   /* FIXME: We might want to move the readConfig method outside of init, for
    * better handling of error codes. */
-  st_Glsltoy_BackgroundToy_readConfig(self, config);
+  ttoy_Glsltoy_BackgroundToy_readConfig(self, config);
 }
 
-void st_Glsltoy_BackgroundToy_readConfig(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_readConfig(
+    ttoy_Glsltoy_BackgroundToy *self,
     json_t *config)
 {
   json_t *shaderPath_json;
@@ -149,13 +149,13 @@ void st_Glsltoy_BackgroundToy_readConfig(
   /* XXX: Register the shader file with our file watcher */
   fprintf(stderr, "glsltoy registering file to watch: '%s'\n",
       self->internal->shaderPath);
-  st_FileWatcher_watchFile(&self->internal->shaderWatcher,
+  ttoy_FileWatcher_watchFile(&self->internal->shaderWatcher,
       self->internal->shaderPath  /* filePath */
       );
 }
 
-void st_Glsltoy_BackgroundToy_destroy(
-    st_Glsltoy_BackgroundToy *self)
+void ttoy_Glsltoy_BackgroundToy_destroy(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
   if (self->internal->initializedDrawObjects) {
     /* TODO: Clean up the GL objects that we initialized */
@@ -169,8 +169,8 @@ void st_Glsltoy_BackgroundToy_destroy(
 
 /* FIXME: I think glslsandbox might operate using tenths of a second? This
  * function returns tenths of a second accordingly.*/
-float st_Glsltoy_BackgroundToy_getTime(
-    st_Glsltoy_BackgroundToy *self)
+float ttoy_Glsltoy_BackgroundToy_getTime(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
   uint32_t start, current;
   start = self->internal->startTicks;
@@ -188,60 +188,60 @@ static const char *vert =
   "  gl_Position = vec4(vertPos, 1.0);\n"
   "}\n";
 
-st_ErrorCode
-st_Glsltoy_BackgroundToy_initShader(
-    st_Glsltoy_BackgroundToy *self)
+ttoy_ErrorCode
+ttoy_Glsltoy_BackgroundToy_initShader(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
-  st_ErrorCode error;
+  ttoy_ErrorCode error;
   /* XXX: Initialize our shader with the test shader program */
-  st_Shader_init(&self->internal->shader);
+  ttoy_Shader_init(&self->internal->shader);
 
   /* Compile our internal vertex shader */
-  error = st_Shader_compileShaderFromString(&self->internal->shader,
+  error = ttoy_Shader_compileShaderFromString(&self->internal->shader,
       vert,  /* code */
       strlen(vert),  /* length */
       GL_VERTEX_SHADER  /* type */
       );
-  if (error == ST_ERROR_SHADER_COMPILATION_FAILED) {
-    /* TODO: Pass the compilation log up to st_Terminal and display it to the
-     * user. It is probably best to use the ST_LOG_ERROR facility. */
+  if (error == TTOY_ERROR_SHADER_COMPILATION_FAILED) {
+    /* TODO: Pass the compilation log up to ttoy_Terminal and display it to the
+     * user. It is probably best to use the TTOY_LOG_ERROR facility. */
     /* NOTE: This is a fatal error, since the user has no hope of editing the
      * vertex shader. */
     return error;
-  } else if (error != ST_NO_ERROR) {
-    ST_LOG_ERROR_CODE(error);
+  } else if (error != TTOY_NO_ERROR) {
+    TTOY_LOG_ERROR_CODE(error);
     return error;
   }
   /* Compile the user-provided fragment shader */
-  error = st_Shader_compileShaderFromFile(&self->internal->shader,
+  error = ttoy_Shader_compileShaderFromFile(&self->internal->shader,
       self->internal->shaderPath,  /* filePath */
       GL_FRAGMENT_SHADER  /* type */
       );
-  if (error == ST_ERROR_SHADER_COMPILATION_FAILED) {
-    /* TODO: Pass the compilation log up to st_Terminal and display it to the
-     * user. It is probably best to use the ST_LOG_ERROR facility. */
+  if (error == TTOY_ERROR_SHADER_COMPILATION_FAILED) {
+    /* TODO: Pass the compilation log up to ttoy_Terminal and display it to the
+     * user. It is probably best to use the TTOY_LOG_ERROR facility. */
     return error;
-  } else if (error == ST_ERROR_SHADER_FILE_NOT_FOUND) {
-    /* TODO: Pass this error up to the st_Terminal and display it to the user
+  } else if (error == TTOY_ERROR_SHADER_FILE_NOT_FOUND) {
+    /* TODO: Pass this error up to the ttoy_Terminal and display it to the user
      * through the GUI. */
     return error;
-  } else if (error != ST_NO_ERROR) {
-    ST_LOG_ERROR_CODE(error);
+  } else if (error != TTOY_NO_ERROR) {
+    TTOY_LOG_ERROR_CODE(error);
     return error;
   }
   /* Link the shader program */
-  error = st_Shader_linkProgram(&self->internal->shader);
-  if (error == ST_ERROR_SHADER_LINKING_FAILED) {
-    /* TODO: Pass the linking log up to st_Terminal and display it to the user.
-     * It is probably best to use the ST_LOG_ERROR facility. */
+  error = ttoy_Shader_linkProgram(&self->internal->shader);
+  if (error == TTOY_ERROR_SHADER_LINKING_FAILED) {
+    /* TODO: Pass the linking log up to ttoy_Terminal and display it to the user.
+     * It is probably best to use the TTOY_LOG_ERROR facility. */
     return error;
-  } else if (error != ST_NO_ERROR) {
-    ST_LOG_ERROR_CODE(error);
+  } else if (error != TTOY_NO_ERROR) {
+    TTOY_LOG_ERROR_CODE(error);
     return error;
   }
 
   /* FIXME: If the user provided shader is invalid, we need to provide a dummy
-   * shader? Or perhaps inform Shelltoy that we do not need to render a
+   * shader? Or perhaps inform ttoy that we do not need to render a
    * background toy texture? */
 
   /* Get the uniform locations we are interested in */
@@ -256,13 +256,13 @@ st_Glsltoy_BackgroundToy_initShader(
   GET_UNIFORM(mouse)
   GET_UNIFORM(resolution)
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-void st_Glsltoy_BackgroundToy_initQuad(
-    st_Glsltoy_BackgroundToy *self)
+void ttoy_Glsltoy_BackgroundToy_initQuad(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
-  st_Glsltoy_BackgroundToy_QuadVertex vertices[] = {
+  ttoy_Glsltoy_BackgroundToy_QuadVertex vertices[] = {
     {
       .pos = { -1.0f, -1.0f, 0.0f },
       .texCoord = { 0.0f, 0.0f },
@@ -343,8 +343,8 @@ void st_Glsltoy_BackgroundToy_initQuad(
       3,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_Glsltoy_BackgroundToy_QuadVertex),  /* stride */
-      (GLvoid *)offsetof(st_Glsltoy_BackgroundToy_QuadVertex, pos)  /* pointer */
+      sizeof(ttoy_Glsltoy_BackgroundToy_QuadVertex),  /* stride */
+      (GLvoid *)offsetof(ttoy_Glsltoy_BackgroundToy_QuadVertex, pos)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   /* Prepare the texCoord vertex attribute */
@@ -357,8 +357,8 @@ void st_Glsltoy_BackgroundToy_initQuad(
       2,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_Glsltoy_BackgroundToy_QuadVertex),  /* stride */
-      (GLvoid *)offsetof(st_Glsltoy_BackgroundToy_QuadVertex, texCoord)  /* pointer */
+      sizeof(ttoy_Glsltoy_BackgroundToy_QuadVertex),  /* stride */
+      (GLvoid *)offsetof(ttoy_Glsltoy_BackgroundToy_QuadVertex, texCoord)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   /* Clear the vertex array object binding */
@@ -368,8 +368,8 @@ void st_Glsltoy_BackgroundToy_initQuad(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_Glsltoy_BackgroundToy_drawShader(
-    st_Glsltoy_BackgroundToy *self)
+void ttoy_Glsltoy_BackgroundToy_drawShader(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
   /* Prepare the shader for drawing */
   glUseProgram(
@@ -387,7 +387,7 @@ void st_Glsltoy_BackgroundToy_drawShader(
   FORCE_ASSERT_GL_ERROR();
   glUniform1f(
       self->internal->timeLocation,  /* location */
-      st_Glsltoy_BackgroundToy_getTime(self)  /* v0 */
+      ttoy_Glsltoy_BackgroundToy_getTime(self)  /* v0 */
       );
   FORCE_ASSERT_GL_ERROR();
   glUniform2f(
@@ -426,35 +426,35 @@ void st_Glsltoy_BackgroundToy_drawShader(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_Glsltoy_BackgroundToy_draw(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_draw(
+    ttoy_Glsltoy_BackgroundToy *self,
     int viewportWidth,
     int viewportHeight)
 {
   if (!self->internal->initializedDrawObjects) {
     /* Initialize our GL objects on the first frame */
-    st_Glsltoy_BackgroundToy_initShader(self);
-    st_Glsltoy_BackgroundToy_initQuad(self);
+    ttoy_Glsltoy_BackgroundToy_initShader(self);
+    ttoy_Glsltoy_BackgroundToy_initQuad(self);
     self->internal->initializedDrawObjects = 1;
   }
 
   /* Check for pending shader changes */
-  if (st_Glsltoy_BackgroundToy_checkShaderChanges(self)) {
+  if (ttoy_Glsltoy_BackgroundToy_checkShaderChanges(self)) {
     fprintf(stderr, "\033[1mRecompiling shader...\033[0m\n");
-    st_Glsltoy_BackgroundToy_recompileShader(self);
+    ttoy_Glsltoy_BackgroundToy_recompileShader(self);
   }
 
   /* Render our shader to the current framebuffer */
-  st_Glsltoy_BackgroundToy_drawShader(self);
+  ttoy_Glsltoy_BackgroundToy_drawShader(self);
 }
 
-void st_Glsltoy_BackgroundToy_shaderFileChanged(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_shaderFileChanged(
+    ttoy_Glsltoy_BackgroundToy *self,
     const char *filePath)
 {
   /* TODO: Attempt to re-compile the shader? We actually need to notify the
    * main thread, since we cannot compile shaders outside of the GL thread. */
-  fprintf(stderr, "st_Glsltoy_BackgroundToy_shaderFileChanged\n");
+  fprintf(stderr, "ttoy_Glsltoy_BackgroundToy_shaderFileChanged\n");
   /* TODO: Flag the main thread to re-compile the shader */
   /* NOTE: Since shaders must be compiled on the main graphics thread with
    * OpenGL, we use a timestamp to limit the adverse effect on terminal
@@ -466,8 +466,8 @@ void st_Glsltoy_BackgroundToy_shaderFileChanged(
   SDL_UnlockMutex(self->internal->shaderChangedMutex);
 }
 
-int st_Glsltoy_BackgroundToy_checkShaderChanges(
-    st_Glsltoy_BackgroundToy *self)
+int ttoy_Glsltoy_BackgroundToy_checkShaderChanges(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
   int result;
 
@@ -488,40 +488,40 @@ int st_Glsltoy_BackgroundToy_checkShaderChanges(
   return result;
 }
 
-st_ErrorCode
-st_Glsltoy_BackgroundToy_recompileShader(
-    st_Glsltoy_BackgroundToy *self)
+ttoy_ErrorCode
+ttoy_Glsltoy_BackgroundToy_recompileShader(
+    ttoy_Glsltoy_BackgroundToy *self)
 {
-  st_ErrorCode error;
+  ttoy_ErrorCode error;
 
   /* Compile the user-provided fragment shader */
-  error = st_Shader_compileShaderFromFile(&self->internal->shader,
+  error = ttoy_Shader_compileShaderFromFile(&self->internal->shader,
       self->internal->shaderPath,  /* filePath */
       GL_FRAGMENT_SHADER  /* type */
       );
-  if (error == ST_ERROR_SHADER_COMPILATION_FAILED) {
-    /* TODO: Pass the compilation log up to st_Terminal and display it to the
-     * user. It is probably best to use the ST_LOG_ERROR facility. */
+  if (error == TTOY_ERROR_SHADER_COMPILATION_FAILED) {
+    /* TODO: Pass the compilation log up to ttoy_Terminal and display it to the
+     * user. It is probably best to use the TTOY_LOG_ERROR facility. */
     return error;
-  } else if (error == ST_ERROR_SHADER_FILE_NOT_FOUND) {
-    /* TODO: Pass this error up to the st_Terminal and display it to the user
+  } else if (error == TTOY_ERROR_SHADER_FILE_NOT_FOUND) {
+    /* TODO: Pass this error up to the ttoy_Terminal and display it to the user
      * through the GUI. */
     return error;
-  } else if (error != ST_NO_ERROR) {
-    ST_LOG_ERROR_CODE(error);
+  } else if (error != TTOY_NO_ERROR) {
+    TTOY_LOG_ERROR_CODE(error);
     return error;
   }
 
   /* Link the shader program */
-  error = st_Shader_linkProgram(&self->internal->shader);
-  if (error == ST_ERROR_SHADER_LINKING_FAILED) {
-    /* TODO: Pass the linking log up to st_Terminal and display it to the user.
-     * It is probably best to use the ST_LOG_ERROR facility. */
+  error = ttoy_Shader_linkProgram(&self->internal->shader);
+  if (error == TTOY_ERROR_SHADER_LINKING_FAILED) {
+    /* TODO: Pass the linking log up to ttoy_Terminal and display it to the user.
+     * It is probably best to use the TTOY_LOG_ERROR facility. */
     return error;
-  } else if (error != ST_NO_ERROR) {
-    ST_LOG_ERROR_CODE(error);
+  } else if (error != TTOY_NO_ERROR) {
+    TTOY_LOG_ERROR_CODE(error);
     return error;
   }
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }

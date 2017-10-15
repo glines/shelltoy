@@ -1,7 +1,7 @@
 { stdenv, fetchgit, cmake, libtsm, SDL2, glew, freetype, dejavu_fonts, pkgconfig, check, vimNox, gprof2dot, oprofile, jansson, fontconfig, expat, doxygen, python27Packages, git, xorg }:
 
 stdenv.mkDerivation rec {
-  name = "shelltoy-${version}";
+  name = "ttoy-${version}";
   version = "dev";
 
   src = ./.;

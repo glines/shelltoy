@@ -21,82 +21,82 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_GLYPH_RENDERER_H_
-#define ST_GLYPH_RENDERER_H_
+#ifndef TTOY_GLYPH_RENDERER_H_
+#define TTOY_GLYPH_RENDERER_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 #include <inttypes.h>
 
-#include <shelltoy/error.h>
+#include <ttoy/error.h>
 
 #include "font.h"
 #include "profile.h"
 
-struct st_GlyphRenderer_Internal;
+struct ttoy_GlyphRenderer_Internal;
 
 /** A wrapper around the glyph rendering faciliies of FreeType. This class
  * combines font faces from multiple sources, including boldface and asian
  * fonts, and renders any given character with the appropriate font face.
  */
-typedef struct st_GlyphRenderer_ {
-  struct st_GlyphRenderer_Internal *internal;
-} st_GlyphRenderer;
+typedef struct ttoy_GlyphRenderer_ {
+  struct ttoy_GlyphRenderer_Internal *internal;
+} ttoy_GlyphRenderer;
 
-void st_GlyphRenderer_init(
-    st_GlyphRenderer *self,
-    st_Profile *profile);
+void ttoy_GlyphRenderer_init(
+    ttoy_GlyphRenderer *self,
+    ttoy_Profile *profile);
 
-void st_GlyphRenderer_destroy(
-    st_GlyphRenderer *self);
+void ttoy_GlyphRenderer_destroy(
+    ttoy_GlyphRenderer *self);
 
-void st_GlyphRenderer_getCellSize(
-    const st_GlyphRenderer *self,
+void ttoy_GlyphRenderer_getCellSize(
+    const ttoy_GlyphRenderer *self,
     int *width, int *height);
 
-void st_GlyphRenderer_getUnderlineOffset(
-    st_GlyphRenderer *self,
+void ttoy_GlyphRenderer_getUnderlineOffset(
+    ttoy_GlyphRenderer *self,
     int *offset);
 
-st_ErrorCode
-st_GlyphRenderer_getFont(
-    st_GlyphRenderer *self,
+ttoy_ErrorCode
+ttoy_GlyphRenderer_getFont(
+    ttoy_GlyphRenderer *self,
     uint32_t character,
     int bold,
-    st_Font **font,
+    ttoy_Font **font,
     int *fontIndex);
 
 /**
  * Convenience function to get the font index for a glyph without needing to
  * provide storange for the font pointer.
  */
-st_ErrorCode
-st_GlyphRenderer_getFontIndex(
-    st_GlyphRenderer *self,
+ttoy_ErrorCode
+ttoy_GlyphRenderer_getFontIndex(
+    ttoy_GlyphRenderer *self,
     uint32_t character,
     int bold,
     int *fontIndex);
 
-st_ErrorCode
-st_GlyphRenderer_getGlyphDimensions(
-    st_GlyphRenderer *self,
+ttoy_ErrorCode
+ttoy_GlyphRenderer_getGlyphDimensions(
+    ttoy_GlyphRenderer *self,
     uint32_t character,
     int bold,
     int *width,
     int *height);
 
-st_ErrorCode
-st_GlyphRenderer_getGlyphOffset(
-    st_GlyphRenderer *self,
+ttoy_ErrorCode
+ttoy_GlyphRenderer_getGlyphOffset(
+    ttoy_GlyphRenderer *self,
     uint32_t character,
     int bold,
     int *x,
     int *y);
 
-st_ErrorCode
-st_GlyphRenderer_renderGlyph(
-    st_GlyphRenderer *self,
+ttoy_ErrorCode
+ttoy_GlyphRenderer_renderGlyph(
+    ttoy_GlyphRenderer *self,
     uint32_t character,
     int bold,
     FT_Bitmap **bitmap,

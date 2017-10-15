@@ -21,13 +21,13 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_TEXT_TOY_DICTIONARY_H_
-#define SHELLTOY_TEXT_TOY_DICTIONARY_H_
+#ifndef TTOY_TEXT_TOY_DICTIONARY_H_
+#define TTOY_TEXT_TOY_DICTIONARY_H_
 
-#include <shelltoy/textToy.h>
+#include <ttoy/textToy.h>
 
 #include "./common/dictionary.h"
 
-ST_DECLARE_DICTIONARY(st_TextToy)
+TTOY_DECLARE_DICTIONARY(ttoy_TextToy)
 
 #endif

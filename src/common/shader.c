@@ -8,22 +8,22 @@
 
 #include "shader.h"
 
-struct st_Shader_Internal_ {
+struct ttoy_Shader_Internal_ {
   GLuint vert, frag;
   char *log;
 };
 
-void st_Shader_init(
-    st_Shader *self)
+void ttoy_Shader_init(
+    ttoy_Shader *self)
 {
   /* Allocate internal memory */
-  self->internal = (st_Shader_Internal *)malloc(sizeof(st_Shader_Internal));
+  self->internal = (ttoy_Shader_Internal *)malloc(sizeof(ttoy_Shader_Internal));
   self->internal->log = NULL;
   self->program = 0;
 }
 
-void st_Shader_destroy(
-    st_Shader *self)
+void ttoy_Shader_destroy(
+    ttoy_Shader *self)
 {
   /* TODO: Free resources allocated in the GL */
   /* Free allocated memory */
@@ -31,9 +31,9 @@ void st_Shader_destroy(
   free(self->internal);
 }
 
-st_ErrorCode
-st_Shader_compileShaderFromString(
-    st_Shader *self,
+ttoy_ErrorCode
+ttoy_Shader_compileShaderFromString(
+    ttoy_Shader *self,
     const GLchar *code,
     GLint length,
     GLenum type)
@@ -49,7 +49,7 @@ st_Shader_compileShaderFromString(
       shader = &self->internal->frag;
       break;
     default:
-      return ST_ERROR_UNKNOWN_SHADER_TYPE;
+      return TTOY_ERROR_UNKNOWN_SHADER_TYPE;
   }
 
   /* Create a shader object in the GL */
@@ -72,7 +72,7 @@ st_Shader_compileShaderFromString(
   if (status != GL_TRUE) {
     int logLength;
     /* Store the shader compilation log for future access via the
-     * st_Shader_getLog() method */
+     * ttoy_Shader_getLog() method */
     glGetShaderiv(
         *shader,  /* shader */
         GL_INFO_LOG_LENGTH,  /* pname */
@@ -82,7 +82,7 @@ st_Shader_compileShaderFromString(
     free(self->internal->log);
     self->internal->log = (char*)malloc(logLength);
     if (self->internal->log == NULL) {
-      return ST_ERROR_OUT_OF_MEMORY;
+      return TTOY_ERROR_OUT_OF_MEMORY;
     }
     glGetShaderInfoLog(
         *shader,  /* shader */
@@ -91,19 +91,19 @@ st_Shader_compileShaderFromString(
         self->internal->log  /* infoLog */
         );
     FORCE_ASSERT_GL_ERROR();
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Error compiling shader: \n"
         "%s",
         self->internal->log);
-    return ST_ERROR_SHADER_COMPILATION_FAILED;
+    return TTOY_ERROR_SHADER_COMPILATION_FAILED;
   }
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-st_ErrorCode
-st_Shader_compileShaderFromFile(
-    st_Shader *self,
+ttoy_ErrorCode
+ttoy_Shader_compileShaderFromFile(
+    ttoy_Shader *self,
     const char *filePath,
     GLenum type)
 {
@@ -112,32 +112,32 @@ st_Shader_compileShaderFromFile(
   int result;
   long length;
   size_t bytesRead;
-  st_ErrorCode error;
+  ttoy_ErrorCode error;
 
   /* Load the entire file into a string */
   fp = fopen(filePath, "rb");
   if (fp == NULL) {
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Error opening shader file '%s': %s",
         filePath,
         strerror(errno));
-    return ST_ERROR_OPENING_SHADER_FILE;
+    return TTOY_ERROR_OPENING_SHADER_FILE;
   }
   /* Seek to the end of the file to determine its length */
   result = fseek(fp, 0, SEEK_END);
   if (result != 0) {
     if (ferror(fp)) {
-      ST_LOG_ERROR(
+      TTOY_LOG_ERROR(
           "fseek() failed on shader file '%s'",
           filePath);
-      return ST_ERROR_OPENING_SHADER_FILE;
+      return TTOY_ERROR_OPENING_SHADER_FILE;
     }
   }
   length = ftell(fp);
   fseek(fp, 0, SEEK_SET);
   code = (char *)malloc(length);
   if (code == NULL) {
-    return ST_ERROR_OUT_OF_MEMORY;
+    return TTOY_ERROR_OUT_OF_MEMORY;
   }
   bytesRead = fread(
       code,  /* buffer */
@@ -146,15 +146,15 @@ st_Shader_compileShaderFromFile(
       fp  /* stream */
       );
   if (bytesRead != length || ferror(fp)) {
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Error reading shader file '%s'",
         filePath);
     free(code);
-    return ST_ERROR_OPENING_SHADER_FILE;
+    return TTOY_ERROR_OPENING_SHADER_FILE;
   }
 
   /* Compile the shader string */
-  error = st_Shader_compileShaderFromString(self,
+  error = ttoy_Shader_compileShaderFromString(self,
       code,  /* code */
       length,  /* length */
       type  /* type */
@@ -165,9 +165,9 @@ st_Shader_compileShaderFromFile(
   return error;
 }
 
-st_ErrorCode
-st_Shader_linkProgram(
-    st_Shader *self)
+ttoy_ErrorCode
+ttoy_Shader_linkProgram(
+    ttoy_Shader *self)
 {
   GLint status;
   char *log;
@@ -202,7 +202,7 @@ st_Shader_linkProgram(
     FORCE_ASSERT_GL_ERROR();
     fprintf(stderr, "Error linking shader program:\n%s", log);
     free(log);
-    return ST_ERROR_SHADER_LINKING_FAILED;
+    return TTOY_ERROR_SHADER_LINKING_FAILED;
   }
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }

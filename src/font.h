@@ -21,91 +21,91 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_FONT_H_
-#define SHELLTOY_FONT_H_
+#ifndef TTOY_FONT_H_
+#define TTOY_FONT_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 #include <inttypes.h>
 
-#include <shelltoy/error.h>
+#include <ttoy/error.h>
 
-struct st_Font_Internal_;
-typedef struct st_Font_Internal_ st_Font_Internal;
+struct ttoy_Font_Internal_;
+typedef struct ttoy_Font_Internal_ ttoy_Font_Internal;
 
-typedef struct st_Font_ {
-  st_Font_Internal *internal;
-} st_Font;
+typedef struct ttoy_Font_ {
+  ttoy_Font_Internal *internal;
+} ttoy_Font;
 
-void st_Font_init(
-    st_Font *self);
+void ttoy_Font_init(
+    ttoy_Font *self);
 
-st_ErrorCode
-st_Font_load(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_load(
+    ttoy_Font *self,
     const char *fontPath,
     const char *faceName,
     float fontSize,
     int x_dpi,
     int y_dpi);
 
-int st_Font_isValid(
-    const st_Font *self);
+int ttoy_Font_isValid(
+    const ttoy_Font *self);
 
-void st_Font_destroy(
-    st_Font *self);
+void ttoy_Font_destroy(
+    ttoy_Font *self);
 
 int
-st_Font_hasCharacter(
-    st_Font *self,
+ttoy_Font_hasCharacter(
+    ttoy_Font *self,
     uint32_t character);
 
-st_ErrorCode
-st_Font_getGlyphDimensions(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_getGlyphDimensions(
+    ttoy_Font *self,
     uint32_t character,
     int *width,
     int *height);
 
-st_ErrorCode
-st_Font_getGlyphOffset(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_getGlyphOffset(
+    ttoy_Font *self,
     uint32_t character,
     int *x,
     int *y);
 
-st_ErrorCode
-st_Font_renderGlyph(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_renderGlyph(
+    ttoy_Font *self,
     uint32_t character,
     FT_Bitmap **bitmap);
 
-st_ErrorCode
-st_Font_renderGlyph(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_renderGlyph(
+    ttoy_Font *self,
     uint32_t character,
     FT_Bitmap **bitmap);
 
 const char *
-st_Font_getFaceName(
-    const st_Font *self);
+ttoy_Font_getFaceName(
+    const ttoy_Font *self);
 
 const char *
-st_Font_getFontPath(
-    const st_Font *self);
+ttoy_Font_getFontPath(
+    const ttoy_Font *self);
 
 float
-st_Font_getSize(
-    const st_Font *self);
+ttoy_Font_getSize(
+    const ttoy_Font *self);
 
-st_ErrorCode
-st_Font_setSize(
-    const st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_setSize(
+    const ttoy_Font *self,
     float size);
 
 FT_Face
-st_Font_getFtFace(
-    st_Font *self);
+ttoy_Font_getFtFace(
+    ttoy_Font *self);
 
 #endif

@@ -28,17 +28,17 @@
 
 START_TEST(test_Config_checkDefaultProfile)
 {
-  st_Config config;
-  st_Profile *defaultProfile;
+  ttoy_Config config;
+  ttoy_Profile *defaultProfile;
 
-  st_Config_init(&config);
+  ttoy_Config_init(&config);
   mark_point();
-  st_Config_getDefaultProfile(&config,
+  ttoy_Config_getDefaultProfile(&config,
       &defaultProfile);
 
   ck_assert(defaultProfile != NULL);
 
-  st_Config_destroy(&config);
+  ttoy_Config_destroy(&config);
 }
 END_TEST
 

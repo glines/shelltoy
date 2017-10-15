@@ -21,33 +21,33 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_NAIVE_COLLISION_DETECTION_H_
-#define ST_NAIVE_COLLISION_DETECTION_H_
+#ifndef TTOY_NAIVE_COLLISION_DETECTION_H_
+#define TTOY_NAIVE_COLLISION_DETECTION_H_
 
 #include "collisionDetection.h"
 
-#define ST_NAIVE_COLLISION_DETECTION_INIT_SIZE_ENTITIES 128
+#define TTOY_NAIVE_COLLISION_DETECTION_INIT_SIZE_ENTITIES 128
 
-struct st_NaiveCollisionDetection_Internal;
+struct ttoy_NaiveCollisionDetection_Internal;
 
-typedef struct st_NaiveCollisionDetection_ {
-  st_CollisionDetection base;
-  struct st_NaiveCollisionDetection_Internal *internal;
-} st_NaiveCollisionDetection;
+typedef struct ttoy_NaiveCollisionDetection_ {
+  ttoy_CollisionDetection base;
+  struct ttoy_NaiveCollisionDetection_Internal *internal;
+} ttoy_NaiveCollisionDetection;
 
-void st_NaiveCollisionDetection_init(
-    st_NaiveCollisionDetection *self);
+void ttoy_NaiveCollisionDetection_init(
+    ttoy_NaiveCollisionDetection *self);
 
-void st_NaiveCollisionDetection_destroy(
-    st_NaiveCollisionDetection *self);
+void ttoy_NaiveCollisionDetection_destroy(
+    ttoy_NaiveCollisionDetection *self);
 
-void st_NaiveCollisionDetection_addEntity(
-    st_NaiveCollisionDetection *self,
-    const st_BoundingBox *bbox,
+void ttoy_NaiveCollisionDetection_addEntity(
+    ttoy_NaiveCollisionDetection *self,
+    const ttoy_BoundingBox *bbox,
     void *data);
 
-void *st_NaiveCollisionDetection_checkCollision(
-    st_NaiveCollisionDetection *self,
-    const st_BoundingBox *bbox);
+void *ttoy_NaiveCollisionDetection_checkCollision(
+    ttoy_NaiveCollisionDetection *self,
+    const ttoy_BoundingBox *bbox);
 
 #endif

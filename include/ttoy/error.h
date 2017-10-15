@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Jonathan Glines
+ * Copyright (c) 2016-2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,15 +21,23 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_VERSION_H_
-#define SHELLTOY_VERSION_H_
+#ifndef TTOY_ERROR_H_
+#define TTOY_ERROR_H_
 
-#define SHELLTOY_QUALIFIED_VERSION "@SHELLTOY_QUALIFIED_VERSION@"
+/* Create an enum type for all of our error codes */
+#define TTOY_START_ERROR_CODES \
+  typedef enum ttoy_ErrorCode_ {
+#define TTOY_DECLARE_ERROR_CODE(code,string) \
+    code,
+#define TTOY_END_ERROR_CODES \
+  } ttoy_ErrorCode;
+#undef TTOY_ERROR_CODES_H_
+#include <ttoy/errorCodes.h>
+#undef TTOY_START_ERROR_CODES
+#undef TTOY_DECLARE_ERROR_CODE
+#undef TTOY_END_ERROR_CODES
 
-#define SHELLTOY_MAJOR_VERSION @SHELLTOY_MAJOR_VERSION@
-#define SHELLTOY_MINOR_VERSION @SHELLTOY_MINOR_VERSION@
-#define SHELLTOY_PATCH_VERSION @SHELLTOY_PATCH_VERSION@
-
-#define SHELLTOY_VERSION ((SHELLTOY_MAJOR_VERSION << 8) + SHELLTOY_MINOR_VERSION)
+const char *ttoy_ErrorString(
+    ttoy_ErrorCode error);
 
 #endif

@@ -7,8 +7,8 @@ result:
 
 .PHONY: debug
 debug: result
-	@exec cgdb -e ./result/bin/shelltoy \
-		-s ./result-debug/lib/debug/shelltoy \
+	@exec cgdb -e ./result/bin/ttoy \
+		-s ./result-debug/lib/debug/ttoy \
 		-d ./src
 
 .PHONY: clean

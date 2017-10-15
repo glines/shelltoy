@@ -23,4 +23,4 @@
 
 #include "glyphRendererRef.h"
 
-ST_DEFINE_REFERENCE(st_GlyphRenderer)
+TTOY_DEFINE_REFERENCE(ttoy_GlyphRenderer)

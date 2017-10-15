@@ -21,44 +21,44 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_COMMON_DICTIONARY_H_
-#define SHELLTOY_COMMON_DICTIONARY_H_
+#ifndef TTOY_COMMON_DICTIONARY_H_
+#define TTOY_COMMON_DICTIONARY_H_
 
 #include <stddef.h>
 
-struct st_Dictionary_Internal_;
-typedef struct st_Dictionary_Internal_ st_Dictionary_Internal;
+struct ttoy_Dictionary_Internal_;
+typedef struct ttoy_Dictionary_Internal_ ttoy_Dictionary_Internal;
 
-typedef struct st_Dictionary_ {
-  st_Dictionary_Internal *internal;
-} st_Dictionary;
+typedef struct ttoy_Dictionary_ {
+  ttoy_Dictionary_Internal *internal;
+} ttoy_Dictionary;
 
-void st_Dictionary_init(
-    st_Dictionary *self);
+void ttoy_Dictionary_init(
+    ttoy_Dictionary *self);
 
-void st_Dictionary_destroy(
-    st_Dictionary *self);
+void ttoy_Dictionary_destroy(
+    ttoy_Dictionary *self);
 
-void st_Dictionary_insert(
-    st_Dictionary *self,
+void ttoy_Dictionary_insert(
+    ttoy_Dictionary *self,
     const char *key,
     void *value);
 
-void *st_Dictionary_getValue(
-    st_Dictionary *self,
+void *ttoy_Dictionary_getValue(
+    ttoy_Dictionary *self,
     const char *key);
 
-size_t st_Dictionary_size(
-    st_Dictionary *self);
+size_t ttoy_Dictionary_size(
+    ttoy_Dictionary *self);
 
-void *st_Dictionary_getValueAtIndex(
-    st_Dictionary *self,
+void *ttoy_Dictionary_getValueAtIndex(
+    ttoy_Dictionary *self,
     size_t index);
 
-#define ST_DECLARE_DICTIONARY( \
+#define TTOY_DECLARE_DICTIONARY( \
     VALUE_TYPE) \
-typedef struct st_ ## VALUE_TYPE ## Dictionary_ { \
-  st_Dictionary base; \
+typedef struct ttoy_ ## VALUE_TYPE ## Dictionary_ { \
+  ttoy_Dictionary base; \
 } VALUE_TYPE ## Dictionary; \
 void VALUE_TYPE ## Dictionary_init( \
     VALUE_TYPE ## Dictionary *self); \
@@ -78,25 +78,25 @@ VALUE_TYPE *VALUE_TYPE ## Dictionary_getValueAtIndex( \
     size_t index);
 
 
-#define ST_DEFINE_DICTIONARY( \
+#define TTOY_DEFINE_DICTIONARY( \
     VALUE_TYPE) \
   void VALUE_TYPE ## Dictionary_init( \
       VALUE_TYPE ## Dictionary *self) \
   { \
-    st_Dictionary_init((st_Dictionary *)self); \
+    ttoy_Dictionary_init((ttoy_Dictionary *)self); \
   } \
   void VALUE_TYPE ## Dictionary_destroy( \
       VALUE_TYPE ## Dictionary *self) \
   { \
-    st_Dictionary_destroy((st_Dictionary *)self); \
+    ttoy_Dictionary_destroy((ttoy_Dictionary *)self); \
   } \
   void VALUE_TYPE ## Dictionary_insert( \
       VALUE_TYPE ## Dictionary *self, \
       const char *key, \
       VALUE_TYPE *value) \
   { \
-    st_Dictionary_insert( \
-        (st_Dictionary *)self, \
+    ttoy_Dictionary_insert( \
+        (ttoy_Dictionary *)self, \
         key, \
         (void *)value); \
   } \
@@ -105,21 +105,21 @@ VALUE_TYPE *VALUE_TYPE ## Dictionary_getValueAtIndex( \
       const char *key) \
   { \
     return (VALUE_TYPE *) \
-      st_Dictionary_getValue( \
-        (st_Dictionary *)self, \
+      ttoy_Dictionary_getValue( \
+        (ttoy_Dictionary *)self, \
         key); \
   } \
   size_t VALUE_TYPE ## Dictionary_size( \
       VALUE_TYPE ## Dictionary *self) \
   { \
-    return st_Dictionary_size((st_Dictionary *)self); \
+    return ttoy_Dictionary_size((ttoy_Dictionary *)self); \
   } \
   VALUE_TYPE *VALUE_TYPE ## Dictionary_getValueAtIndex( \
       VALUE_TYPE ## Dictionary *self, \
       size_t index) \
   { \
-    return (VALUE_TYPE *)st_Dictionary_getValueAtIndex( \
-        (st_Dictionary *)self, \
+    return (VALUE_TYPE *)ttoy_Dictionary_getValueAtIndex( \
+        (ttoy_Dictionary *)self, \
         index); \
   }
 

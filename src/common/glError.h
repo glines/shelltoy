@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_COMMON_GL_ERROR_H_
-#define ST_COMMON_GL_ERROR_H_
+#ifndef TTOY_COMMON_GL_ERROR_H_
+#define TTOY_COMMON_GL_ERROR_H_
 
 #include <assert.h>
 
@@ -37,10 +37,10 @@
 #endif
 
 #define FORCE_CHECK_GL_ERROR() \
-  (st_checkGLError(__FILE__, __LINE__))
+  (ttoy_checkGLError(__FILE__, __LINE__))
 
 #define FORCE_ASSERT_GL_ERROR() \
-  if (st_checkGLError(__FILE__, __LINE__)) \
+  if (ttoy_checkGLError(__FILE__, __LINE__)) \
     assert(0);
 
 #if DISABLE_CHECK_GL_ERROR
@@ -52,15 +52,15 @@
 #else  // DISABLE_CHECK_GL_ERROR
 
 #define CHECK_GL_ERROR() \
-  (st_checkGLError(__FILE__, __LINE__))
+  (ttoy_checkGLError(__FILE__, __LINE__))
 
 #define ASSERT_GL_ERROR() \
-  if (st_checkGLError(__FILE__, __LINE__)) \
+  if (ttoy_checkGLError(__FILE__, __LINE__)) \
     assert(0);
 
 #endif  // DISABLE_CHECK_GL_ERROR
 
-int st_checkGLError(const char *file, int line);
-const char *st_glErrorToString(GLenum error);
+int ttoy_checkGLError(const char *file, int line);
+const char *ttoy_glErrorToString(GLenum error);
 
 #endif

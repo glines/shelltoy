@@ -21,13 +21,13 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PLUGIN_DICTIONARY_H_
-#define SHELLTOY_PLUGIN_DICTIONARY_H_
+#ifndef TTOY_PLUGIN_DICTIONARY_H_
+#define TTOY_PLUGIN_DICTIONARY_H_
 
-#include <shelltoy/plugin.h>
+#include <ttoy/plugin.h>
 
 #include "./common/dictionary.h"
 
-ST_DECLARE_DICTIONARY(st_Plugin)
+TTOY_DECLARE_DICTIONARY(ttoy_Plugin)
 
 #endif

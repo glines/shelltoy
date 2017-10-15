@@ -21,23 +21,23 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PLUGINS_GLSLTOY_PLUGIN_H_
-#define SHELLTOY_PLUGINS_GLSLTOY_PLUGIN_H_
+#ifndef TTOY_PLUGINS_GLSLTOY_PLUGIN_H_
+#define TTOY_PLUGINS_GLSLTOY_PLUGIN_H_
 
 #include <jansson.h>
 
-#include <shelltoy/error.h>
-#include <shelltoy/plugin.h>
+#include <ttoy/error.h>
+#include <ttoy/plugin.h>
 
-typedef struct st_Glsltoy_Plugin_ {
-  st_Plugin base;
-} st_Glsltoy_Plugin;
+typedef struct ttoy_Glsltoy_Plugin_ {
+  ttoy_Plugin base;
+} ttoy_Glsltoy_Plugin;
 
-void st_Glsltoy_Plugin_init(
-    st_Glsltoy_Plugin *self,
+void ttoy_Glsltoy_Plugin_init(
+    ttoy_Glsltoy_Plugin *self,
     const char *name);
 
-void st_Glsltoy_Plugin_destroy(
-    st_Glsltoy_Plugin *self);
+void ttoy_Glsltoy_Plugin_destroy(
+    ttoy_Glsltoy_Plugin *self);
 
 #endif

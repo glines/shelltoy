@@ -32,55 +32,55 @@
 #define max(a, b) (a) < (b) ? (b) : (a);
 
 /* Private data structures */
-typedef struct st_GlyphAtlasEntry_ {
-  st_BoundingBox bbox;
+typedef struct ttoy_GlyphAtlasEntry_ {
+  ttoy_BoundingBox bbox;
   int xOffset, yOffset;
   uint32_t ch;
   int cellWidth, cellHeight;
   int fontIndex;
-} st_GlyphAtlasEntry;
+} ttoy_GlyphAtlasEntry;
 
-struct st_GlyphAtlas_Internal {
-  st_GlyphAtlasEntry *glyphs;
+struct ttoy_GlyphAtlas_Internal {
+  ttoy_GlyphAtlasEntry *glyphs;
   size_t numGlyphs, sizeGlyphs;
   GLuint textureBuffer;
   int textureSize;
 };
 
 /* Private method declarations */
-void st_GlyphAtlas_blitGlyph(
-    const st_GlyphAtlasEntry *glyph,
+void ttoy_GlyphAtlas_blitGlyph(
+    const ttoy_GlyphAtlasEntry *glyph,
     const FT_Bitmap *bitmap,
     int padding,
     uint8_t *atlasTexture,
     int textureSize);
 
-void st_GlyphAtlas_init(
-    st_GlyphAtlas_ptr self)
+void ttoy_GlyphAtlas_init(
+    ttoy_GlyphAtlas_ptr self)
 {
   /* Allocate memory for internal data structures */
-  self->internal = (struct st_GlyphAtlas_Internal *)malloc(
-      sizeof(struct st_GlyphAtlas_Internal));
-  self->internal->sizeGlyphs = ST_GLYPH_ATLAS_INIT_SIZE_GLYPHS;
-  self->internal->glyphs = (st_GlyphAtlasEntry *)malloc(
-      sizeof(st_GlyphAtlasEntry) * self->internal->sizeGlyphs);
+  self->internal = (struct ttoy_GlyphAtlas_Internal *)malloc(
+      sizeof(struct ttoy_GlyphAtlas_Internal));
+  self->internal->sizeGlyphs = TTOY_GLYPH_ATLAS_INIT_SIZE_GLYPHS;
+  self->internal->glyphs = (ttoy_GlyphAtlasEntry *)malloc(
+      sizeof(ttoy_GlyphAtlasEntry) * self->internal->sizeGlyphs);
   self->internal->numGlyphs = 0;
   /* Initialize our texture buffer */
   glGenTextures(1, &self->internal->textureBuffer);
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_GlyphAtlas_destroy(
-    st_GlyphAtlas_ptr self)
+void ttoy_GlyphAtlas_destroy(
+    ttoy_GlyphAtlas_ptr self)
 {
   /* Free internal data structures */
   free(self->internal->glyphs);
   free(self->internal);
 }
 
-int st_compareGlyphSizes(
-    const st_GlyphAtlasEntry *a,
-    const st_GlyphAtlasEntry *b)
+int ttoy_compareGlyphSizes(
+    const ttoy_GlyphAtlasEntry *a,
+    const ttoy_GlyphAtlasEntry *b)
 {
   int size_a, size_b;
   size_a = a->bbox.w * a->bbox.h;
@@ -92,9 +92,9 @@ int st_compareGlyphSizes(
   return 0;
 }
 
-int st_compareGlyphs(
-    const st_GlyphAtlasEntry *a,
-    const st_GlyphAtlasEntry *b)
+int ttoy_compareGlyphs(
+    const ttoy_GlyphAtlasEntry *a,
+    const ttoy_GlyphAtlasEntry *b)
 {
   if (a->ch < b->ch)
     return -1;
@@ -107,19 +107,19 @@ int st_compareGlyphs(
   return 0;
 }
 
-void st_GlyphAtlas_renderASCIIGlyphs(
-    st_GlyphAtlas *self,
-    st_GlyphRenderer *glyphRenderer)
+void ttoy_GlyphAtlas_renderASCIIGlyphs(
+    ttoy_GlyphAtlas *self,
+    ttoy_GlyphRenderer *glyphRenderer)
 {
 #define PRINT_ASCII_FIRST 33
 #define PRINT_ASCII_LAST 126
 #define NUM_PRINT_ASCII (PRINT_ASCII_LAST - PRINT_ASCII_FIRST + 1)
-  st_GlyphAtlasEntry *pendingGlyphs;
+  ttoy_GlyphAtlasEntry *pendingGlyphs;
   /* TODO: The collision detection structure should be stored inside of the
-   * st_GlyphAtlas internal data structure, so that subsequent collision
+   * ttoy_GlyphAtlas internal data structure, so that subsequent collision
    * detection can be performed more cheaply. */
-  st_NaiveCollisionDetection collisionDetection;
-  st_GlyphAtlasEntry *currentGlyph, *collidingGlyph;
+  ttoy_NaiveCollisionDetection collisionDetection;
+  ttoy_GlyphAtlasEntry *currentGlyph, *collidingGlyph;
   FT_Bitmap *bitmap;
   size_t numPendingGlyphs;
   int done;
@@ -129,12 +129,12 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   int error;
   int cellWidth, cellHeight;
 
-  pendingGlyphs = (st_GlyphAtlasEntry*)malloc(
-      sizeof(st_GlyphAtlasEntry) * NUM_PRINT_ASCII);
+  pendingGlyphs = (ttoy_GlyphAtlasEntry*)malloc(
+      sizeof(ttoy_GlyphAtlasEntry) * NUM_PRINT_ASCII);
 
   /* We will need to store the cell size with each glyph rendered, for future
    * reference if the cell size ever changes */
-  st_GlyphRenderer_getCellSize(glyphRenderer,
+  ttoy_GlyphRenderer_getCellSize(glyphRenderer,
       &cellWidth,  /* width */
       &cellHeight  /* height */
       );
@@ -149,7 +149,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     assert(numPendingGlyphs < NUM_PRINT_ASCII);
     currentGlyph = &pendingGlyphs[numPendingGlyphs];
     /* Check for the glyph and get its dimensions */
-    error = st_GlyphRenderer_getGlyphDimensions(glyphRenderer,
+    error = ttoy_GlyphRenderer_getGlyphDimensions(glyphRenderer,
         c,  /* character */
         0,  /* bold */
         &currentGlyph->bbox.w, &currentGlyph->bbox.h);
@@ -159,7 +159,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     numPendingGlyphs += 1;
     currentGlyph->ch = c;
     /* Store the glyph offset */
-    st_GlyphRenderer_getGlyphOffset(glyphRenderer,
+    ttoy_GlyphRenderer_getGlyphOffset(glyphRenderer,
         c,  /* character */
         0,  /* bold */
         &currentGlyph->xOffset,  /* x */
@@ -196,21 +196,21 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   qsort(
     pendingGlyphs,  /* ptr */
     numPendingGlyphs,  /* count */
-    sizeof(st_GlyphAtlasEntry),  /* size */
-    (int(*)(const void *, const void *))st_compareGlyphSizes  /* comp */
+    sizeof(ttoy_GlyphAtlasEntry),  /* size */
+    (int(*)(const void *, const void *))ttoy_compareGlyphSizes  /* comp */
     );
   /* We place glyphs in the atlas texture using the heuristic described here:
    * <http://gamedev.stackexchange.com/a/2839> */
   /* Loop over the possible texture sizes, such that if a small texture will
    * not hold all of the glyphs we can try again with a larger texture */
   done = 0;
-  for (textureSize = ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE; 
-      textureSize <= ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE && !done;
+  for (textureSize = TTOY_GLYPH_ATLAS_MIN_TEXTURE_SIZE; 
+      textureSize <= TTOY_GLYPH_ATLAS_MAX_TEXTURE_SIZE && !done;
       textureSize *= 2)
   {
     fprintf(stderr, "Growing atlas texture to %dx%d\n",
         textureSize, textureSize);
-    st_NaiveCollisionDetection_init(&collisionDetection);
+    ttoy_NaiveCollisionDetection_init(&collisionDetection);
     /* Position glyphs in the texture, starting with the largest glyphs */
     for (int i = numPendingGlyphs - 1; i >= 0; --i) {
       currentGlyph = &pendingGlyphs[i];
@@ -235,8 +235,8 @@ void st_GlyphAtlas_renderASCIIGlyphs(
           }
           /* TODO: Replace all of these NaiveCollisionDetection calls with
            * virtual calls */
-          collidingGlyph = (st_GlyphAtlasEntry*)
-            st_NaiveCollisionDetection_checkCollision(
+          collidingGlyph = (ttoy_GlyphAtlasEntry*)
+            ttoy_NaiveCollisionDetection_checkCollision(
                 &collisionDetection,
                 &currentGlyph->bbox);
           if (collidingGlyph == NULL) {
@@ -254,7 +254,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
                 currentGlyph->bbox.x + currentGlyph->bbox.w,
                 currentGlyph->bbox.y + currentGlyph->bbox.h);
             */
-            st_NaiveCollisionDetection_addEntity(
+            ttoy_NaiveCollisionDetection_addEntity(
                 &collisionDetection,
                 &currentGlyph->bbox,
                 (void*)currentGlyph);
@@ -275,7 +275,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     }
     /* FIXME: Without providing a "clear" method for NaiveCollisionDetection,
      * this is not very efficient */
-    st_NaiveCollisionDetection_destroy(&collisionDetection);
+    ttoy_NaiveCollisionDetection_destroy(&collisionDetection);
   }
   assert(done);
   fprintf(stderr, "Ultimate atlas texture size: %dx%d\n",
@@ -287,7 +287,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   for (int i = 0; i < numPendingGlyphs; ++i) {
     currentGlyph = &pendingGlyphs[i];
     /* Render each glyph */
-    error = st_GlyphRenderer_renderGlyph(glyphRenderer,
+    error = ttoy_GlyphRenderer_renderGlyph(glyphRenderer,
         currentGlyph->ch,  /* character */
         0,  /* bold */
         &bitmap,  /* bitmap */
@@ -296,7 +296,7 @@ void st_GlyphAtlas_renderASCIIGlyphs(
     assert(bitmap->width < currentGlyph->bbox.w);
     assert(bitmap->rows < currentGlyph->bbox.h);
     /* Blit the rendered glyph onto our texture in memory */
-    st_GlyphAtlas_blitGlyph(
+    ttoy_GlyphAtlas_blitGlyph(
         currentGlyph,  /* glyph */
         bitmap,  /* bitmap */
         padding,  /* padding */
@@ -344,18 +344,18 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   FORCE_ASSERT_GL_ERROR();
 
   if (self->internal->numGlyphs + numPendingGlyphs > self->internal->sizeGlyphs) {
-    st_GlyphAtlasEntry *newGlyphs;
+    ttoy_GlyphAtlasEntry *newGlyphs;
     /* Grow the array of glyphs to hold the new glyphs */
-    /* FIXME: This could probably be moved to an st_GlyphAtlas_growGlyphs()
+    /* FIXME: This could probably be moved to an ttoy_GlyphAtlas_growGlyphs()
      * private method */
     do {
       self->internal->sizeGlyphs *= 2;
     } while (
         self->internal->numGlyphs + numPendingGlyphs > self->internal->sizeGlyphs);
-    newGlyphs = (st_GlyphAtlasEntry *)malloc(
-        sizeof(st_GlyphAtlasEntry) * self->internal->sizeGlyphs);
+    newGlyphs = (ttoy_GlyphAtlasEntry *)malloc(
+        sizeof(ttoy_GlyphAtlasEntry) * self->internal->sizeGlyphs);
     memcpy(newGlyphs, self->internal->glyphs,
-        sizeof(st_GlyphAtlasEntry) * self->internal->numGlyphs);
+        sizeof(ttoy_GlyphAtlasEntry) * self->internal->numGlyphs);
     free(self->internal->glyphs);
     self->internal->glyphs = newGlyphs;
   }
@@ -365,28 +365,28 @@ void st_GlyphAtlas_renderASCIIGlyphs(
   memcpy(
       &self->internal->glyphs[self->internal->numGlyphs],
       pendingGlyphs,
-      sizeof(st_GlyphAtlasEntry) * numPendingGlyphs);
+      sizeof(ttoy_GlyphAtlasEntry) * numPendingGlyphs);
   self->internal->numGlyphs += numPendingGlyphs;
   /* Sort the glyphs by character so that they can be searched */
   qsort(
     self->internal->glyphs,  /* ptr */
     self->internal->numGlyphs,  /* count */
-    sizeof(st_GlyphAtlasEntry),  /* size */
-    (int(*)(const void *, const void *))st_compareGlyphs  /* comp */
+    sizeof(ttoy_GlyphAtlasEntry),  /* size */
+    (int(*)(const void *, const void *))ttoy_compareGlyphs  /* comp */
     );
 
   free(atlasTexture);
   free(pendingGlyphs);
 }
 
-st_ErrorCode
-st_GlyphAtlas_getGlyph(
-    const st_GlyphAtlas *self,
+ttoy_ErrorCode
+ttoy_GlyphAtlas_getGlyph(
+    const ttoy_GlyphAtlas *self,
     uint32_t character,
     int fontIndex,
     int cellWidth,
     int cellHeight,
-    st_BoundingBox *bbox,
+    ttoy_BoundingBox *bbox,
     float *xOffset,
     float *yOffset,
     float *glyphWidth,
@@ -394,11 +394,11 @@ st_GlyphAtlas_getGlyph(
 {
   int a, b, i;
   float widthRatio, heightRatio;
-  st_GlyphAtlasEntry *currentGlyph;
-  st_GlyphAtlasEntry target;
+  ttoy_GlyphAtlasEntry *currentGlyph;
+  ttoy_GlyphAtlasEntry target;
   int result;
   if (self->internal->numGlyphs == 0)
-    return ST_ERROR_ATLAS_GLYPH_NOT_FOUND;
+    return TTOY_ERROR_ATLAS_GLYPH_NOT_FOUND;
   target.ch = character;
   target.fontIndex = fontIndex;
   currentGlyph = &self->internal->glyphs[0];
@@ -409,7 +409,7 @@ st_GlyphAtlas_getGlyph(
   while (a < b) {
     i = (b - a) / 2 + a;
     currentGlyph = &self->internal->glyphs[i];
-    result = st_compareGlyphs(&target, currentGlyph);
+    result = ttoy_compareGlyphs(&target, currentGlyph);
     if (result < 0) {
       b = i;
     } else if (result > 0) {
@@ -419,9 +419,9 @@ st_GlyphAtlas_getGlyph(
       break;
     }
   }
-  result = st_compareGlyphs(&target, currentGlyph);
+  result = ttoy_compareGlyphs(&target, currentGlyph);
   if (result != 0)
-    return ST_ERROR_ATLAS_GLYPH_NOT_FOUND;
+    return TTOY_ERROR_ATLAS_GLYPH_NOT_FOUND;
   memcpy(bbox, &currentGlyph->bbox, sizeof(*bbox));
   /* Calculate the offset and dimensions of the glyph using the ratio of the
    * current cell dimensions over the cell dimensions for which the glyph was
@@ -434,11 +434,11 @@ st_GlyphAtlas_getGlyph(
   *glyphHeight = currentGlyph->bbox.dim[1] * heightRatio;
   /* TODO: Set the atlas texture index once we start using more than one atlas
    * texture */
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-void st_GlyphAtlas_blitGlyph(
-    const st_GlyphAtlasEntry *glyph,
+void ttoy_GlyphAtlas_blitGlyph(
+    const ttoy_GlyphAtlasEntry *glyph,
     const FT_Bitmap *bitmap,
     int padding,
     uint8_t *atlasTexture,
@@ -472,12 +472,12 @@ void st_GlyphAtlas_blitGlyph(
         &bitmap->buffer[row * abs(bitmap->pitch)],
         bitmap->width);
   }
-//  st_printAntiAliasedGlyphDebug(bitmap);  /* XXX */
+//  ttoy_printAntiAliasedGlyphDebug(bitmap);  /* XXX */
 //  fprintf(stderr, "\n");  /* XXX */
 }
 
-void st_GlyphAtlas_getTextures(
-    const st_GlyphAtlas *self,
+void ttoy_GlyphAtlas_getTextures(
+    const ttoy_GlyphAtlas *self,
     GLuint *textures,
     int *numTextures)
 {
@@ -486,8 +486,8 @@ void st_GlyphAtlas_getTextures(
   *numTextures = 1;
 }
 
-int st_GlyphAtlas_getTextureSize(
-    const st_GlyphAtlas *self)
+int ttoy_GlyphAtlas_getTextureSize(
+    const ttoy_GlyphAtlas *self)
 {
   return self->internal->textureSize;
 }

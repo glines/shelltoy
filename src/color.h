@@ -21,37 +21,37 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_COLOR_H_
-#define SHELLTOY_COLOR_H_
+#ifndef TTOY_COLOR_H_
+#define TTOY_COLOR_H_
 
-typedef struct st_Color_ {
+typedef struct ttoy_Color_ {
   uint8_t rgb[3];
-} st_Color;
+} ttoy_Color;
 
-typedef enum st_ColorEnum_ {
-  ST_COLOR_0 = 0,
-  ST_COLOR_1,
-  ST_COLOR_2,
-  ST_COLOR_3,
-  ST_COLOR_4,
-  ST_COLOR_5,
-  ST_COLOR_6,
-  ST_COLOR_7,
-  ST_COLOR_8,
-  ST_COLOR_9,
-  ST_COLOR_10,
-  ST_COLOR_11,
-  ST_COLOR_12,
-  ST_COLOR_13,
-  ST_COLOR_14,
-  ST_COLOR_15,
-  ST_COLOR_FOREGROUND,
-  ST_COLOR_BACKGROUND,
-  ST_NUM_COLORS,
-} st_ColorEnum;
+typedef enum ttoy_ColorEnum_ {
+  TTOY_COLOR_0 = 0,
+  TTOY_COLOR_1,
+  TTOY_COLOR_2,
+  TTOY_COLOR_3,
+  TTOY_COLOR_4,
+  TTOY_COLOR_5,
+  TTOY_COLOR_6,
+  TTOY_COLOR_7,
+  TTOY_COLOR_8,
+  TTOY_COLOR_9,
+  TTOY_COLOR_10,
+  TTOY_COLOR_11,
+  TTOY_COLOR_12,
+  TTOY_COLOR_13,
+  TTOY_COLOR_14,
+  TTOY_COLOR_15,
+  TTOY_COLOR_FOREGROUND,
+  TTOY_COLOR_BACKGROUND,
+  TTOY_NUM_COLORS,
+} ttoy_ColorEnum;
 
-typedef struct st_ColorScheme_ {
-  st_Color colors[ST_NUM_COLORS];
-} st_ColorScheme;
+typedef struct ttoy_ColorScheme_ {
+  ttoy_Color colors[TTOY_NUM_COLORS];
+} ttoy_ColorScheme;
 
 #endif

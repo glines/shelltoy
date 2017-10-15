@@ -26,16 +26,16 @@
 #include "../../common/glError.h"
 #include "plugin.h"
 
-SHELLTOY_PLUGIN_DISPATCH(
-    st_Glsltoy_Plugin,  /* PLUGIN_STRUCT */
-    ST_GRAPHICS_API_OPENGL,  /* GRAPHICS_APIS */
-    ST_TOY_TYPE_BACKGROUND,  /* TOY_TYPES */
-    (st_Plugin_Init)st_Glsltoy_Plugin_init,  /* INIT_CB */
-    (st_Plugin_Destroy)st_Glsltoy_Plugin_destroy  /* DESTROY_CB */
+TTOY_PLUGIN_DISPATCH(
+    ttoy_Glsltoy_Plugin,  /* PLUGIN_STRUCT */
+    TTOY_GRAPHICS_API_OPENGL,  /* GRAPHICS_APIS */
+    TTOY_TOY_TYPE_BACKGROUND,  /* TOY_TYPES */
+    (ttoy_Plugin_Init)ttoy_Glsltoy_Plugin_init,  /* INIT_CB */
+    (ttoy_Plugin_Destroy)ttoy_Glsltoy_Plugin_destroy  /* DESTROY_CB */
     )
 
-void st_Glsltoy_Plugin_init(
-    st_Glsltoy_Plugin *self,
+void ttoy_Glsltoy_Plugin_init(
+    ttoy_Glsltoy_Plugin *self,
     const char *name)
 {
   /* TODO */
@@ -44,7 +44,7 @@ void st_Glsltoy_Plugin_init(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_Glsltoy_Plugin_destroy(
-    st_Glsltoy_Plugin *self)
+void ttoy_Glsltoy_Plugin_destroy(
+    ttoy_Glsltoy_Plugin *self)
 {
 }

@@ -24,7 +24,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-void st_logError(
+void ttoy_logError(
   const char *file,
   int line,
   const char *format,
@@ -32,7 +32,7 @@ void st_logError(
 {
   va_list args;
   va_start(args, format);
-  fprintf(stderr, "Shelltoy ERROR <%s:%d>: ",
+  fprintf(stderr, "ttoy ERROR <%s:%d>: ",
       file,
       line);
   vfprintf(stderr, format, args);

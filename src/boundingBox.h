@@ -21,10 +21,10 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_BOUNDING_BOX_H_
-#define ST_BOUNDING_BOX_H_
+#ifndef TTOY_BOUNDING_BOX_H_
+#define TTOY_BOUNDING_BOX_H_
 
-typedef struct st_BoundingBox_ {
+typedef struct ttoy_BoundingBox_ {
   union {
     struct {
       int pos[2], dim[2];
@@ -33,10 +33,10 @@ typedef struct st_BoundingBox_ {
       int x, y, w, h;
     };
   };
-} st_BoundingBox;
+} ttoy_BoundingBox;
 
-int st_BoundingBox_checkIntersection(
-    const st_BoundingBox *self,
-    const st_BoundingBox *other);
+int ttoy_BoundingBox_checkIntersection(
+    const ttoy_BoundingBox *self,
+    const ttoy_BoundingBox *other);
 
 #endif

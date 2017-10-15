@@ -28,28 +28,28 @@
 
 START_TEST(test_BoundingBox_checkIntersection)
 {
-  st_BoundingBox a, b;
+  ttoy_BoundingBox a, b;
 
   a.x = a.y = b.x = b.y = 0;
   a.w = a.h = b.w = b.h = 10;
 
-  ck_assert(st_BoundingBox_checkIntersection(&a, &b));
+  ck_assert(ttoy_BoundingBox_checkIntersection(&a, &b));
 
   for (int y = 0; y < 10; ++y) {
     b.y = y;
     for (int x = 0; x < 10; ++x) {
       b.x = x;
-      ck_assert(st_BoundingBox_checkIntersection(&a, &b));
+      ck_assert(ttoy_BoundingBox_checkIntersection(&a, &b));
     }
     b.x = 10;
-    ck_assert(!st_BoundingBox_checkIntersection(&a, &b));
+    ck_assert(!ttoy_BoundingBox_checkIntersection(&a, &b));
   }
   b.y = 10;
-  ck_assert(!st_BoundingBox_checkIntersection(&a, &b));
+  ck_assert(!ttoy_BoundingBox_checkIntersection(&a, &b));
   a.x += 1;
-  ck_assert(!st_BoundingBox_checkIntersection(&a, &b));
+  ck_assert(!ttoy_BoundingBox_checkIntersection(&a, &b));
   a.y += 1;
-  ck_assert(st_BoundingBox_checkIntersection(&a, &b));
+  ck_assert(ttoy_BoundingBox_checkIntersection(&a, &b));
 }
 END_TEST
 

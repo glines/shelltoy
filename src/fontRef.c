@@ -23,4 +23,4 @@
 
 #include "fontRef.h"
 
-ST_DEFINE_REFERENCE(st_Font)
+TTOY_DEFINE_REFERENCE(ttoy_Font)

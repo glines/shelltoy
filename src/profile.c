@@ -9,32 +9,32 @@
 #include "profile.h"
 
 /* Private methods */
-st_ErrorCode
-st_Profile_adjustFallbackFontSize(
-    st_Profile *self,
-    st_Font *font);
+ttoy_ErrorCode
+ttoy_Profile_adjustFallbackFontSize(
+    ttoy_Profile *self,
+    ttoy_Font *font);
 
 /**
- * Structure that describes a font as it is known by the Shelltoy profile. This
+ * Structure that describes a font as it is known by the ttoy profile. This
  * structure includes information (obtained via Fontconfig) about which
  * character codes the font supports.
  */
-struct st_Profile_Internal_ {
-  st_FontRefArray fonts, boldFonts;
-  st_BackgroundToy *backgroundToy;
-  st_TextToy *textToy;
+struct ttoy_Profile_Internal_ {
+  ttoy_FontRefArray fonts, boldFonts;
+  ttoy_BackgroundToy *backgroundToy;
+  ttoy_TextToy *textToy;
   int dpi[2];
 };
 
-void st_Profile_init(
-    st_Profile *self,
+void ttoy_Profile_init(
+    ttoy_Profile *self,
     const char *name)
 {
   self->fontSize = 0.0f;
   /* Allocate memory for internal structures */
-  self->internal = (st_Profile_Internal *)malloc(sizeof(st_Profile_Internal));
-  st_FontRefArray_init(&self->internal->fonts);
-  st_FontRefArray_init(&self->internal->boldFonts);
+  self->internal = (ttoy_Profile_Internal *)malloc(sizeof(ttoy_Profile_Internal));
+  ttoy_FontRefArray_init(&self->internal->fonts);
+  ttoy_FontRefArray_init(&self->internal->boldFonts);
   self->internal->backgroundToy = NULL;
   self->internal->textToy = NULL;
   /* TODO: Allow the user to set the DPI */
@@ -46,31 +46,31 @@ void st_Profile_init(
   strcpy(self->name, name);
 }
 
-void st_Profile_destroy(
-    st_Profile *self)
+void ttoy_Profile_destroy(
+    ttoy_Profile *self)
 {
   /* Release references to held fonts */
 #define DEC_FONT_REFS(ARRAY) \
   for (size_t i = 0; \
-      i < st_FontRefArray_size(&self->internal->ARRAY); \
+      i < ttoy_FontRefArray_size(&self->internal->ARRAY); \
       ++i) \
   { \
-    st_FontRef *fontRef; \
-    fontRef = st_FontRefArray_get(&self->internal->ARRAY, i); \
-    st_FontRef_decrement(fontRef); \
+    ttoy_FontRef *fontRef; \
+    fontRef = ttoy_FontRefArray_get(&self->internal->ARRAY, i); \
+    ttoy_FontRef_decrement(fontRef); \
   }
   DEC_FONT_REFS(fonts)
   DEC_FONT_REFS(boldFonts)
   /* Destroy our font arrays */
-  st_FontRefArray_destroy(&self->internal->fonts);
-  st_FontRefArray_destroy(&self->internal->boldFonts);
+  ttoy_FontRefArray_destroy(&self->internal->fonts);
+  ttoy_FontRefArray_destroy(&self->internal->boldFonts);
   /* Free memory from internal structures */
-  /* NOTE: Ownership of the toys is held by the st_Config object */
+  /* NOTE: Ownership of the toys is held by the ttoy_Config object */
   free(self->internal);
 }
 
-void st_Profile_setFlags(
-    st_Profile *self,
+void ttoy_Profile_setFlags(
+    ttoy_Profile *self,
     uint32_t flags)
 {
   /* TODO: We might need to do some processing when some of these flags change.
@@ -80,29 +80,29 @@ void st_Profile_setFlags(
 
 
 void
-st_Profile_clearFonts(
-    st_Profile *self)
+ttoy_Profile_clearFonts(
+    ttoy_Profile *self)
 {
   /* Release our held font references */
   DEC_FONT_REFS(fonts)
   DEC_FONT_REFS(boldFonts)
   /* Clear our font arrays */
-  st_FontRefArray_clear(&self->internal->fonts);
-  st_FontRefArray_clear(&self->internal->boldFonts);
+  ttoy_FontRefArray_clear(&self->internal->fonts);
+  ttoy_FontRefArray_clear(&self->internal->boldFonts);
 }
 
-st_Font *
-st_Profile_getPrimaryFont(
-    st_Profile *self)
+ttoy_Font *
+ttoy_Profile_getPrimaryFont(
+    ttoy_Profile *self)
 {
-  if (st_FontRefArray_size(&self->internal->fonts) <= 0)
+  if (ttoy_FontRefArray_size(&self->internal->fonts) <= 0)
     return NULL;
-  return st_FontRef_get(st_FontRefArray_get(&self->internal->fonts, 0));
+  return ttoy_FontRef_get(ttoy_FontRefArray_get(&self->internal->fonts, 0));
 }
 
-st_ErrorCode
-st_Profile_setPrimaryFont(
-    st_Profile *self,
+ttoy_ErrorCode
+ttoy_Profile_setPrimaryFont(
+    ttoy_Profile *self,
     const char *fontFace,
     float fontSize)
 {
@@ -114,11 +114,11 @@ st_Profile_setPrimaryFont(
   FcResult fcResult;
   FcValue fcValue;
   const char *fontPath;
-  st_FontRef *fontRef;
-  st_ErrorCode error;
+  ttoy_FontRef *fontRef;
+  ttoy_ErrorCode error;
 
   /* Use fontconfig to look for a font with this face and font size */
-  fc = st_Fonts_getFontconfigInstance();
+  fc = ttoy_Fonts_getFontconfigInstance();
 
   /* Build a Fontconfig pattern describing our font criteria */
   pattern = FcPatternBuild(
@@ -130,7 +130,7 @@ st_Profile_setPrimaryFont(
       (char *) NULL  /* terminator */
       );
   if (pattern == NULL) {
-    error = ST_ERROR_FONTCONFIG_ERROR;
+    error = TTOY_ERROR_FONTCONFIG_ERROR;
     goto setPrimaryFont_cleanup1;
   }
 
@@ -147,7 +147,7 @@ st_Profile_setPrimaryFont(
       NULL  /* object_set */
       );
   if (resultFontSet == NULL) {
-    error = ST_ERROR_FONTCONFIG_ERROR;
+    error = TTOY_ERROR_FONTCONFIG_ERROR;
     goto setPrimaryFont_cleanup2;
   }
 
@@ -162,10 +162,10 @@ st_Profile_setPrimaryFont(
   if (resultFontSet->nfont > 0) {
     matchingFont = resultFontSet->fonts[0];
   } else {
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Fontconfig could not find any suitable fonts for face '%s'",
         fontFace);
-    error = ST_ERROR_MISSING_FONT;
+    error = TTOY_ERROR_MISSING_FONT;
     goto setPrimaryFont_cleanup3;
   }
 
@@ -177,27 +177,27 @@ st_Profile_setPrimaryFont(
       &fcValue  /* value */
       );
   if (fcResult != FcResultMatch) {
-    error = ST_ERROR_FONTCONFIG_ERROR;
+    error = TTOY_ERROR_FONTCONFIG_ERROR;
     goto setPrimaryFont_cleanup3;
   }
   fontPath = (const char *)fcValue.u.s;
   if (fontPath == NULL) {
-    error = ST_ERROR_FONTCONFIG_ERROR;
+    error = TTOY_ERROR_FONTCONFIG_ERROR;
     goto setPrimaryFont_cleanup3;
   }
 
   /* Load the font with FreeType */
-  st_FontRef_init(&fontRef);
-  st_Font_init(st_FontRef_get(fontRef));
-  error = st_Font_load(st_FontRef_get(fontRef),
+  ttoy_FontRef_init(&fontRef);
+  ttoy_Font_init(ttoy_FontRef_get(fontRef));
+  error = ttoy_Font_load(ttoy_FontRef_get(fontRef),
       fontPath,  /* fontPath */
       fontFace,  /* faceName */
       fontSize,  /* fontSize */
       self->internal->dpi[0],  /* x_dpi */
       self->internal->dpi[1]  /* y_dpi */
       );
-  if (error != ST_NO_ERROR) {
-    st_FontRef_decrement(fontRef);
+  if (error != TTOY_NO_ERROR) {
+    ttoy_FontRef_decrement(fontRef);
     goto setPrimaryFont_cleanup3;
   }
 
@@ -205,10 +205,10 @@ st_Profile_setPrimaryFont(
   /* The primary font is always the first font in our array of fonts. The
    * primary font determines the font size of all subsequently added fallback
    * fonts, so setting the primary font implies clearing all existing fonts. */
-  st_Profile_clearFonts(self);
+  ttoy_Profile_clearFonts(self);
 
   /* Add the font to the beginning of our array of fonts */
-  st_FontRefArray_append(&self->internal->fonts, fontRef);
+  ttoy_FontRefArray_append(&self->internal->fonts, fontRef);
 
   /* TODO: Look for the corresponding bold font? */
 
@@ -221,134 +221,134 @@ setPrimaryFont_cleanup1:
   return error;
 }
 
-st_ErrorCode
-st_Profile_addFallbackFont(
-    st_Profile *self,
+ttoy_ErrorCode
+ttoy_Profile_addFallbackFont(
+    ttoy_Profile *self,
     const char *fontFace)
 {
   /* TODO */
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
 float
-st_Profile_getFontSize(
-    st_Profile *self)
+ttoy_Profile_getFontSize(
+    ttoy_Profile *self)
 {
-  st_Font *primaryFont;
+  ttoy_Font *primaryFont;
 
   /* The font size is determined by the font size of the primary font */
-  primaryFont = st_Profile_getPrimaryFont(self);
+  primaryFont = ttoy_Profile_getPrimaryFont(self);
   if (primaryFont == NULL)
     return -1;
-  return st_Font_getSize(primaryFont);
+  return ttoy_Font_getSize(primaryFont);
 }
 
-st_ErrorCode
-st_Profile_setFontSize(
-    st_Profile *self,
+ttoy_ErrorCode
+ttoy_Profile_setFontSize(
+    ttoy_Profile *self,
     float fontSize)
 {
-  st_Font *primaryFont;
-  st_ErrorCode error;
+  ttoy_Font *primaryFont;
+  ttoy_ErrorCode error;
 
   /* TODO: Change the size of the primary font */
-  primaryFont = st_Profile_getPrimaryFont(self);
+  primaryFont = ttoy_Profile_getPrimaryFont(self);
   if (primaryFont == NULL) {
-    return ST_ERROR_PROFILE_NO_PRIMARY_FONT;
+    return TTOY_ERROR_PROFILE_NO_PRIMARY_FONT;
   }
-  error = st_Font_setSize(primaryFont, fontSize);
-  if (error != ST_NO_ERROR) {
+  error = ttoy_Font_setSize(primaryFont, fontSize);
+  if (error != TTOY_NO_ERROR) {
     return error;
   }
 
   /* Adjust all of the fallback font sizes now that the primary font has
    * changed size */
   for (size_t i = 1;
-      i < st_FontRefArray_size(&self->internal->fonts);
+      i < ttoy_FontRefArray_size(&self->internal->fonts);
       ++i)
   {
-    st_Font *font;
-    font = st_FontRef_get(st_FontRefArray_get(&self->internal->fonts, i));
-    error = st_Profile_adjustFallbackFontSize(self, font);
-    if (error != ST_NO_ERROR) {
-      ST_LOG_ERROR(
+    ttoy_Font *font;
+    font = ttoy_FontRef_get(ttoy_FontRefArray_get(&self->internal->fonts, i));
+    error = ttoy_Profile_adjustFallbackFontSize(self, font);
+    if (error != TTOY_NO_ERROR) {
+      TTOY_LOG_ERROR(
           "Profile '%s' failed to adjust size for fallback font '%s'",
           self->name,
-          st_Font_getFontPath(font));
+          ttoy_Font_getFontPath(font));
       /* NOTE: Not a fatal error; we might have some poorly rendered glyphs
        * though */
     }
   }
   for (size_t i = 0;
-      i < st_FontRefArray_size(&self->internal->boldFonts);
+      i < ttoy_FontRefArray_size(&self->internal->boldFonts);
       ++i)
   {
-    st_Font *font;
+    ttoy_Font *font;
     /* FIXME: Shouldn't we just set the bold font to the same size as the
      * normal font? */
-    font = st_FontRef_get(st_FontRefArray_get(&self->internal->fonts, i));
-    st_Profile_adjustFallbackFontSize(self, font);
+    font = ttoy_FontRef_get(ttoy_FontRefArray_get(&self->internal->fonts, i));
+    ttoy_Profile_adjustFallbackFontSize(self, font);
   }
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-st_ErrorCode
-st_Profile_adjustFallbackFontSize(
-    st_Profile *self,
-    st_Font *font)
+ttoy_ErrorCode
+ttoy_Profile_adjustFallbackFontSize(
+    ttoy_Profile *self,
+    ttoy_Font *font)
 {
   /* TODO: Actually adjust the fallback font sizes (once we have fallback
    * fonts) */
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
 void
-st_Profile_getFonts(
-    st_Profile *self,
-    st_FontRefArray *fonts,
-    st_FontRefArray *boldFonts)
+ttoy_Profile_getFonts(
+    ttoy_Profile *self,
+    ttoy_FontRefArray *fonts,
+    ttoy_FontRefArray *boldFonts)
 {
   /* Copy all of our fonts to the given fonts array, incrementing reference
    * counts along the way */
 #define COPY_FONT_REFS(ARRAY) \
   for (size_t i = 0; \
-      i < st_FontRefArray_size(&self->internal->ARRAY); \
+      i < ttoy_FontRefArray_size(&self->internal->ARRAY); \
       ++i) \
   { \
-    st_FontRef *fontRef; \
-    fontRef = st_FontRefArray_get(&self->internal->ARRAY, i); \
-    st_FontRefArray_append(ARRAY, fontRef); \
-    st_FontRef_increment(fontRef); \
+    ttoy_FontRef *fontRef; \
+    fontRef = ttoy_FontRefArray_get(&self->internal->ARRAY, i); \
+    ttoy_FontRefArray_append(ARRAY, fontRef); \
+    ttoy_FontRef_increment(fontRef); \
   }
   COPY_FONT_REFS(fonts)
   COPY_FONT_REFS(boldFonts)
 }
 
-void st_Profile_setBackgroundToy(
-    st_Profile *self,
-    st_BackgroundToy *backgroundToy)
+void ttoy_Profile_setBackgroundToy(
+    ttoy_Profile *self,
+    ttoy_BackgroundToy *backgroundToy)
 {
   self->internal->backgroundToy = backgroundToy;
 }
 
-st_BackgroundToy *
-st_Profile_getBackgroundToy(
-    st_Profile *self)
+ttoy_BackgroundToy *
+ttoy_Profile_getBackgroundToy(
+    ttoy_Profile *self)
 {
   return self->internal->backgroundToy;
 }
 
-void st_Profile_setTextToy(
-    st_Profile *self,
-    st_TextToy *textToy)
+void ttoy_Profile_setTextToy(
+    ttoy_Profile *self,
+    ttoy_TextToy *textToy)
 {
   self->internal->textToy = textToy;
 }
 
-st_TextToy *
-st_Profile_getTextToy(
-    st_Profile *self)
+ttoy_TextToy *
+ttoy_Profile_getTextToy(
+    ttoy_Profile *self)
 {
   return self->internal->textToy;
 }

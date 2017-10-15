@@ -21,54 +21,54 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_COLLISION_DETECTION_H_
-#define ST_COLLISION_DETECTION_H_
+#ifndef TTOY_COLLISION_DETECTION_H_
+#define TTOY_COLLISION_DETECTION_H_
 
 #include <assert.h>
 
 #include "boundingBox.h"
 
-typedef struct st_CollisionEntity_ {
-  st_BoundingBox bbox;
+typedef struct ttoy_CollisionEntity_ {
+  ttoy_BoundingBox bbox;
   void *data;
-} st_CollisionEntity;
+} ttoy_CollisionEntity;
 
-typedef struct st_CollisionDetection_ st_CollisionDetection;
+typedef struct ttoy_CollisionDetection_ ttoy_CollisionDetection;
 
 /* Type declarations for virtual methods */
-typedef void (*st_CollisionDetection_addEntity_t)(
-    st_CollisionDetection *,
-    const st_BoundingBox *,
+typedef void (*ttoy_CollisionDetection_addEntity_t)(
+    ttoy_CollisionDetection *,
+    const ttoy_BoundingBox *,
     void *);
-typedef void *(*st_CollisionDetection_checkCollision_t)(
-    st_CollisionDetection *,
-    const st_BoundingBox *);
-typedef void *(*st_CollisionDetection_destroy_t)(
-    st_CollisionDetection *);
+typedef void *(*ttoy_CollisionDetection_checkCollision_t)(
+    ttoy_CollisionDetection *,
+    const ttoy_BoundingBox *);
+typedef void *(*ttoy_CollisionDetection_destroy_t)(
+    ttoy_CollisionDetection *);
 
-typedef struct st_CollisionDetection_VTable_ {
-  st_CollisionDetection_destroy_t destroy;
-  st_CollisionDetection_addEntity_t addEntity;
-  st_CollisionDetection_checkCollision_t checkCollision;
-} st_CollisionDetection_VTable;
+typedef struct ttoy_CollisionDetection_VTable_ {
+  ttoy_CollisionDetection_destroy_t destroy;
+  ttoy_CollisionDetection_addEntity_t addEntity;
+  ttoy_CollisionDetection_checkCollision_t checkCollision;
+} ttoy_CollisionDetection_VTable;
 
-typedef struct st_CollisionDetection_ {
-  const st_CollisionDetection_VTable *vptr;
-} st_CollisionDetection;
+typedef struct ttoy_CollisionDetection_ {
+  const ttoy_CollisionDetection_VTable *vptr;
+} ttoy_CollisionDetection;
 
-void st_CollisionDetection_init(
-    st_CollisionDetection *self);
+void ttoy_CollisionDetection_init(
+    ttoy_CollisionDetection *self);
 
-void st_CollisionDetection_destroy(
-    st_CollisionDetection *self);
+void ttoy_CollisionDetection_destroy(
+    ttoy_CollisionDetection *self);
 
-void st_CollisionDetection_addEntity(
-    st_CollisionDetection *self,
-    const st_BoundingBox *bbox,
+void ttoy_CollisionDetection_addEntity(
+    ttoy_CollisionDetection *self,
+    const ttoy_BoundingBox *bbox,
     void *data);
 
-void *st_CollisionDetection_checkCollision(
-    st_CollisionDetection *self,
-    const st_BoundingBox *bbox);
+void *ttoy_CollisionDetection_checkCollision(
+    ttoy_CollisionDetection *self,
+    const ttoy_BoundingBox *bbox);
 
 #endif

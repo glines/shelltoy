@@ -21,20 +21,20 @@
  * IN THE SOFTWARE.
  */
 
-#include <shelltoy/error.h>
+#include <ttoy/error.h>
 
-#define ST_START_ERROR_CODES \
-  const char *st_ErrorString( \
-      st_ErrorCode error) \
+#define TTOY_START_ERROR_CODES \
+  const char *ttoy_ErrorString( \
+      ttoy_ErrorCode error) \
   { \
     switch (error) {
-#define ST_DECLARE_ERROR_CODE(code,string) \
+#define TTOY_DECLARE_ERROR_CODE(code,string) \
       /* TODO: Add support for translations of these strings */ \
       case code: \
         return #code ": " string;
-#define ST_END_ERROR_CODES \
+#define TTOY_END_ERROR_CODES \
     }; \
     return "Unknown error code"; \
   }
-#undef SHELLTOY_ERROR_CODES_H_
-#include <shelltoy/errorCodes.h>
+#undef TTOY_ERROR_CODES_H_
+#include <ttoy/errorCodes.h>

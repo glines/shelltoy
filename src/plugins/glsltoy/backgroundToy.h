@@ -21,31 +21,31 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
-#define SHELLTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
+#ifndef TTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
+#define TTOY_PLUGINS_GLSLTOY_BACKGROUND_TOY_H_
 
-#include <shelltoy/backgroundToy.h>
+#include <ttoy/backgroundToy.h>
 
-struct st_Glsltoy_BackgroundToy_Internal_;
-typedef struct st_Glsltoy_BackgroundToy_Internal_
-st_Glsltoy_BackgroundToy_Internal;
+struct ttoy_Glsltoy_BackgroundToy_Internal_;
+typedef struct ttoy_Glsltoy_BackgroundToy_Internal_
+ttoy_Glsltoy_BackgroundToy_Internal;
 
-typedef struct st_Glsltoy_BackgroundToy_ {
-  st_BackgroundToy base;
+typedef struct ttoy_Glsltoy_BackgroundToy_ {
+  ttoy_BackgroundToy base;
 
-  st_Glsltoy_BackgroundToy_Internal *internal;
-} st_Glsltoy_BackgroundToy;
+  ttoy_Glsltoy_BackgroundToy_Internal *internal;
+} ttoy_Glsltoy_BackgroundToy;
 
-void st_Glsltoy_BackgroundToy_init(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_init(
+    ttoy_Glsltoy_BackgroundToy *self,
     const char *name,
     json_t *config);
 
-void st_Glsltoy_BackgroundToy_destroy(
-    st_Glsltoy_BackgroundToy *self);
+void ttoy_Glsltoy_BackgroundToy_destroy(
+    ttoy_Glsltoy_BackgroundToy *self);
 
-void st_Glsltoy_BackgroundToy_draw(
-    st_Glsltoy_BackgroundToy *self,
+void ttoy_Glsltoy_BackgroundToy_draw(
+    ttoy_Glsltoy_BackgroundToy *self,
     int viewportWidth,
     int viewportHeight);
 

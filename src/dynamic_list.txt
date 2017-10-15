@@ -1,14 +1,14 @@
 {
-  /* This is a list of all of the symbols exported by the Shelltoy ELF
-   * executable for use in plugins loaded by Shelltoy.
+  /* This is a list of all of the symbols exported by the ttoy ELF
+   * executable for use in plugins loaded by ttoy.
    *
-   * This file is read by ld, the GNU linker, when linking Shelltoy for the
+   * This file is read by ld, the GNU linker, when linking ttoy for the
    * Linux platform. Other platforms will use different mechanisms for
    * exporting symbols used by plugins.
    */
-  st_FileWatcher_init;
-  st_FileWatcher_setCallback;
-  st_FileWatcher_watchFile;
-  st_logError;
-  st_ErrorString;
+  ttoy_FileWatcher_init;
+  ttoy_FileWatcher_setCallback;
+  ttoy_FileWatcher_watchFile;
+  ttoy_logError;
+  ttoy_ErrorString;
 };

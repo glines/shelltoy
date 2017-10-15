@@ -21,12 +21,12 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_COMMON_REFERENCE_H_
-#define SHELLTOY_COMMON_REFERENCE_H_
+#ifndef TTOY_COMMON_REFERENCE_H_
+#define TTOY_COMMON_REFERENCE_H_
 
 #include <stdlib.h>
 
-#define ST_DECLARE_REFERENCE(TYPE) \
+#define TTOY_DECLARE_REFERENCE(TYPE) \
   typedef struct TYPE ## Ref_ { \
     TYPE base; \
     int refCount; \
@@ -40,7 +40,7 @@
   void TYPE ## Ref_decrement( \
       TYPE ## Ref *self);
 
-#define ST_DEFINE_REFERENCE(TYPE) \
+#define TTOY_DEFINE_REFERENCE(TYPE) \
   void TYPE ## Ref_init( \
       TYPE ## Ref **self) \
   { \

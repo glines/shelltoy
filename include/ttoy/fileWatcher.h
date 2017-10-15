@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Jonathan Glines
+ * Copyright (c) 2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,23 +21,35 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_ERROR_H_
-#define SHELLTOY_ERROR_H_
+#ifndef TTOY_FILE_WATCHER_H_
+#define TTOY_FILE_WATCHER_H_
 
-/* Create an enum type for all of our error codes */
-#define ST_START_ERROR_CODES \
-  typedef enum st_ErrorCode_ {
-#define ST_DECLARE_ERROR_CODE(code,string) \
-    code,
-#define ST_END_ERROR_CODES \
-  } st_ErrorCode;
-#undef SHELLTOY_ERROR_CODES_H_
-#include <shelltoy/errorCodes.h>
-#undef ST_START_ERROR_CODES
-#undef ST_DECLARE_ERROR_CODE
-#undef ST_END_ERROR_CODES
+#include <ttoy/error.h>
 
-const char *st_ErrorString(
-    st_ErrorCode error);
+typedef void (*ttoy_FileWatcher_FileChangedCallback)(
+    void *data,
+    const char *filePath);
+
+struct ttoy_FileWatcher_Internal_;
+typedef struct ttoy_FileWatcher_Internal_ ttoy_FileWatcher_Internal;
+
+typedef struct ttoy_FileWatcher_ {
+  ttoy_FileWatcher_Internal *internal;
+} ttoy_FileWatcher;
+
+void
+ttoy_FileWatcher_init(
+    ttoy_FileWatcher *self);
+
+void
+ttoy_FileWatcher_setCallback(
+    ttoy_FileWatcher *self,
+    ttoy_FileWatcher_FileChangedCallback callback,
+    void *data);
+
+ttoy_ErrorCode
+ttoy_FileWatcher_watchFile(
+    ttoy_FileWatcher *self,
+    const char *filePath);
 
 #endif

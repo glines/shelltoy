@@ -1,25 +1,25 @@
 cmake_minimum_required(VERSION 3.6)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
-project(shelltoy)
+project(ttoy)
 enable_testing()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Add a target to update the Shelltoy version header at build time
+# Add a target to update the ttoy version header at build time
 find_package(Git REQUIRED)  # Git needed to get version string
 message("git executable: ${GIT_EXECUTABLE}")
 configure_file(
-    "${CMAKE_SOURCE_DIR}/include/shelltoy/configure_version_header.cmake.in"
-    "${CMAKE_BINARY_DIR}/include/shelltoy/configure_version_header.cmake"
+    "${CMAKE_SOURCE_DIR}/include/ttoy/configure_version_header.cmake.in"
+    "${CMAKE_BINARY_DIR}/include/ttoy/configure_version_header.cmake"
     @ONLY
     )
-add_custom_target(shelltoy_version ALL
+add_custom_target(ttoy_version ALL
     COMMAND ${CMAKE_COMMAND} -P
-      "${CMAKE_BINARY_DIR}/include/shelltoy/configure_version_header.cmake"
+      "${CMAKE_BINARY_DIR}/include/ttoy/configure_version_header.cmake"
     DEPENDS
-      "${CMAKE_CURRENT_BINARY_DIR}/include/shelltoy/configure_version_header.cmake"
-      "${CMAKE_CURRENT_SOURCE_DIR}/include/shelltoy/version.h.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/include/ttoy/configure_version_header.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/include/ttoy/version.h.in"
     )
 
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -47,13 +47,13 @@ include_directories(SYSTEM
     ${X11_INCLUDE_DIR}
     )
 
-# Use the Shelltoy header files in this project
+# Use the ttoy header files in this project
 include_directories(SYSTEM
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/include
     )
 
-# Install the Shelltoy header files
+# Install the ttoy header files
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
     DESTINATION "include"
     FILES_MATCHING PATTERN "*.h")

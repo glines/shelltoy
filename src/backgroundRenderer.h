@@ -21,27 +21,28 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_BACKGROUND_RENDERER_H_
-#define SHELLTOY_BACKGROUND_RENDERER_H_
+#ifndef TTOY_BACKGROUND_RENDERER_H_
+#define TTOY_BACKGROUND_RENDERER_H_
 
 #include "profile.h"
 
-struct st_BackgroundRenderer_Internal_;
-typedef struct st_BackgroundRenderer_Internal_ st_BackgroundRenderer_Internal;
+struct ttoy_BackgroundRenderer_Internal_;
+typedef struct ttoy_BackgroundRenderer_Internal_ \
+          ttoy_BackgroundRenderer_Internal;
 
-typedef struct st_BackgroundRenderer_ {
-  st_BackgroundRenderer_Internal *internal;
-} st_BackgroundRenderer;
+typedef struct ttoy_BackgroundRenderer_ {
+  ttoy_BackgroundRenderer_Internal *internal;
+} ttoy_BackgroundRenderer;
 
-void st_BackgroundRenderer_init(
-    st_BackgroundRenderer *self,
-    st_Profile *profile);
+void ttoy_BackgroundRenderer_init(
+    ttoy_BackgroundRenderer *self,
+    ttoy_Profile *profile);
 
-void st_BackgroundRenderer_destroy(
-    st_BackgroundRenderer *self);
+void ttoy_BackgroundRenderer_destroy(
+    ttoy_BackgroundRenderer *self);
 
-void st_BackgroundRenderer_draw(
-    st_BackgroundRenderer *self,
+void ttoy_BackgroundRenderer_draw(
+    ttoy_BackgroundRenderer *self,
     int viewportWidth,
     int viewportHeight);
 

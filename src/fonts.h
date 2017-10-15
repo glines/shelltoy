@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_FONTS_H_
-#define SHELLTOY_FONTS_H_
+#ifndef TTOY_FONTS_H_
+#define TTOY_FONTS_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -32,52 +32,52 @@
 
 typedef struct {
   int w, h, x, y;
-} st_AtlasPos;
+} ttoy_AtlasPos;
 
 typedef struct {
-  st_AtlasPos aaPos, sdfPos;
+  ttoy_AtlasPos aaPos, sdfPos;
   int xOffset, yOffset;
   int width, height;
   int halfwidth;
   uint32_t ch;
-} st_MonospaceGlyph;
+} ttoy_MonospaceGlyph;
 
 typedef struct {
   int glyphWidth, glyphHeight;
   unsigned char *atlas_aa;  /* TODO: Use GL buffer? */
   float *atlas_sdf;  /* TODO: Use GL buffer? */
-  st_MonospaceGlyph *glyphs;
+  ttoy_MonospaceGlyph *glyphs;
   size_t numGlyphs, sizeGlyphs;
-} st_MonospaceFontFace;
+} ttoy_MonospaceFontFace;
 
 /*
 typedef struct {
-  st_AtlasPos position;
-} st_GlyphAtlas;
+  ttoy_AtlasPos position;
+} ttoy_GlyphAtlas;
 
 */
 /**
- * Fonts used in Shelltoy are loaded by a central facility.
+ * Fonts used in ttoy are loaded by a central facility.
  */
-void st_Fonts_init();
-void st_Fonts_destroy();
+void ttoy_Fonts_init();
+void ttoy_Fonts_destroy();
 
-FT_Library st_Fonts_getFreeTypeInstance();
-FcConfig *st_Fonts_getFontconfigInstance();
+FT_Library ttoy_Fonts_getFreeTypeInstance();
+FcConfig *ttoy_Fonts_getFontconfigInstance();
 
-st_MonospaceFontFace *st_Fonts_loadMonospace(
+ttoy_MonospaceFontFace *ttoy_Fonts_loadMonospace(
     int width, int height,
     const char *fontPath);
-void st_printGlyphDebug(const FT_Bitmap *bitmap);
-void st_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap);
+void ttoy_printGlyphDebug(const FT_Bitmap *bitmap);
+void ttoy_printAntiAliasedGlyphDebug(const FT_Bitmap *bitmap);
 
-void st_MonospaceFontFace_init(st_MonospaceFontFace *self);
-void st_MonospaceFontFace_loadGlyph(
-    st_MonospaceFontFace *self,
+void ttoy_MonospaceFontFace_init(ttoy_MonospaceFontFace *self);
+void ttoy_MonospaceFontFace_loadGlyph(
+    ttoy_MonospaceFontFace *self,
     FT_Face face,
     uint32_t ch);
-st_MonospaceGlyph *st_MonospaceFontFace_getGlyph(
-    st_MonospaceFontFace *self,
+ttoy_MonospaceGlyph *ttoy_MonospaceFontFace_getGlyph(
+    ttoy_MonospaceFontFace *self,
     uint32_t ch);
 
 #endif

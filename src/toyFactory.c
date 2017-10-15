@@ -25,8 +25,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include <shelltoy/plugin.h>
-#include <shelltoy/version.h>
+#include <ttoy/plugin.h>
+#include <ttoy/version.h>
 
 #include "logging.h"
 #include "pluginDictionary.h"
@@ -34,50 +34,50 @@
 #include "toyFactory.h"
 
 /* Private members */
-st_Plugin *
-st_ToyFactory_getPlugin(
-    st_ToyFactory *self,
+ttoy_Plugin *
+ttoy_ToyFactory_getPlugin(
+    ttoy_ToyFactory *self,
     const char *name);
 
-struct st_ToyFactory_Internal {
-  st_PluginDictionary plugins;
+struct ttoy_ToyFactory_Internal {
+  ttoy_PluginDictionary plugins;
   const char *pluginPath;
 };
 
 #define INIT_SIZE_PLUGINS 4
 
-void st_ToyFactory_init(
-    st_ToyFactory *self,
+void ttoy_ToyFactory_init(
+    ttoy_ToyFactory *self,
     const char *pluginPath)
 {
   /* Initialize memory for internal data structures */
-  self->internal = (struct st_ToyFactory_Internal *)malloc(
-      sizeof(struct st_ToyFactory_Internal));
-  st_PluginDictionary_init(&self->internal->plugins);
+  self->internal = (struct ttoy_ToyFactory_Internal *)malloc(
+      sizeof(struct ttoy_ToyFactory_Internal));
+  ttoy_PluginDictionary_init(&self->internal->plugins);
   self->internal->pluginPath = malloc(strlen(pluginPath) + 1);
   strcpy((char *)self->internal->pluginPath, pluginPath);
 }
 
-void st_ToyFactory_destroy(
-    st_ToyFactory *self)
+void ttoy_ToyFactory_destroy(
+    ttoy_ToyFactory *self)
 {
   /* Destroy all held plugins */
   for (size_t i = 0
-      ; i < st_PluginDictionary_size(&self->internal->plugins)
+      ; i < ttoy_PluginDictionary_size(&self->internal->plugins)
       ; ++i)
   {
-    st_Plugin_destroy(
-        st_PluginDictionary_getValueAtIndex(
+    ttoy_Plugin_destroy(
+        ttoy_PluginDictionary_getValueAtIndex(
           &self->internal->plugins, i));
   }
-  st_PluginDictionary_destroy(&self->internal->plugins);
+  ttoy_PluginDictionary_destroy(&self->internal->plugins);
   /* Free internal data structure memory */
   free((char *)self->internal->pluginPath);
   free(self->internal);
 }
 
-void st_ToyFactory_setPluginPath(
-    st_ToyFactory *self,
+void ttoy_ToyFactory_setPluginPath(
+    ttoy_ToyFactory *self,
     const char *path)
 {
   free((char *)self->internal->pluginPath);
@@ -85,30 +85,30 @@ void st_ToyFactory_setPluginPath(
   strcpy((char *)self->internal->pluginPath, path);
 }
 
-int comp_plugins(st_Plugin **a, st_Plugin **b) {
+int comp_plugins(ttoy_Plugin **a, ttoy_Plugin **b) {
   return strcmp((*a)->name, (*b)->name);
 }
 
-st_ErrorCode
-st_ToyFactory_registerPlugin(
-    st_ToyFactory *self,
+ttoy_ErrorCode
+ttoy_ToyFactory_registerPlugin(
+    ttoy_ToyFactory *self,
     const char *name,
     const char *dlPath)
 {
   void *dl;
-  const uint32_t *shelltoyVersion;
+  const uint32_t *ttoyVersion;
   const char *oldDlPath;
-  st_Plugin *plugin;
-  const st_Plugin_Attributes *pluginAttributes;
-  const st_Plugin_Dispatch *pluginDispatch;
-  const st_BackgroundToy_Attributes *backgroundToyAttributes;
-  const st_BackgroundToy_Dispatch *backgroundToyDispatch;
-  const st_TextToy_Attributes *textToyAttributes;
-  const st_TextToy_Dispatch *textToyDispatch;
+  ttoy_Plugin *plugin;
+  const ttoy_Plugin_Attributes *pluginAttributes;
+  const ttoy_Plugin_Dispatch *pluginDispatch;
+  const ttoy_BackgroundToy_Attributes *backgroundToyAttributes;
+  const ttoy_BackgroundToy_Dispatch *backgroundToyDispatch;
+  const ttoy_TextToy_Attributes *textToyAttributes;
+  const ttoy_TextToy_Dispatch *textToyDispatch;
 
   /* Check for an existing plugin with the same name */
-  if (st_ToyFactory_getPlugin(self, name) != NULL) {
-    return ST_ERROR_DUPLICATE_PLUGIN_NAME;
+  if (ttoy_ToyFactory_getPlugin(self, name) != NULL) {
+    return TTOY_ERROR_DUPLICATE_PLUGIN_NAME;
   }
 
   /* If dlPath is not a relative or absolute path, we look for our plugin in
@@ -129,50 +129,50 @@ st_ToyFactory_registerPlugin(
       RTLD_LAZY  /* flag */
       );
   if (dl == NULL) {
-    ST_LOG_ERROR("Plugin '%s' at path '%s' could not be loaded: %s",
+    TTOY_LOG_ERROR("Plugin '%s' at path '%s' could not be loaded: %s",
         name,
         dlPath,
         dlerror());
-    return ST_ERROR_PLUGIN_DL_FAILED_TO_LOAD;
+    return TTOY_ERROR_PLUGIN_DL_FAILED_TO_LOAD;
   }
 
   /* Get the symbols we need from the dynamic library */
 #define GET_REQUIRED_SYMBOL(SYMBOL,TYPE,OUTPUT) \
   OUTPUT = (TYPE *)dlsym(dl, #SYMBOL); \
   if (OUTPUT == NULL) { \
-    ST_LOG_ERROR("Plugin '%s' missing symbol '%s'", \
+    TTOY_LOG_ERROR("Plugin '%s' missing symbol '%s'", \
     name, \
     #SYMBOL); \
-    return ST_ERROR_PLUGIN_MISSING_SYMBOL; \
+    return TTOY_ERROR_PLUGIN_MISSING_SYMBOL; \
   }
   GET_REQUIRED_SYMBOL(
-      shelltoy_version,
+      ttoy_version,
       const uint32_t,
-      shelltoyVersion);
+      ttoyVersion);
 
-  /* Check the Shelltoy version this plugin was built against */
-  if (*shelltoyVersion != SHELLTOY_VERSION) {
-    return ST_ERROR_PLUGIN_VERSION_MISMATCH;
+  /* Check the ttoy version this plugin was built against */
+  if (*ttoyVersion != TTOY_VERSION) {
+    return TTOY_ERROR_PLUGIN_VERSION_MISMATCH;
   }
 
   GET_REQUIRED_SYMBOL(
-      SHELLTOY_PLUGIN_ATTRIBUTES,
-      const st_Plugin_Attributes,
+      TTOY_PLUGIN_ATTRIBUTES,
+      const ttoy_Plugin_Attributes,
       pluginAttributes);
   GET_REQUIRED_SYMBOL(
-      SHELLTOY_PLUGIN_DISPATCH,
-      const st_Plugin_Dispatch,
+      TTOY_PLUGIN_DISPATCH,
+      const ttoy_Plugin_Dispatch,
       pluginDispatch);
 
   /* Get background toy symbols if needed */
-  if (pluginAttributes->toyTypes & ST_TOY_TYPE_BACKGROUND) {
+  if (pluginAttributes->toyTypes & TTOY_TOY_TYPE_BACKGROUND) {
     GET_REQUIRED_SYMBOL(
-        SHELLTOY_BACKGROUND_TOY_ATTRIBUTES,
-        const st_BackgroundToy_Attributes,
+        TTOY_BACKGROUND_TOY_ATTRIBUTES,
+        const ttoy_BackgroundToy_Attributes,
         backgroundToyAttributes);
     GET_REQUIRED_SYMBOL(
-        SHELLTOY_BACKGROUND_TOY_DISPATCH,
-        const st_BackgroundToy_Dispatch,
+        TTOY_BACKGROUND_TOY_DISPATCH,
+        const ttoy_BackgroundToy_Dispatch,
         backgroundToyDispatch);
   } else {
     backgroundToyAttributes = NULL;
@@ -180,14 +180,14 @@ st_ToyFactory_registerPlugin(
   }
 
   /* Get text toy symbols if needed */
-  if (pluginAttributes->toyTypes & ST_TOY_TYPE_TEXT) {
+  if (pluginAttributes->toyTypes & TTOY_TOY_TYPE_TEXT) {
     GET_REQUIRED_SYMBOL(
-        SHELLTOY_TEXT_TOY_ATTRIBUTES,
-        const st_TextToy_Attributes,
+        TTOY_TEXT_TOY_ATTRIBUTES,
+        const ttoy_TextToy_Attributes,
         textToyAttributes);
     GET_REQUIRED_SYMBOL(
-        SHELLTOY_TEXT_TOY_DISPATCH,
-        const st_TextToy_Dispatch,
+        TTOY_TEXT_TOY_DISPATCH,
+        const ttoy_TextToy_Dispatch,
         textToyDispatch);
   } else {
     textToyAttributes = NULL;
@@ -195,8 +195,8 @@ st_ToyFactory_registerPlugin(
   }
 
   /* Initialize and insert the new plugin */
-  plugin = (st_Plugin *)malloc(pluginAttributes->size);
-  st_Plugin_init(plugin,
+  plugin = (ttoy_Plugin *)malloc(pluginAttributes->size);
+  ttoy_Plugin_init(plugin,
       name,  /* name */
       pluginDispatch,  /* dispatch */
       backgroundToyAttributes,  /* backgroundToyAttributes */
@@ -205,56 +205,56 @@ st_ToyFactory_registerPlugin(
       textToyDispatch  /* textToyDispatch */
       );
   pluginDispatch->init(plugin, name);
-  st_PluginDictionary_insert(&self->internal->plugins,
+  ttoy_PluginDictionary_insert(&self->internal->plugins,
       name,  /* key */
       plugin  /* value */
       );
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-st_PluginDictionary *
-st_ToyFactory_getPlugins(
-    st_ToyFactory *self)
+ttoy_PluginDictionary *
+ttoy_ToyFactory_getPlugins(
+    ttoy_ToyFactory *self)
 {
   return &self->internal->plugins;
 }
 
-st_Plugin *
-st_ToyFactory_getPlugin(
-    st_ToyFactory *self,
+ttoy_Plugin *
+ttoy_ToyFactory_getPlugin(
+    ttoy_ToyFactory *self,
     const char *name)
 {
-  return st_PluginDictionary_getValue(
+  return ttoy_PluginDictionary_getValue(
       &self->internal->plugins,
       name);
 }
 
-st_ErrorCode
-st_ToyFactory_buildBackgroundToy(
-    st_ToyFactory *self,
+ttoy_ErrorCode
+ttoy_ToyFactory_buildBackgroundToy(
+    ttoy_ToyFactory *self,
     const char *pluginName,
     const char *toyName,
     json_t *config,
-    st_BackgroundToy **toy)
+    ttoy_BackgroundToy **toy)
 {
-  st_Plugin *plugin;
-  const st_BackgroundToy_Attributes *toyAttributes;
-  const st_BackgroundToy_Dispatch *toyDispatch;
+  ttoy_Plugin *plugin;
+  const ttoy_BackgroundToy_Attributes *toyAttributes;
+  const ttoy_BackgroundToy_Dispatch *toyDispatch;
 
   /* Find the plugin with the given name */
-  plugin = st_ToyFactory_getPlugin(self,
+  plugin = ttoy_ToyFactory_getPlugin(self,
       pluginName);
   if (plugin == NULL) {
-    return ST_ERROR_PLUGIN_NOT_FOUND;
+    return TTOY_ERROR_PLUGIN_NOT_FOUND;
   }
-  toyAttributes = st_Plugin_getBackgroundToyAttributes(plugin);
-  toyDispatch = st_Plugin_getBackgroundToyDispatch(plugin);
+  toyAttributes = ttoy_Plugin_getBackgroundToyAttributes(plugin);
+  toyDispatch = ttoy_Plugin_getBackgroundToyDispatch(plugin);
 
   /* Allocate memory for the toy */
-  *toy = (st_BackgroundToy *)malloc(toyAttributes->size);
+  *toy = (ttoy_BackgroundToy *)malloc(toyAttributes->size);
   /* Initialize the toy */
-  st_BackgroundToy_init(*toy,
+  ttoy_BackgroundToy_init(*toy,
       toyName,  /* name */
       toyDispatch  /* dispatch */
       );
@@ -264,34 +264,34 @@ st_ToyFactory_buildBackgroundToy(
       config  /* config */
       );
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-st_ErrorCode
-st_ToyFactory_buildTextToy(
-    st_ToyFactory *self,
+ttoy_ErrorCode
+ttoy_ToyFactory_buildTextToy(
+    ttoy_ToyFactory *self,
     const char *pluginName,
     const char *toyName,
     json_t *config,
-    st_TextToy **toy)
+    ttoy_TextToy **toy)
 {
-  st_Plugin *plugin;
-  const st_TextToy_Attributes *toyAttributes;
-  const st_TextToy_Dispatch *toyDispatch;
+  ttoy_Plugin *plugin;
+  const ttoy_TextToy_Attributes *toyAttributes;
+  const ttoy_TextToy_Dispatch *toyDispatch;
 
   /* Find the plugin with the given name */
-  plugin = st_ToyFactory_getPlugin(self,
+  plugin = ttoy_ToyFactory_getPlugin(self,
       pluginName);
   if (plugin == NULL) {
-    return ST_ERROR_PLUGIN_NOT_FOUND;
+    return TTOY_ERROR_PLUGIN_NOT_FOUND;
   }
-  toyAttributes = st_Plugin_getTextToyAttributes(plugin);
-  toyDispatch = st_Plugin_getTextToyDispatch(plugin);
+  toyAttributes = ttoy_Plugin_getTextToyAttributes(plugin);
+  toyDispatch = ttoy_Plugin_getTextToyDispatch(plugin);
 
   /* Allocate memory for the toy */
-  *toy = (st_TextToy *)malloc(toyAttributes->size);
+  *toy = (ttoy_TextToy *)malloc(toyAttributes->size);
   /* Initialize the toy */
-  st_TextToy_init(*toy,
+  ttoy_TextToy_init(*toy,
       toyName,  /* name */
       toyDispatch  /* dispatch */
       );
@@ -301,5 +301,5 @@ st_ToyFactory_buildTextToy(
       config  /* config */
       );
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }

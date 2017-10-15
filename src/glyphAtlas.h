@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_GLYPH_ATLAS_H_
-#define ST_GLYPH_ATLAS_H_
+#ifndef TTOY_GLYPH_ATLAS_H_
+#define TTOY_GLYPH_ATLAS_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -34,12 +34,12 @@
 #include "boundingBox.h"
 #include "glyphRenderer.h"
 
-#define ST_GLYPH_ATLAS_MIN_TEXTURE_SIZE 256
-#define ST_GLYPH_ATLAS_MAX_TEXTURE_SIZE 4096
-#define ST_GLYPH_ATLAS_INIT_SIZE_GLYPHS 256
-#define ST_GLYPH_ATLAS_MAX_NUM_TEXTURES 4
+#define TTOY_GLYPH_ATLAS_MIN_TEXTURE_SIZE 256
+#define TTOY_GLYPH_ATLAS_MAX_TEXTURE_SIZE 4096
+#define TTOY_GLYPH_ATLAS_INIT_SIZE_GLYPHS 256
+#define TTOY_GLYPH_ATLAS_MAX_NUM_TEXTURES 4
 
-struct st_GlyphAtlas_Internal;
+struct ttoy_GlyphAtlas_Internal;
 
 /**
  * Class for managing glyphs that have been rendered to a GL texture (or
@@ -53,17 +53,17 @@ struct st_GlyphAtlas_Internal;
  * atlas are added and grown accordingly.
  *
  * \todo Change this to an abstract class and move the current functionality to
- * an st_AAGlyphAtlas class and signed distance field functionality to an
- * st_SDFGlyphAtlas class. This refactoring will likely require the
+ * an ttoy_AAGlyphAtlas class and signed distance field functionality to an
+ * ttoy_SDFGlyphAtlas class. This refactoring will likely require the
  * implementation of a simple vtable.
  *
  * \todo Determine whether or not on-the-fly glyph loading causes too much
  * latency; if so, we may need to implement asynchronous glyph loading.
  */
-typedef struct st_GlyphAtlas_ {
-  struct st_GlyphAtlas_Internal *internal;
-} st_GlyphAtlas;
-typedef struct st_GlyphAtlas_ * st_GlyphAtlas_ptr;
+typedef struct ttoy_GlyphAtlas_ {
+  struct ttoy_GlyphAtlas_Internal *internal;
+} ttoy_GlyphAtlas;
+typedef struct ttoy_GlyphAtlas_ * ttoy_GlyphAtlas_ptr;
 
 /* Public methods */
 /**
@@ -72,11 +72,11 @@ typedef struct st_GlyphAtlas_ * st_GlyphAtlas_ptr;
  * Since the glyph atlas may need to allocate buffers in the GL, this method
  * must be called after the GL has been initialized.
  */
-void st_GlyphAtlas_init(
-    st_GlyphAtlas_ptr self);
+void ttoy_GlyphAtlas_init(
+    ttoy_GlyphAtlas_ptr self);
 
-void st_GlyphAtlas_destroy(
-    st_GlyphAtlas_ptr self);
+void ttoy_GlyphAtlas_destroy(
+    ttoy_GlyphAtlas_ptr self);
 
 /**
  * This method renders and adds all of the ASCII glyphs provided by the given
@@ -90,32 +90,32 @@ void st_GlyphAtlas_destroy(
  * Since adding glyphs might cause the atlas to allocate new texture buffers in
  * the GL, this method must be called after the GL has been initialized.
  */
-void st_GlyphAtlas_renderASCIIGlyphs(
-    st_GlyphAtlas *self,
-    st_GlyphRenderer *glyphRenderer);
+void ttoy_GlyphAtlas_renderASCIIGlyphs(
+    ttoy_GlyphAtlas *self,
+    ttoy_GlyphRenderer *glyphRenderer);
 
-void st_GlyphAtlas_addGlyph(
+void ttoy_GlyphAtlas_addGlyph(
     /* TODO */);
 
-st_ErrorCode
-st_GlyphAtlas_getGlyph(
-    const st_GlyphAtlas *self,
+ttoy_ErrorCode
+ttoy_GlyphAtlas_getGlyph(
+    const ttoy_GlyphAtlas *self,
     uint32_t character,
     int fontIndex,
     int cellWidth,
     int cellHeight,
-    st_BoundingBox *bbox,
+    ttoy_BoundingBox *bbox,
     float *xOffset,
     float *yOffset,
     float *glyphWidth,
     float *glyphHeight);
 
-void st_GlyphAtlas_getTextures(
-    const st_GlyphAtlas *self,
+void ttoy_GlyphAtlas_getTextures(
+    const ttoy_GlyphAtlas *self,
     GLuint *textures,
     int *numTextures);
 
-int st_GlyphAtlas_getTextureSize(
-    const st_GlyphAtlas *self);
+int ttoy_GlyphAtlas_getTextureSize(
+    const ttoy_GlyphAtlas *self);
 
 #endif

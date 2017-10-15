@@ -24,28 +24,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <shelltoy/textToy.h>
+#include <ttoy/textToy.h>
 
-struct st_TextToy_Internal_ {
-  const st_TextToy_Dispatch *dispatch;
+struct ttoy_TextToy_Internal_ {
+  const ttoy_TextToy_Dispatch *dispatch;
 };
 
-void st_TextToy_init(
-    st_TextToy *self,
+void ttoy_TextToy_init(
+    ttoy_TextToy *self,
     const char *name,
-    const st_TextToy_Dispatch *dispatch)
+    const ttoy_TextToy_Dispatch *dispatch)
 {
   /* FIXME: Change this to call the derived init method? */
   /* Allocate memory for internal structures */
-  self->internal = (st_TextToy_Internal *)malloc(
-      sizeof(st_TextToy_Internal));
+  self->internal = (ttoy_TextToy_Internal *)malloc(
+      sizeof(ttoy_TextToy_Internal));
   /* Copy the name string */
   self->name = (const char *)malloc(strlen(name) + 1);
   strcpy((char *)self->name, name);
 }
 
-void st_TextToy_destroy(
-    st_TextToy *self)
+void ttoy_TextToy_destroy(
+    ttoy_TextToy *self)
 {
   /* Call the derived destructor */
   self->internal->dispatch->destroy(self);
@@ -54,8 +54,8 @@ void st_TextToy_destroy(
   free(self->internal);
 }
 
-void st_TextToy_draw(
-    st_TextToy *self,
+void ttoy_TextToy_draw(
+    ttoy_TextToy *self,
     int viewportWidth,
     int viewportHeight)
 {

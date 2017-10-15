@@ -23,4 +23,4 @@
 
 #include "fontRefArray.h"
 
-ST_DEFINE_ARRAY(st_FontRef)
+TTOY_DEFINE_ARRAY(ttoy_FontRef)

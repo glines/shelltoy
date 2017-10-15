@@ -21,35 +21,15 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_FILE_WATCHER_H_
-#define SHELLTOY_FILE_WATCHER_H_
+#ifndef TTOY_VERSION_H_
+#define TTOY_VERSION_H_
 
-#include <shelltoy/error.h>
+#define TTOY_QUALIFIED_VERSION "@TTOY_QUALIFIED_VERSION@"
 
-typedef void (*st_FileWatcher_FileChangedCallback)(
-    void *data,
-    const char *filePath);
+#define TTOY_MAJOR_VERSION @TTOY_MAJOR_VERSION@
+#define TTOY_MINOR_VERSION @TTOY_MINOR_VERSION@
+#define TTOY_PATCH_VERSION @TTOY_PATCH_VERSION@
 
-struct st_FileWatcher_Internal_;
-typedef struct st_FileWatcher_Internal_ st_FileWatcher_Internal;
-
-typedef struct st_FileWatcher_ {
-  st_FileWatcher_Internal *internal;
-} st_FileWatcher;
-
-void
-st_FileWatcher_init(
-    st_FileWatcher *self);
-
-void
-st_FileWatcher_setCallback(
-    st_FileWatcher *self,
-    st_FileWatcher_FileChangedCallback callback,
-    void *data);
-
-st_ErrorCode
-st_FileWatcher_watchFile(
-    st_FileWatcher *self,
-    const char *filePath);
+#define TTOY_VERSION ((TTOY_MAJOR_VERSION << 8) + TTOY_MINOR_VERSION)
 
 #endif

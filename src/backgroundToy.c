@@ -24,23 +24,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <shelltoy/backgroundToy.h>
+#include <ttoy/backgroundToy.h>
 
-struct st_BackgroundToy_Internal_ {
-  const st_BackgroundToy_Dispatch *dispatch;
+struct ttoy_BackgroundToy_Internal_ {
+  const ttoy_BackgroundToy_Dispatch *dispatch;
 };
 
-void st_BackgroundToy_init(
-    st_BackgroundToy *self,
+void ttoy_BackgroundToy_init(
+    ttoy_BackgroundToy *self,
     const char *name,
-    const st_BackgroundToy_Dispatch *dispatch)
+    const ttoy_BackgroundToy_Dispatch *dispatch)
 {
   /* NOTE: This is the only method that is not virtual, i.e. we are not
    * responsible for calling into the dispatch table here. FIXME: Clarify why
    * this is the case. We could probably actually pull this off... */
   /* Allocate memory for internal structures */
-  self->internal = (st_BackgroundToy_Internal *)malloc(
-      sizeof(st_BackgroundToy_Internal));
+  self->internal = (ttoy_BackgroundToy_Internal *)malloc(
+      sizeof(ttoy_BackgroundToy_Internal));
   /* Copy the name string */
   self->name = (const char *)malloc(strlen(name) + 1);
   strcpy((char *)self->name, name);
@@ -48,8 +48,8 @@ void st_BackgroundToy_init(
   self->internal->dispatch = dispatch;
 }
 
-void st_BackgroundToy_destroy(
-    st_BackgroundToy *self)
+void ttoy_BackgroundToy_destroy(
+    ttoy_BackgroundToy *self)
 {
   /* Call destroy for derived class through dispatch table */
   self->internal->dispatch->destroy(self);
@@ -58,8 +58,8 @@ void st_BackgroundToy_destroy(
   free(self->internal);
 }
 
-void st_BackgroundToy_draw(
-    st_BackgroundToy *self,
+void ttoy_BackgroundToy_draw(
+    ttoy_BackgroundToy *self,
     int viewportWidth,
     int viewportHeight)
 {

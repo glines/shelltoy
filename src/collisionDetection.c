@@ -25,8 +25,8 @@
 
 #include "collisionDetection.h"
 
-void st_CollisionDetection_init(
-    st_CollisionDetection *self)
+void ttoy_CollisionDetection_init(
+    ttoy_CollisionDetection *self)
 {
 #ifndef NDEBUG
   /* Initialize the vptr with null */
@@ -34,7 +34,7 @@ void st_CollisionDetection_init(
 #endif
 }
 
-void st_CollisionDetection_destroy(
-    st_CollisionDetection *self)
+void ttoy_CollisionDetection_destroy(
+    ttoy_CollisionDetection *self)
 {
 }

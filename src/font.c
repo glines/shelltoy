@@ -39,7 +39,7 @@
     + (int)trunc(((value) - trunc(value)) * (float)(1 << 6)))
 
 const char *
-st_FreeTypeErrorString(
+ttoy_FreeTypeErrorString(
     FT_Error error)
 {
 #undef __FTERRORS_H__
@@ -50,7 +50,7 @@ st_FreeTypeErrorString(
   return "Unknown FreeType Error";
 }
 
-struct st_Font_Internal_ {
+struct ttoy_Font_Internal_ {
   /* TODO: Somewhere in the FreeType documentation they suggest disposing of
    * FT_Face objects whenever possible. We tend to keep them for as long as the
    * font does not change. It might be best not to keep these objects around,
@@ -61,20 +61,20 @@ struct st_Font_Internal_ {
 };
 
 void
-st_Font_init(
-    st_Font *self)
+ttoy_Font_init(
+    ttoy_Font *self)
 {
   /* Allocate memory for internal structures */
-  self->internal = (st_Font_Internal *)malloc(sizeof(st_Font_Internal));
+  self->internal = (ttoy_Font_Internal *)malloc(sizeof(ttoy_Font_Internal));
   /* Fonts are not valid until FreeType font face has been loaded */
   self->internal->face = NULL;
   self->internal->faceName = NULL;
   self->internal->size = -1.0f;
 }
 
-st_ErrorCode
-st_Font_load(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_load(
+    ttoy_Font *self,
     const char *fontPath,
     const char *faceName,
     float fontSize,
@@ -84,7 +84,7 @@ st_Font_load(
   FT_Error ftError;
   FT_Library ft;
 
-  ft = st_Fonts_getFreeTypeInstance();
+  ft = ttoy_Fonts_getFreeTypeInstance();
 
   /* Load the FreeType font face from file */
   ftError = FT_New_Face(
@@ -94,10 +94,10 @@ st_Font_load(
       &self->internal->face  /* aface */
       );
   if (ftError != FT_Err_Ok) {
-    ST_LOG_ERROR("Freetype encountered an error reading file '%s': %s",
+    TTOY_LOG_ERROR("Freetype encountered an error reading file '%s': %s",
         fontPath,
-        st_FreeTypeErrorString(ftError));
-    return ST_ERROR_FAILED_TO_LOAD_FONT;
+        ttoy_FreeTypeErrorString(ftError));
+    return TTOY_ERROR_FAILED_TO_LOAD_FONT;
   }
 
   /* Attempt to set the font size */
@@ -109,7 +109,7 @@ st_Font_load(
       y_dpi  /* vert_resolution */
       );
   if (ftError != FT_Err_Ok) {
-    ST_LOG_ERROR("Freetype failed to set character size for font: %s",
+    TTOY_LOG_ERROR("Freetype failed to set character size for font: %s",
         fontPath);
     /* TODO: Print the specific error message from Freetype */
     /* NOTE: Not a fatal error */
@@ -120,24 +120,24 @@ st_Font_load(
   /* Store the face name */
   self->internal->faceName = (char *)malloc(strlen(faceName) + 1);
   if (self->internal->faceName == NULL) {
-    return ST_ERROR_OUT_OF_MEMORY;
+    return TTOY_ERROR_OUT_OF_MEMORY;
   }
   strcpy(self->internal->faceName, faceName);
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
 int
-st_Font_isValid(
-    const st_Font *self)
+ttoy_Font_isValid(
+    const ttoy_Font *self)
 {
   /* Without a face loaded, the font is invalid */
   return self->internal->face != NULL;
 }
 
 void
-st_Font_destroy(
-    st_Font *self)
+ttoy_Font_destroy(
+    ttoy_Font *self)
 {
   if (self->internal->face != NULL) {
     /* Release the FreeType font face */
@@ -149,8 +149,8 @@ st_Font_destroy(
 }
 
 int
-st_Font_hasCharacter(
-    st_Font *self,
+ttoy_Font_hasCharacter(
+    ttoy_Font *self,
     uint32_t character)
 {
   if (self->internal->face == NULL)
@@ -162,9 +162,9 @@ st_Font_hasCharacter(
       ) != 0;
 }
 
-st_ErrorCode
-st_Font_getGlyphDimensions(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_getGlyphDimensions(
+    ttoy_Font *self,
     uint32_t character,
     int *width,
     int *height)
@@ -175,7 +175,7 @@ st_Font_getGlyphDimensions(
   /* Look for the glyph that corresponds with the given character code */
   glyph_index = FT_Get_Char_Index(self->internal->face, character);
   if (!glyph_index)
-    return ST_ERROR_FONT_GLYPH_NOT_FOUND;  /* Error; could not find the glyph */
+    return TTOY_ERROR_FONT_GLYPH_NOT_FOUND;  /* Error; could not find the glyph */
 
   /* Load the glyph */
   ftError = FT_Load_Glyph(
@@ -185,11 +185,11 @@ st_Font_getGlyphDimensions(
       );
   if (ftError != FT_Err_Ok) {
     /* TODO: Print out the specific FreeType error */
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Freetype error loading glyph for the character '0x%08x': %s",
         character,
-        st_FreeTypeErrorString(ftError));
-    return ST_ERROR_FREETYPE_ERROR;
+        ttoy_FreeTypeErrorString(ftError));
+    return TTOY_ERROR_FREETYPE_ERROR;
   }
 
   /* Calculate the pixel dimensions of this glyph, as we would render it */
@@ -198,12 +198,12 @@ st_Font_getGlyphDimensions(
   *height = 
     TWENTY_SIX_SIX_TO_PIXELS(self->internal->face->glyph->metrics.height);
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-st_ErrorCode
-st_Font_getGlyphOffset(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_getGlyphOffset(
+    ttoy_Font *self,
     uint32_t character,
     int *x,
     int *y)
@@ -217,7 +217,7 @@ st_Font_getGlyphOffset(
   /* Look for the glyph that corresponds with the given character code */
   glyph_index = FT_Get_Char_Index(self->internal->face, character);
   if (!glyph_index)
-    return ST_ERROR_FONT_GLYPH_NOT_FOUND;  /* Error; could not find the glyph */
+    return TTOY_ERROR_FONT_GLYPH_NOT_FOUND;  /* Error; could not find the glyph */
 
   /* Load the glyph */
   ftError = FT_Load_Glyph(
@@ -227,10 +227,10 @@ st_Font_getGlyphOffset(
       );
   if (ftError != FT_Err_Ok) {
     /* TODO: Print out the specific FreeType error */
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Freetype error loading glyph for the character '0x%08x'",
         character);
-    return ST_ERROR_FREETYPE_ERROR;
+    return TTOY_ERROR_FREETYPE_ERROR;
   }
 
   /* Calculate the horizontal offset of this glyph */
@@ -245,12 +245,12 @@ st_Font_getGlyphOffset(
       - face->glyph->metrics.height
       - linegap / 2);  /* Distribute the linegap above and below the glyph */
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
-st_ErrorCode
-st_Font_renderGlyph(
-    st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_renderGlyph(
+    ttoy_Font *self,
     uint32_t character,
     FT_Bitmap **bitmap)
 {
@@ -260,7 +260,7 @@ st_Font_renderGlyph(
   /* Look for the glyph that corresponds with the given character code */
   glyph_index = FT_Get_Char_Index(self->internal->face, character);
   if (!glyph_index)
-    return ST_ERROR_FONT_GLYPH_NOT_FOUND;  /* Error; could not find the glyph */
+    return TTOY_ERROR_FONT_GLYPH_NOT_FOUND;  /* Error; could not find the glyph */
 
   /* Load the glyph */
   ftError = FT_Load_Glyph(
@@ -270,10 +270,10 @@ st_Font_renderGlyph(
       );
   if (ftError != FT_Err_Ok) {
     /* TODO: Print out the specific FreeType error */
-    ST_LOG_ERROR(
+    TTOY_LOG_ERROR(
         "Freetype error loading glyph for the character '0x%08x'",
         character);
-    return ST_ERROR_FREETYPE_ERROR;
+    return TTOY_ERROR_FREETYPE_ERROR;
   }
 
   /* Render the glyph */
@@ -282,40 +282,40 @@ st_Font_renderGlyph(
       FT_RENDER_MODE_NORMAL);
   if (ftError != FT_Err_Ok) {
     /* TODO: Print out the specific FreeType error */
-    ST_LOG_ERROR("Freetype error rendering the glyph for '0x%08x'\n",
+    TTOY_LOG_ERROR("Freetype error rendering the glyph for '0x%08x'\n",
         character);
-    return ST_ERROR_FREETYPE_ERROR;
+    return TTOY_ERROR_FREETYPE_ERROR;
   }
 
   *bitmap = &self->internal->face->glyph->bitmap;
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
 const char *
-st_Font_getFaceName(
-    const st_Font *self)
+ttoy_Font_getFaceName(
+    const ttoy_Font *self)
 {
   return (const char *)self->internal->faceName;
 }
 
 const char *
-st_Font_getFontPath(
-    const st_Font *self)
+ttoy_Font_getFontPath(
+    const ttoy_Font *self)
 {
   return (const char *)self->internal->fontPath;
 }
 
 float
-st_Font_getSize(
-    const st_Font *self)
+ttoy_Font_getSize(
+    const ttoy_Font *self)
 {
   return self->internal->size;
 }
 
-st_ErrorCode
-st_Font_setSize(
-    const st_Font *self,
+ttoy_ErrorCode
+ttoy_Font_setSize(
+    const ttoy_Font *self,
     float size)
 {
   FT_Error ftError;
@@ -330,21 +330,21 @@ st_Font_setSize(
       144  /* vert_resolution */
       );
   if (ftError != FT_Err_Ok) {
-    ST_LOG_ERROR("Freetype failed to set character size for font '%s': %s",
+    TTOY_LOG_ERROR("Freetype failed to set character size for font '%s': %s",
         self->internal->fontPath,
-        st_FreeTypeErrorString(ftError));
-    return ST_ERROR_FREETYPE_ERROR;
+        ttoy_FreeTypeErrorString(ftError));
+    return TTOY_ERROR_FREETYPE_ERROR;
   }
 
   /* Store the new font size */
   self->internal->size = size;
 
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
 
 FT_Face
-st_Font_getFtFace(
-    st_Font *self)
+ttoy_Font_getFtFace(
+    ttoy_Font *self)
 {
   return self->internal->face;
 }

@@ -1,44 +1,44 @@
-#ifndef SHELLTOY_COMMON_SHADER_H_
-#define SHELLTOY_COMMON_SHADER_H_
+#ifndef TTOY_COMMON_SHADER_H_
+#define TTOY_COMMON_SHADER_H_
 
 #include <GL/glew.h>
 
-#include <shelltoy/error.h>
+#include <ttoy/error.h>
 
-struct st_Shader_Internal_;
-typedef struct st_Shader_Internal_ st_Shader_Internal;
+struct ttoy_Shader_Internal_;
+typedef struct ttoy_Shader_Internal_ ttoy_Shader_Internal;
 
 typedef struct {
-  st_Shader_Internal *internal;
+  ttoy_Shader_Internal *internal;
   GLuint program;
-} st_Shader;
+} ttoy_Shader;
 
-void st_Shader_init(
-    st_Shader *self);
+void ttoy_Shader_init(
+    ttoy_Shader *self);
 
-void st_Shader_destroy(
-    st_Shader *self);
+void ttoy_Shader_destroy(
+    ttoy_Shader *self);
 
-st_ErrorCode
-st_Shader_compileShaderFromString(
-    st_Shader *self,
+ttoy_ErrorCode
+ttoy_Shader_compileShaderFromString(
+    ttoy_Shader *self,
     const GLchar *code,
     GLint length,
     GLenum type);
 
-st_ErrorCode
-st_Shader_compileShaderFromFile(
-    st_Shader *self,
+ttoy_ErrorCode
+ttoy_Shader_compileShaderFromFile(
+    ttoy_Shader *self,
     const char *filePath,
     GLenum type);
 
-st_ErrorCode
-st_Shader_linkProgram(
-    st_Shader *self);
+ttoy_ErrorCode
+ttoy_Shader_linkProgram(
+    ttoy_Shader *self);
 
 void
-st_Shader_getLog(
-    st_Shader *self,
+ttoy_Shader_getLog(
+    ttoy_Shader *self,
     const char **log);
 
 #endif

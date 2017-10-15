@@ -21,69 +21,69 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_BACKGROUND_TOY_H_
-#define SHELLTOY_BACKGROUND_TOY_H_
+#ifndef TTOY_BACKGROUND_TOY_H_
+#define TTOY_BACKGROUND_TOY_H_
 
 #include <jansson.h>
 
-typedef struct st_BackgroundToy_Attributes_ {
+typedef struct ttoy_BackgroundToy_Attributes_ {
   size_t size;
-} st_BackgroundToy_Attributes;
+} ttoy_BackgroundToy_Attributes;
 
-struct st_BackgroundToy_Internal_;
-typedef struct st_BackgroundToy_Internal_
-st_BackgroundToy_Internal;
+struct ttoy_BackgroundToy_Internal_;
+typedef struct ttoy_BackgroundToy_Internal_
+ttoy_BackgroundToy_Internal;
 
-typedef struct st_BackgroundToy_ {
+typedef struct ttoy_BackgroundToy_ {
   const char *name;
 
-  st_BackgroundToy_Internal *internal;
-} st_BackgroundToy;
+  ttoy_BackgroundToy_Internal *internal;
+} ttoy_BackgroundToy;
 
-typedef void (*st_BackgroundToy_Init)(
-    st_BackgroundToy *,  /* self */
+typedef void (*ttoy_BackgroundToy_Init)(
+    ttoy_BackgroundToy *,  /* self */
     const char *,  /* name */
     json_t *  /* config */
     );
 
-typedef void (*st_BackgroundToy_Destroy)(
-    st_BackgroundToy *  /* self */
+typedef void (*ttoy_BackgroundToy_Destroy)(
+    ttoy_BackgroundToy *  /* self */
     );
 
-typedef void (*st_BackgroundToy_Draw)(
-    st_BackgroundToy *,  /* self */
+typedef void (*ttoy_BackgroundToy_Draw)(
+    ttoy_BackgroundToy *,  /* self */
     int,  /* viewportWidth */
     int  /* viewportHeight */
     );
 
-typedef struct st_BackgroundToy_Dispatch_ {
-  st_BackgroundToy_Init init;
-  st_BackgroundToy_Destroy destroy;
-  st_BackgroundToy_Draw draw;
-} st_BackgroundToy_Dispatch;
+typedef struct ttoy_BackgroundToy_Dispatch_ {
+  ttoy_BackgroundToy_Init init;
+  ttoy_BackgroundToy_Destroy destroy;
+  ttoy_BackgroundToy_Draw draw;
+} ttoy_BackgroundToy_Dispatch;
 
-void st_BackgroundToy_init(
-    st_BackgroundToy *self,
+void ttoy_BackgroundToy_init(
+    ttoy_BackgroundToy *self,
     const char *name,
-    const st_BackgroundToy_Dispatch *dispatch);
+    const ttoy_BackgroundToy_Dispatch *dispatch);
 
-void st_BackgroundToy_destroy(
-    st_BackgroundToy *self);
+void ttoy_BackgroundToy_destroy(
+    ttoy_BackgroundToy *self);
 
-void st_BackgroundToy_draw(
-    st_BackgroundToy *self,
+void ttoy_BackgroundToy_draw(
+    ttoy_BackgroundToy *self,
     int viewportWidth,
     int viewportHeight);
 
-#define SHELLTOY_BACKGROUND_TOY_DISPATCH( \
+#define TTOY_BACKGROUND_TOY_DISPATCH( \
     BACKGROUND_TOY_STRUCT, \
     INIT_CB, \
     DESTROY_CB, \
     DRAW_CB) \
-  const st_BackgroundToy_Attributes SHELLTOY_BACKGROUND_TOY_ATTRIBUTES = { \
+  const ttoy_BackgroundToy_Attributes TTOY_BACKGROUND_TOY_ATTRIBUTES = { \
     .size = sizeof(BACKGROUND_TOY_STRUCT), \
   }; \
-  const st_BackgroundToy_Dispatch SHELLTOY_BACKGROUND_TOY_DISPATCH = { \
+  const ttoy_BackgroundToy_Dispatch TTOY_BACKGROUND_TOY_DISPATCH = { \
     .init = INIT_CB, \
     .destroy = DESTROY_CB, \
     .draw = DRAW_CB, \

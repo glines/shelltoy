@@ -23,39 +23,39 @@
 
 #include "textToy.h"
 
-SHELLTOY_TEXT_TOY_DISPATCH(
-    st_Glsltoy_TextToy,  /* TEXT_TOY_STRUCT */
-    (st_TextToy_Init)st_Glsltoy_TextToy_init,  /* INIT_CB */
-    (st_TextToy_Destroy)st_Glsltoy_TextToy_destroy,  /* DESTROY_CB */
-    (st_TextToy_Draw)st_Glsltoy_TextToy_draw  /* DRAW_CB */
+TTOY_TEXT_TOY_DISPATCH(
+    ttoy_Glsltoy_TextToy,  /* TEXT_TOY_STRUCT */
+    (ttoy_TextToy_Init)ttoy_Glsltoy_TextToy_init,  /* INIT_CB */
+    (ttoy_TextToy_Destroy)ttoy_Glsltoy_TextToy_destroy,  /* DESTROY_CB */
+    (ttoy_TextToy_Draw)ttoy_Glsltoy_TextToy_draw  /* DRAW_CB */
     )
 
-struct st_Glsltoy_TextToy_Internal_ {
+struct ttoy_Glsltoy_TextToy_Internal_ {
   int foo;
 };
 
-void st_Glsltoy_TextToy_init(
-    st_Glsltoy_TextToy *self,
+void ttoy_Glsltoy_TextToy_init(
+    ttoy_Glsltoy_TextToy *self,
     const char *name,
     json_t *config)
 {
   /* Allocate memory for internal structures */
-  self->internal = (st_Glsltoy_TextToy_Internal *)malloc(
-      sizeof(st_Glsltoy_TextToy_Internal));
+  self->internal = (ttoy_Glsltoy_TextToy_Internal *)malloc(
+      sizeof(ttoy_Glsltoy_TextToy_Internal));
 }
 
-void st_Glsltoy_TextToy_destroy(
-    st_Glsltoy_TextToy *self)
+void ttoy_Glsltoy_TextToy_destroy(
+    ttoy_Glsltoy_TextToy *self)
 {
   /* Free allocated memory */
   free(self->internal);
 }
 
-void st_Glsltoy_TextToy_draw(
-    st_Glsltoy_TextToy *self,
+void ttoy_Glsltoy_TextToy_draw(
+    ttoy_Glsltoy_TextToy *self,
     int viewportWidth,
     int viewportHeight)
 {
   /* TODO */
-  fprintf(stderr, "inside st_Glsltoy_TextToy_draw()\n");
+  fprintf(stderr, "inside ttoy_Glsltoy_TextToy_draw()\n");
 }

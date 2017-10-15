@@ -28,61 +28,61 @@
 #include "naiveCollisionDetection.h"
 
 /* Storage for vtable */
-const st_CollisionDetection_VTable st_NaiveCollisionDetection_vtable = {
+const ttoy_CollisionDetection_VTable ttoy_NaiveCollisionDetection_vtable = {
   .destroy =
-    (st_CollisionDetection_destroy_t)
-    st_NaiveCollisionDetection_destroy,
+    (ttoy_CollisionDetection_destroy_t)
+    ttoy_NaiveCollisionDetection_destroy,
   .addEntity =
-    (st_CollisionDetection_addEntity_t)
-    st_NaiveCollisionDetection_addEntity,
+    (ttoy_CollisionDetection_addEntity_t)
+    ttoy_NaiveCollisionDetection_addEntity,
   .checkCollision =
-    (st_CollisionDetection_checkCollision_t)
-    st_NaiveCollisionDetection_checkCollision,
+    (ttoy_CollisionDetection_checkCollision_t)
+    ttoy_NaiveCollisionDetection_checkCollision,
 };
 
 /* Private member function declarations */
-void st_NaiveCollisionDetection_growEntities(
-    st_NaiveCollisionDetection *self);
+void ttoy_NaiveCollisionDetection_growEntities(
+    ttoy_NaiveCollisionDetection *self);
 
-struct st_NaiveCollisionDetection_Internal {
-  st_CollisionEntity *entities;
+struct ttoy_NaiveCollisionDetection_Internal {
+  ttoy_CollisionEntity *entities;
   size_t numEntities, sizeEntities;
 };
 
-void st_NaiveCollisionDetection_init(
-    st_NaiveCollisionDetection *self)
+void ttoy_NaiveCollisionDetection_init(
+    ttoy_NaiveCollisionDetection *self)
 {
-  st_CollisionDetection_init((st_CollisionDetection *)self);
+  ttoy_CollisionDetection_init((ttoy_CollisionDetection *)self);
   /* Initialize the vtable pointer */
-  self->base.vptr = &st_NaiveCollisionDetection_vtable;
+  self->base.vptr = &ttoy_NaiveCollisionDetection_vtable;
   /* Initialize internal data structure */
-  self->internal = (struct st_NaiveCollisionDetection_Internal *)malloc(
+  self->internal = (struct ttoy_NaiveCollisionDetection_Internal *)malloc(
       sizeof(*self->internal));
-  self->internal->sizeEntities = ST_NAIVE_COLLISION_DETECTION_INIT_SIZE_ENTITIES;
-  self->internal->entities = (st_CollisionEntity *)malloc(
-      sizeof(st_CollisionEntity) * self->internal->sizeEntities);
+  self->internal->sizeEntities = TTOY_NAIVE_COLLISION_DETECTION_INIT_SIZE_ENTITIES;
+  self->internal->entities = (ttoy_CollisionEntity *)malloc(
+      sizeof(ttoy_CollisionEntity) * self->internal->sizeEntities);
   self->internal->numEntities = 0;
 
 }
 
-void st_NaiveCollisionDetection_destroy(
-    st_NaiveCollisionDetection *self)
+void ttoy_NaiveCollisionDetection_destroy(
+    ttoy_NaiveCollisionDetection *self)
 {
   /* Free internal data structure */
   free(self->internal->entities);
   free(self->internal);
-  st_CollisionDetection_destroy((st_CollisionDetection *)self);
+  ttoy_CollisionDetection_destroy((ttoy_CollisionDetection *)self);
 }
 
-void st_NaiveCollisionDetection_addEntity(
-    st_NaiveCollisionDetection *self,
-    const st_BoundingBox *bbox,
+void ttoy_NaiveCollisionDetection_addEntity(
+    ttoy_NaiveCollisionDetection *self,
+    const ttoy_BoundingBox *bbox,
     void *data)
 {
-  st_CollisionEntity *newEntity;
+  ttoy_CollisionEntity *newEntity;
   /* Ensure our array of entities is large enough */
   if (self->internal->numEntities + 1 > self->internal->sizeEntities) {
-    st_NaiveCollisionDetection_growEntities(self);
+    ttoy_NaiveCollisionDetection_growEntities(self);
   }
   /* Add to our list of entities */
   newEntity = &self->internal->entities[self->internal->numEntities++];
@@ -92,31 +92,31 @@ void st_NaiveCollisionDetection_addEntity(
   newEntity->data = data;
 }
 
-void *st_NaiveCollisionDetection_checkCollision(
-    st_NaiveCollisionDetection *self,
-    const st_BoundingBox *bbox)
+void *ttoy_NaiveCollisionDetection_checkCollision(
+    ttoy_NaiveCollisionDetection *self,
+    const ttoy_BoundingBox *bbox)
 {
-  st_CollisionEntity *currentEntity;
+  ttoy_CollisionEntity *currentEntity;
   /* Simply iterate over all collision entities and check if they intersect
    * with this bounding box */
   for (size_t i = 0; i < self->internal->numEntities; ++i) {
     currentEntity = &self->internal->entities[i];
-    if (st_BoundingBox_checkIntersection(bbox, &currentEntity->bbox)) {
+    if (ttoy_BoundingBox_checkIntersection(bbox, &currentEntity->bbox)) {
       return currentEntity->data;
     }
   }
   return NULL;
 }
 
-void st_NaiveCollisionDetection_growEntities(
-    st_NaiveCollisionDetection *self)
+void ttoy_NaiveCollisionDetection_growEntities(
+    ttoy_NaiveCollisionDetection *self)
 {
-  st_CollisionEntity *newEntities;
+  ttoy_CollisionEntity *newEntities;
 
   /* Double the size of the array of entities */
-  newEntities = (st_CollisionEntity *)malloc(self->internal->sizeEntities * 2);
+  newEntities = (ttoy_CollisionEntity *)malloc(self->internal->sizeEntities * 2);
   memcpy(newEntities, self->internal->entities,
-      self->internal->numEntities * sizeof(st_CollisionEntity));
+      self->internal->numEntities * sizeof(ttoy_CollisionEntity));
   free(self->internal->entities);
   self->internal->entities = newEntities;
 }

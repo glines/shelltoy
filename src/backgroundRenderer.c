@@ -32,38 +32,38 @@
 #include "backgroundRenderer.h"
 
 /* Private methods */
-void st_BackgroundRenderer_initShader(
-    st_BackgroundRenderer *self);
-void st_BackgroundRenderer_initFramebuffer(
-    st_BackgroundRenderer *self);
-void st_BackgroundRenderer_initQuad(
-    st_BackgroundRenderer *self);
+void ttoy_BackgroundRenderer_initShader(
+    ttoy_BackgroundRenderer *self);
+void ttoy_BackgroundRenderer_initFramebuffer(
+    ttoy_BackgroundRenderer *self);
+void ttoy_BackgroundRenderer_initQuad(
+    ttoy_BackgroundRenderer *self);
 
-void st_BackgroundRenderer_drawBackgroundTexture(
-    st_BackgroundRenderer *self);
+void ttoy_BackgroundRenderer_drawBackgroundTexture(
+    ttoy_BackgroundRenderer *self);
 
-typedef struct st_BackgroundRenderer_QuadVertex_ {
+typedef struct ttoy_BackgroundRenderer_QuadVertex_ {
   GLfloat pos[3], texCoord[2];
-} st_BackgroundRenderer_QuadVertex;
+} ttoy_BackgroundRenderer_QuadVertex;
 
-struct st_BackgroundRenderer_Internal_ {
-  st_BackgroundToy *backgroundToy;
-  st_Shader shader;
+struct ttoy_BackgroundRenderer_Internal_ {
+  ttoy_BackgroundToy *backgroundToy;
+  ttoy_Shader shader;
   GLuint texture, framebuffer, quadVertexBuffer, quadIndexBuffer, vao;
   GLuint toySamplerLocation;
   int initializedDrawObjects;
 };
 
-void st_BackgroundRenderer_init(
-    st_BackgroundRenderer *self,
-    st_Profile *profile)
+void ttoy_BackgroundRenderer_init(
+    ttoy_BackgroundRenderer *self,
+    ttoy_Profile *profile)
 {
   /* Allocate memory for internal data structures */
-  self->internal = (st_BackgroundRenderer_Internal *)malloc(
-      sizeof(st_BackgroundRenderer_Internal));
+  self->internal = (ttoy_BackgroundRenderer_Internal *)malloc(
+      sizeof(ttoy_BackgroundRenderer_Internal));
   self->internal->initializedDrawObjects = 0;
   /* Store a pointer to the background toy */
-  self->internal->backgroundToy = st_Profile_getBackgroundToy(profile);
+  self->internal->backgroundToy = ttoy_Profile_getBackgroundToy(profile);
 }
 
 static const char *vert_shader =
@@ -91,42 +91,42 @@ static const char *frag_shader =
   "}\n";
 
 
-void st_BackgroundRenderer_initShader(
-    st_BackgroundRenderer *self)
+void ttoy_BackgroundRenderer_initShader(
+    ttoy_BackgroundRenderer *self)
 {
-  st_ErrorCode error;
+  ttoy_ErrorCode error;
   /* Compile and link our shader for drawing the toy texture */
-  st_Shader_init(&self->internal->shader);
+  ttoy_Shader_init(&self->internal->shader);
   /* Compile the vertex shader, which prepares a simple texture quad */
-  error = st_Shader_compileShaderFromString(
+  error = ttoy_Shader_compileShaderFromString(
       &self->internal->shader,
       vert_shader,  /* code */
       strlen(vert_shader),  /* length */
       GL_VERTEX_SHADER  /* type */
       );
-  if (error != ST_NO_ERROR) {
+  if (error != TTOY_NO_ERROR) {
     /* TODO: Make this error fatal? */
-    ST_LOG_ERROR("%s", "Background renderer failed to compile vertex shader");
+    TTOY_LOG_ERROR("%s", "Background renderer failed to compile vertex shader");
     return;
   }
   /* Compile the fragment shader, which draws our toy texture */
-  error = st_Shader_compileShaderFromString(
+  error = ttoy_Shader_compileShaderFromString(
       &self->internal->shader,
       frag_shader,  /* code */
       strlen(frag_shader),  /* length */
       GL_FRAGMENT_SHADER  /* type */
       );
-  if (error != ST_NO_ERROR) {
+  if (error != TTOY_NO_ERROR) {
     /* TODO: Make this error fatal? */
-    ST_LOG_ERROR("%s",
+    TTOY_LOG_ERROR("%s",
         "Background renderer failed to compile fragment shader");
     return;
   }
   /* Link the shader program */
-  error = st_Shader_linkProgram(&self->internal->shader);
-  if (error != ST_NO_ERROR) {
+  error = ttoy_Shader_linkProgram(&self->internal->shader);
+  if (error != TTOY_NO_ERROR) {
     /* TODO: Make this error fatal? */
-    ST_LOG_ERROR("%s",
+    TTOY_LOG_ERROR("%s",
         "Background renderer failed to link shader program");
     return;
   }
@@ -142,8 +142,8 @@ void st_BackgroundRenderer_initShader(
   GET_UNIFORM(toySampler)
 }
 
-void st_BackgroundRenderer_initFramebuffer(
-    st_BackgroundRenderer *self)
+void ttoy_BackgroundRenderer_initFramebuffer(
+    ttoy_BackgroundRenderer *self)
 {
 #ifndef NDEBUG
   GLenum result;
@@ -223,10 +223,10 @@ void st_BackgroundRenderer_initFramebuffer(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_BackgroundRenderer_initQuad(
-    st_BackgroundRenderer *self)
+void ttoy_BackgroundRenderer_initQuad(
+    ttoy_BackgroundRenderer *self)
 {
-  st_BackgroundRenderer_QuadVertex vertices[] = {
+  ttoy_BackgroundRenderer_QuadVertex vertices[] = {
     {
       .pos = { -1.0f, -1.0f, 0.0f },
       .texCoord = { 0.0f, 0.0f },
@@ -307,8 +307,8 @@ void st_BackgroundRenderer_initQuad(
       3,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_BackgroundRenderer_QuadVertex),  /* stride */
-      (GLvoid *)offsetof(st_BackgroundRenderer_QuadVertex, pos)  /* pointer */
+      sizeof(ttoy_BackgroundRenderer_QuadVertex),  /* stride */
+      (GLvoid *)offsetof(ttoy_BackgroundRenderer_QuadVertex, pos)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   /* Prepare the texCoord vertex attribute */
@@ -321,8 +321,8 @@ void st_BackgroundRenderer_initQuad(
       2,  /* size */
       GL_FLOAT,  /* type */
       0,  /* normalized */
-      sizeof(st_BackgroundRenderer_QuadVertex),  /* stride */
-      (GLvoid *)offsetof(st_BackgroundRenderer_QuadVertex, texCoord)  /* pointer */
+      sizeof(ttoy_BackgroundRenderer_QuadVertex),  /* stride */
+      (GLvoid *)offsetof(ttoy_BackgroundRenderer_QuadVertex, texCoord)  /* pointer */
       );
   FORCE_ASSERT_GL_ERROR();
   /* Clear the vertex array object binding */
@@ -332,8 +332,8 @@ void st_BackgroundRenderer_initQuad(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_BackgroundRenderer_destroy(
-    st_BackgroundRenderer *self)
+void ttoy_BackgroundRenderer_destroy(
+    ttoy_BackgroundRenderer *self)
 {
   if (self->internal->initializedDrawObjects) {
     /* TODO: Clean up the GL objects that we initialized */
@@ -341,8 +341,8 @@ void st_BackgroundRenderer_destroy(
   free(self->internal);
 }
 
-void st_BackgroundRenderer_drawBackgroundTexture(
-    st_BackgroundRenderer *self)
+void ttoy_BackgroundRenderer_drawBackgroundTexture(
+    ttoy_BackgroundRenderer *self)
 {
   glUseProgram(
       self->internal->shader.program  /* program */
@@ -401,17 +401,17 @@ void st_BackgroundRenderer_drawBackgroundTexture(
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_BackgroundRenderer_draw(
-    st_BackgroundRenderer *self,
+void ttoy_BackgroundRenderer_draw(
+    ttoy_BackgroundRenderer *self,
     int viewportWidth,
     int viewportHeight)
 {
   if (self->internal->backgroundToy != NULL) {
     if (!self->internal->initializedDrawObjects) {
       /* Initialize our GL objects on the first frame */
-      st_BackgroundRenderer_initShader(self);
-      st_BackgroundRenderer_initFramebuffer(self);
-      st_BackgroundRenderer_initQuad(self);
+      ttoy_BackgroundRenderer_initShader(self);
+      ttoy_BackgroundRenderer_initFramebuffer(self);
+      ttoy_BackgroundRenderer_initQuad(self);
       self->internal->initializedDrawObjects = 1;
     }
 
@@ -421,7 +421,7 @@ void st_BackgroundRenderer_draw(
         self->internal->framebuffer  /* framebuffer */
         );
     FORCE_ASSERT_GL_ERROR();
-    st_BackgroundToy_draw(self->internal->backgroundToy,
+    ttoy_BackgroundToy_draw(self->internal->backgroundToy,
         viewportWidth,  /* viewportWidth */
         viewportHeight  /* viewportHeight */
         );
@@ -432,7 +432,7 @@ void st_BackgroundRenderer_draw(
         );
     FORCE_ASSERT_GL_ERROR();
     /* Draw the rendered shader texture on a quad that fills the screen */
-    st_BackgroundRenderer_drawBackgroundTexture(self);
+    ttoy_BackgroundRenderer_drawBackgroundTexture(self);
   }
   /* TODO: Without a background toy, what should we do really? We need to draw
    * a solid color. */

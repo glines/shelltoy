@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ST_TEXT_RENDERER_H_
-#define ST_TEXT_RENDERER_H_
+#ifndef TTOY_TEXT_RENDERER_H_
+#define TTOY_TEXT_RENDERER_H_
 
 #include <libtsm.h>
 
@@ -30,32 +30,32 @@
 #include "glyphRendererRef.h"
 #include "profile.h"
 
-struct st_TextRenderer_Internal;
+struct ttoy_TextRenderer_Internal;
 
-typedef struct st_TextRenderer_ {
-  struct st_TextRenderer_Internal *internal;
-} st_TextRenderer;
+typedef struct ttoy_TextRenderer_ {
+  struct ttoy_TextRenderer_Internal *internal;
+} ttoy_TextRenderer;
 
-void st_TextRenderer_init(
-    st_TextRenderer *self,
-    st_GlyphRendererRef *glyphRenderer,
-    st_Profile *profile);
+void ttoy_TextRenderer_init(
+    ttoy_TextRenderer *self,
+    ttoy_GlyphRendererRef *glyphRenderer,
+    ttoy_Profile *profile);
 
-void st_TextRenderer_destroy(
-    st_TextRenderer *self);
+void ttoy_TextRenderer_destroy(
+    ttoy_TextRenderer *self);
 
-void st_TextRenderer_setGlyphRenderer(
-    st_TextRenderer *self,
-    st_GlyphRendererRef *glyphRenderer);
+void ttoy_TextRenderer_setGlyphRenderer(
+    ttoy_TextRenderer *self,
+    ttoy_GlyphRendererRef *glyphRenderer);
 
-void st_TextRenderer_updateScreen(
-    st_TextRenderer *self,
+void ttoy_TextRenderer_updateScreen(
+    ttoy_TextRenderer *self,
     struct tsm_screen *screen,
     int cellWidth,
     int cellHeight);
 
-void st_TextRenderer_draw(
-    const st_TextRenderer *self,
+void ttoy_TextRenderer_draw(
+    const ttoy_TextRenderer *self,
     int cellWidth,
     int cellHeight,
     int viewportWidth,

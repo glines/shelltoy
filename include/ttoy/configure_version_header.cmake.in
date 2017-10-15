@@ -1,0 +1,47 @@
+# This file is needed in order to update the ttoy version at build time rather
+# than at configure time. This way the qualified version string will reflect
+# the latest information from git.
+# Idea thanks to: <https://cmake.org/pipermail/cmake/2012-May/050095.html>
+
+# Pass variables as they were at configure time
+set(SRC_DIR "@CMAKE_SOURCE_DIR@")
+set(BIN_DIR "@CMAKE_BINARY_DIR@")
+set(GIT_EXECUTABLE "@GIT_EXECUTABLE@")
+
+# Get the version string from git
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --dirty
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE TTOY_QUALIFIED_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+string(REGEX MATCH
+    "^[0-9]+\\.[0-9]+\\.[0-9]+"
+    TTOY_VERSION
+    "${TTOY_QUALIFIED_VERSION}"
+    )
+string(REGEX REPLACE
+    "^([0-9]+)\\.[0-9]+\\.[0-9]+" "\\1"
+    TTOY_MAJOR_VERSION
+    "${TTOY_VERSION}"
+    )
+string(REGEX REPLACE
+    "^[0-9]+\\.([0-9]+)\\.[0-9]+" "\\1"
+    TTOY_MINOR_VERSION
+    "${TTOY_VERSION}"
+    )
+string(REGEX REPLACE
+    "^[0-9]+\\.[0-9]+\\.([0-9]+)" "\\1"
+    TTOY_PATCH_VERSION
+    "${TTOY_VERSION}"
+    )
+message("TTOY_QUALIFIED_VERSION: ${TTOY_QUALIFIED_VERSION}")
+message("TTOY_MAJOR_VERSION: ${TTOY_MAJOR_VERSION}")
+message("TTOY_MINOR_VERSION: ${TTOY_MINOR_VERSION}")
+message("TTOY_PATCH_VERSION: ${TTOY_PATCH_VERSION}")
+
+# Set the version strings in the ttoy version header 
+configure_file(
+    "${SRC_DIR}/include/ttoy/version.h.in"
+    "${BIN_DIR}/include/ttoy/version.h"
+    )

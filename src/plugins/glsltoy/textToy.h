@@ -21,28 +21,28 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_PLUGINS_GLSLTOY_TEXT_TOY_H_
-#define SHELLTOY_PLUGINS_GLSLTOY_TEXT_TOY_H_
+#ifndef TTOY_PLUGINS_GLSLTOY_TEXT_TOY_H_
+#define TTOY_PLUGINS_GLSLTOY_TEXT_TOY_H_
 
-#include <shelltoy/textToy.h>
+#include <ttoy/textToy.h>
 
-struct st_Glsltoy_TextToy_Internal_;
-typedef struct st_Glsltoy_TextToy_Internal_ st_Glsltoy_TextToy_Internal;
+struct ttoy_Glsltoy_TextToy_Internal_;
+typedef struct ttoy_Glsltoy_TextToy_Internal_ ttoy_Glsltoy_TextToy_Internal;
 
-typedef struct st_Glsltoy_TextToy {
-  st_Glsltoy_TextToy_Internal *internal;
-} st_Glsltoy_TextToy;
+typedef struct ttoy_Glsltoy_TextToy {
+  ttoy_Glsltoy_TextToy_Internal *internal;
+} ttoy_Glsltoy_TextToy;
 
-void st_Glsltoy_TextToy_init(
-    st_Glsltoy_TextToy *self,
+void ttoy_Glsltoy_TextToy_init(
+    ttoy_Glsltoy_TextToy *self,
     const char *name,
     json_t *config);
 
-void st_Glsltoy_TextToy_destroy(
-    st_Glsltoy_TextToy *self);
+void ttoy_Glsltoy_TextToy_destroy(
+    ttoy_Glsltoy_TextToy *self);
 
-void st_Glsltoy_TextToy_draw(
-    st_Glsltoy_TextToy *self,
+void ttoy_Glsltoy_TextToy_draw(
+    ttoy_Glsltoy_TextToy *self,
     int viewportWidth,
     int viewportHeight);
 

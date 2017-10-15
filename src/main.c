@@ -31,26 +31,26 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <shelltoy/version.h>
+#include <ttoy/version.h>
 #include "config.h"
 #include "fonts.h"
 #include "logging.h"
 #include "terminal.h"
 
-struct st_Shelltoy {
-  st_Config config;
-  st_Terminal terminal;
-} shelltoy;
+struct ttoy_Main {
+  ttoy_Config config;
+  ttoy_Terminal terminal;
+} ttoy;
 
-void st_initSDL() {
+void ttoy_initSDL() {
   SDL_Init(SDL_INIT_VIDEO);
 }
 
-void st_quitSDL() {
+void ttoy_quitSDL() {
   SDL_Quit();
 }
 
-void st_dispatchEvents() {
+void ttoy_dispatchEvents() {
   /* Dispatch all events in the SDL event queue */
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -60,7 +60,7 @@ void st_dispatchEvents() {
           case SDL_WINDOWEVENT_SIZE_CHANGED:
             /* TODO: Support event dispatch to multiple terminals here */
             /* Inform the terminal of the new window size */
-            st_Terminal_windowSizeChanged(&shelltoy.terminal,
+            ttoy_Terminal_windowSizeChanged(&ttoy.terminal,
                 event.window.data1,  /* width */
                 event.window.data2  /* height */
                 );
@@ -69,7 +69,7 @@ void st_dispatchEvents() {
         break;
       case SDL_TEXTINPUT:
         /* NOTE: Control keys are handled separately from text input */
-        st_Terminal_textInput(&shelltoy.terminal,
+        ttoy_Terminal_textInput(&ttoy.terminal,
             event.text.text  /* text */
             );
         break;
@@ -103,7 +103,7 @@ void st_dispatchEvents() {
           if (skip)
             break;
         }
-        st_Terminal_keyInput(&shelltoy.terminal,
+        ttoy_Terminal_keyInput(&ttoy.terminal,
             event.key.keysym.sym,  /* virtual key code */
             event.key.keysym.mod  /* modifiers */
             );
@@ -131,12 +131,12 @@ void st_dispatchEvents() {
        * one terminal at a time. */
       case SDL_MOUSEBUTTONDOWN:
       case SDL_MOUSEBUTTONUP:
-        st_Terminal_mouseButton(&shelltoy.terminal,
+        ttoy_Terminal_mouseButton(&ttoy.terminal,
             &event.button  /* event */
             );
         break;
       case SDL_MOUSEMOTION:
-        st_Terminal_mouseMotion(&shelltoy.terminal,
+        ttoy_Terminal_mouseMotion(&ttoy.terminal,
             &event.motion  /* event */
             );
         break;
@@ -144,11 +144,11 @@ void st_dispatchEvents() {
         exit(EXIT_SUCCESS);
         break;
       default:
-        if (event.type == st_PTY_eventType()) {
+        if (event.type == ttoy_PTY_eventType()) {
           int error;
           /* Instruct the pty to read from the pseudo terminal */
-          st_PTY *pty = (st_PTY *)event.user.data1;
-          error = st_PTY_read(pty);
+          ttoy_PTY *pty = (ttoy_PTY *)event.user.data1;
+          error = ttoy_PTY_read(pty);
           if (error == EWOULDBLOCK) {
             /* TODO: Reset the epoll handle so that we will get a pty event
              * soon? */
@@ -164,7 +164,7 @@ void st_dispatchEvents() {
 
 /* This routine handles SIGCHLD signals which we recieve when any of our
  * child processes (typically shells) exit. */
-void st_childExit(int signal) {
+void ttoy_childExit(int signal) {
   SDL_Event event;
   pid_t pid;
   int status;
@@ -189,7 +189,7 @@ void st_childExit(int signal) {
     /* TODO: Look for the terminal associated with the child that has exited */
     /* XXX: We only have one terminal emulator window at the moment, so here we
      * simply call exit(). */
-    assert(shelltoy.terminal.pty.child == pid);
+    assert(ttoy.terminal.pty.child == pid);
     fprintf(stderr, "Our child process %d has exited\n", pid);  /* XXX */
     /* Push an SDL quit event so that we can cleanly exit */
     event.type = SDL_QUIT;
@@ -201,16 +201,16 @@ void st_childExit(int signal) {
   }
 }
 
-void st_writeConfig() {
-  /* st_Config_write(&shelltoy.config); */
+void ttoy_writeConfig() {
+  /* ttoy_Config_write(&ttoy.config); */
 }
 
-void st_destroyConfig() {
-  st_Config_destroy(&shelltoy.config);
+void ttoy_destroyConfig() {
+  ttoy_Config_destroy(&ttoy.config);
 }
 
-void st_destroyTerminal() {
-  st_Terminal_destroy(&shelltoy.terminal);
+void ttoy_destroyTerminal() {
+  ttoy_Terminal_destroy(&ttoy.terminal);
 }
 
 void print_option(
@@ -225,8 +225,8 @@ void print_option(
 
 void print_help() {
   static const char *helpString =
-    "Usage: shelltoy [options]\n"
-    "       shelltoy [options] -- [shell] [shell arguments]\n"
+    "Usage: ttoy [options]\n"
+    "       ttoy [options] -- [shell] [shell arguments]\n"
     "\n"
     "Options:\n"
     ;
@@ -234,29 +234,29 @@ void print_help() {
   fprintf(stderr, "%s",
       helpString);
   print_option("-h, --help", "Print this help text and exit");
-  print_option("-v, --version", "Print the Shelltoy version and exit");
+  print_option("-v, --version", "Print the ttoy version and exit");
   print_option("--config <file>",
-      "Path to Shelltoy config file, overriding the default");
+      "Path to ttoy config file, overriding the default");
   print_option("-p, --profile <name>",
-      "Name of the profile to use for Shelltoy instance");
+      "Name of the profile to use for ttoy instance");
   print_option("--plugin-path <dir>",
-      "Directory path in which Shelltoy will look for plugins");
+      "Directory path in which ttoy will look for plugins");
 }
 
 void print_version() {
   fprintf(stderr,
-      "Shelltoy %s\n",
-      SHELLTOY_QUALIFIED_VERSION);
+      "ttoy %s\n",
+      TTOY_QUALIFIED_VERSION);
 }
 
 /* TODO: Load 'toy' information from JSON files with '.toy' extensions */
-/* TODO: Include a small font embedded in the shelltoy binary? Hmm... */
+/* TODO: Include a small font embedded in the ttoy binary? Hmm... */
 
 int main(int argc, char** argv) {
   char *configFilePath, *profileName, *pluginPath;
   size_t len;
-  st_Profile *profile;
-  st_ErrorCode error;
+  ttoy_Profile *profile;
+  ttoy_ErrorCode error;
   char **shell_argv;
   int shell_argc;
   char *shell_argv_buff[4];
@@ -289,7 +289,7 @@ int main(int argc, char** argv) {
     switch (c) {
       case 'c':
         if (configFilePath != NULL) {
-          ST_LOG_ERROR("%s", "More than one config file specified; ignoring");
+          TTOY_LOG_ERROR("%s", "More than one config file specified; ignoring");
           break;
         }
         fprintf(stderr, "Using config file path: %s\n", optarg);
@@ -302,7 +302,7 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
       case 'p':
         if (profileName != NULL) {
-          ST_LOG_ERROR("%s", "More than one profile specified; ignoring");
+          TTOY_LOG_ERROR("%s", "More than one profile specified; ignoring");
           break;
         }
         fprintf(stderr, "Using profile: '%s'\n", optarg);
@@ -323,7 +323,7 @@ int main(int argc, char** argv) {
                                     to in case the option does not exist */
         if (strcmp(long_options[longindex].name, "plugin-path") == 0) {
           if (pluginPath != NULL) {
-            ST_LOG_ERROR("%s", "More than one plugin path specified; ignoring");
+            TTOY_LOG_ERROR("%s", "More than one plugin path specified; ignoring");
             break;
           }
           fprintf(stderr, "Using plugin path: '%s'\n", optarg);
@@ -338,9 +338,11 @@ int main(int argc, char** argv) {
    * that have exited */
   {
     const struct sigaction sigchldAction = {
-      .sa_handler = st_childExit,
+      .sa_handler = ttoy_childExit,
       .sa_flags = SA_NOCLDSTOP,  /* ignore suspended/resumed children */
     };
+    /* FIXME: This might interfere with the operation of grantpt(3). Do we
+     * actually need a signal handler for SIGCHLD? */
     sigaction(
         SIGCHLD,  /* signum */
         &sigchldAction,  /* act */
@@ -348,67 +350,67 @@ int main(int argc, char** argv) {
         );
   }
 
-  st_Fonts_init();
-  atexit(st_Fonts_destroy);
+  ttoy_Fonts_init();
+  atexit(ttoy_Fonts_destroy);
 
   /* Prepare the configuration */
-  st_Config_init(&shelltoy.config);
-  atexit(st_destroyConfig);
+  ttoy_Config_init(&ttoy.config);
+  atexit(ttoy_destroyConfig);
   if (pluginPath != NULL) {
-    st_Config_setPluginPath(&shelltoy.config, pluginPath);
+    ttoy_Config_setPluginPath(&ttoy.config, pluginPath);
   }
   if (configFilePath != NULL) {
     /* Config file path was given; read the configuration from file */
-    error = st_Config_setConfigFilePath(&shelltoy.config, configFilePath);
-    if (error != ST_NO_ERROR) {
-      ST_LOG_ERROR_CODE(error);
+    error = ttoy_Config_setConfigFilePath(&ttoy.config, configFilePath);
+    if (error != TTOY_NO_ERROR) {
+      TTOY_LOG_ERROR_CODE(error);
       exit(EXIT_FAILURE);
     }
   } else {
     /* Config file path not given; look for the config file in the default
      * locations */
-    error = st_Config_findConfigFile(&shelltoy.config);
-    if (error == ST_ERROR_CONFIG_FILE_NOT_FOUND) {
+    error = ttoy_Config_findConfigFile(&ttoy.config);
+    if (error == TTOY_ERROR_CONFIG_FILE_NOT_FOUND) {
       /* Could not find config file; we're using the default configuration */
-      error = st_Config_createDefaultConfigFile(&shelltoy.config);
-      if (error != ST_NO_ERROR) {
-        ST_LOG_ERROR_CODE(error);
+      error = ttoy_Config_createDefaultConfigFile(&ttoy.config);
+      if (error != TTOY_NO_ERROR) {
+        TTOY_LOG_ERROR_CODE(error);
       }
-    } else if (error != ST_NO_ERROR) {
-      ST_LOG_ERROR_CODE(error);
+    } else if (error != TTOY_NO_ERROR) {
+      TTOY_LOG_ERROR_CODE(error);
       exit(EXIT_FAILURE);
     }
   }
 
   /* Get the terminal profile from the configuration */
   if (profileName != NULL) {
-    error = st_Config_getProfile(&shelltoy.config,
+    error = ttoy_Config_getProfile(&ttoy.config,
         profileName,  /* name */
         &profile  /* profile */
         );
-    if (error != ST_NO_ERROR) {
-      ST_LOG_ERROR_CODE(error);
+    if (error != TTOY_NO_ERROR) {
+      TTOY_LOG_ERROR_CODE(error);
       exit(EXIT_FAILURE);
     }
   } else {
-    error = st_Config_getDefaultProfile(&shelltoy.config,
+    error = ttoy_Config_getDefaultProfile(&ttoy.config,
         &profile  /* profile */
         );
-    if (error != ST_NO_ERROR) {
-      ST_LOG_ERROR_CODE(error);
+    if (error != TTOY_NO_ERROR) {
+      TTOY_LOG_ERROR_CODE(error);
       exit(EXIT_FAILURE);
     }
   }
 
-  st_initSDL();
-  atexit(st_quitSDL);
+  ttoy_initSDL();
+  atexit(ttoy_quitSDL);
 
   if (argc - optind == 0) {
     /* No shell was given; we check the SHELL environment variable */
     char *shell = getenv("SHELL");
 
     if (shell == NULL) {
-      ST_LOG_ERROR("%s", "SHELL environment variable not set");
+      TTOY_LOG_ERROR("%s", "SHELL environment variable not set");
       shell_argv_buff[0] = "/usr/bin/env";
       shell_argv_buff[1] = "bash";
       shell_argv_buff[2] = "-il";  /* interactive + login */
@@ -427,18 +429,18 @@ int main(int argc, char** argv) {
     shell_argv = &argv[optind];
   }
 
-  st_Terminal_init(&shelltoy.terminal,
+  ttoy_Terminal_init(&ttoy.terminal,
     profile,  /* profile */
     shell_argc,  /* argc */
     shell_argv  /* argv */
     );
-  atexit(st_destroyTerminal);
+  atexit(ttoy_destroyTerminal);
 
   SDL_StartTextInput();  /* Receive text input by default */
   SDL_GL_SetSwapInterval(1);  /* Wait for vsync */
   while (1) {
-    st_dispatchEvents();
-    st_Terminal_draw(&shelltoy.terminal);
+    ttoy_dispatchEvents();
+    ttoy_Terminal_draw(&ttoy.terminal);
     /* FIXME: We should avoid drawing if the terminal window has not
      * changed. */
   }

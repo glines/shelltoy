@@ -23,9 +23,9 @@
 
 #include "boundingBox.h"
 
-int st_BoundingBox_checkIntersection(
-    const st_BoundingBox *self,
-    const st_BoundingBox *other)
+int ttoy_BoundingBox_checkIntersection(
+    const ttoy_BoundingBox *self,
+    const ttoy_BoundingBox *other)
 {
   if (self->x >= other->x + other->w)
     return 0;

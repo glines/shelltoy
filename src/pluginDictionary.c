@@ -23,4 +23,4 @@
 
 #include "pluginDictionary.h"
 
-ST_DEFINE_DICTIONARY(st_Plugin)
+TTOY_DEFINE_DICTIONARY(ttoy_Plugin)

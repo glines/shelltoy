@@ -21,12 +21,12 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_GLYPH_RENDERER_REF_H_
-#define SHELLTOY_GLYPH_RENDERER_REF_H_
+#ifndef TTOY_GLYPH_RENDERER_REF_H_
+#define TTOY_GLYPH_RENDERER_REF_H_
 
 #include "./common/reference.h"
 #include "glyphRenderer.h"
 
-ST_DECLARE_REFERENCE(st_GlyphRenderer)
+TTOY_DECLARE_REFERENCE(ttoy_GlyphRenderer)
 
 #endif

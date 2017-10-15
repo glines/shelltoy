@@ -32,77 +32,77 @@
 #include "./common/array.h"
 #include "logging.h"
 
-#include <shelltoy/fileWatcher.h>
+#include <ttoy/fileWatcher.h>
 
 /* Private methods */
-int st_FileWatcher_watchThread(
-    st_FileWatcher *self);
+int ttoy_FileWatcher_watchThread(
+    ttoy_FileWatcher *self);
 
-typedef struct st_FileWatcher_Watch_ {
+typedef struct ttoy_FileWatcher_Watch_ {
   int descriptor;
   char *filePath, *fileName, *dirPath;
-} st_FileWatcher_Watch;
+} ttoy_FileWatcher_Watch;
 
-ST_DECLARE_ARRAY(st_FileWatcher_Watch)
-ST_DEFINE_ARRAY(st_FileWatcher_Watch)
+TTOY_DECLARE_ARRAY(ttoy_FileWatcher_Watch)
+TTOY_DEFINE_ARRAY(ttoy_FileWatcher_Watch)
 
-struct st_FileWatcher_Internal_ {
-  st_FileWatcher_WatchArray watches;
-  st_FileWatcher_FileChangedCallback callback;
+struct ttoy_FileWatcher_Internal_ {
+  ttoy_FileWatcher_WatchArray watches;
+  ttoy_FileWatcher_FileChangedCallback callback;
   void *callbackData;
   int fd;
 };
 
 void
-st_FileWatcher_init(
-    st_FileWatcher *self)
+ttoy_FileWatcher_init(
+    ttoy_FileWatcher *self)
 {
   /* Allocate memory for internal structures */
-  self->internal = (st_FileWatcher_Internal *)malloc(
-      sizeof(st_FileWatcher_Internal));
-  st_FileWatcher_WatchArray_init(&self->internal->watches);
+  self->internal = (ttoy_FileWatcher_Internal *)malloc(
+      sizeof(ttoy_FileWatcher_Internal));
+  ttoy_FileWatcher_WatchArray_init(&self->internal->watches);
   self->internal->callback = NULL;
   self->internal->callbackData = NULL;
   /* Create an inotify instance and store the resulting file descriptor */
   self->internal->fd = inotify_init();
   if (self->internal->fd < 0) {
-    ST_LOG_ERROR("Error initializing inotify: %s",
+    TTOY_LOG_ERROR("Error initializing inotify: %s",
         strerror(errno));
   }
   /* Spawn a thread to watch the inotify file descriptor for changes */
   SDL_CreateThread(
-      (SDL_ThreadFunction)st_FileWatcher_watchThread,  /* fn */
-      "st_FileWatcher_watchThread",  /* name */
+      (SDL_ThreadFunction)ttoy_FileWatcher_watchThread,  /* fn */
+      "ttoy_FileWatcher_watchThread",  /* name */
       (void *)self  /* data */
       );
 }
 
 void
-st_FileWatcher_destroy(
-    st_FileWatcher *self)
+ttoy_FileWatcher_destroy(
+    ttoy_FileWatcher *self)
 {
   /* Free each of our watch objects */
   for (size_t i = 0;
-      i < st_FileWatcher_WatchArray_size(&self->internal->watches);
+      i < ttoy_FileWatcher_WatchArray_size(&self->internal->watches);
       ++i)
   {
-    st_FileWatcher_Watch *watch;
-    watch = st_FileWatcher_WatchArray_get(&self->internal->watches, i);
+    ttoy_FileWatcher_Watch *watch;
+    watch = ttoy_FileWatcher_WatchArray_get(&self->internal->watches, i);
     free(watch->filePath);
     free(watch->fileName);
     free(watch->dirPath);
     free(watch);
   }
   /* Destroy our watch array */
-  st_FileWatcher_WatchArray_destroy(&self->internal->watches);
+  ttoy_FileWatcher_WatchArray_destroy(&self->internal->watches);
   /* TODO: Close the inotify file descriptor to signal our thread to stop */
   /* TODO: Join the watch thread */
 }
 
 void
-st_FileWatcher_setCallback(
-    st_FileWatcher *self,
-    st_FileWatcher_FileChangedCallback callback,
+ttoy_FileWatcher_setCallback(
+    ttoy_FileWatcher *self,
+    ttoy_FileWatcher_FileChangedCallback callback,
     void *data)
 {
   /* FIXME: We need this in init. It's ugly to synchronize these. */
@@ -110,15 +110,15 @@ st_FileWatcher_setCallback(
   self->internal->callbackData = data;
 }
 
-st_ErrorCode
-st_FileWatcher_watchFile(
-    st_FileWatcher *self,
+ttoy_ErrorCode
+ttoy_FileWatcher_watchFile(
+    ttoy_FileWatcher *self,
     const char *filePath)
 {
   const char *fileName;
-  st_FileWatcher_Watch *watch;
+  ttoy_FileWatcher_Watch *watch;
   /* Allocate memory for the watch entry */
-  watch = (st_FileWatcher_Watch *)malloc(sizeof(st_FileWatcher_Watch));
+  watch = (ttoy_FileWatcher_Watch *)malloc(sizeof(ttoy_FileWatcher_Watch));
   /* Copy the file path */
   watch->filePath = (char *)malloc(strlen(filePath) + 1);
   strcpy(watch->filePath, filePath);
@@ -152,13 +152,13 @@ st_FileWatcher_watchFile(
    * need to somehow quickly index the watches by their descriptors in order to
    * find the file path. (I don't know if we can rely on inotify to always give
    * us the file path in the event structure) */
-  st_FileWatcher_WatchArray_append(&self->internal->watches, watch);
-  return ST_NO_ERROR;
+  ttoy_FileWatcher_WatchArray_append(&self->internal->watches, watch);
+  return TTOY_NO_ERROR;
 }
 
 int
-st_FileWatcher_watchThread(
-    st_FileWatcher *self)
+ttoy_FileWatcher_watchThread(
+    ttoy_FileWatcher *self)
 {
   struct inotify_event *buf, *event;
   size_t bufSize;
@@ -183,7 +183,7 @@ st_FileWatcher_watchThread(
     if (bytesRead < 0) {
       /* TODO: Figure out which of these error codes signal us to join the main
        * thread */
-      ST_LOG_ERROR(
+      TTOY_LOG_ERROR(
           "inotify file descriptor error: %s\n",
           strerror(errno));  /* XXX */
       break;  /* Exit our thread */
@@ -215,11 +215,11 @@ st_FileWatcher_watchThread(
       */
       /* TODO: Check for watches matching this event */
       for (size_t i = 0;
-          i < st_FileWatcher_WatchArray_size(&self->internal->watches);
+          i < ttoy_FileWatcher_WatchArray_size(&self->internal->watches);
           ++i)
       {
-        st_FileWatcher_Watch *watch;
-        watch = st_FileWatcher_WatchArray_get(&self->internal->watches, i);
+        ttoy_FileWatcher_Watch *watch;
+        watch = ttoy_FileWatcher_WatchArray_get(&self->internal->watches, i);
         /* Check for matching watch descriptors (i.e. the directory matches) */
         if (watch->descriptor != event->wd)
           continue;

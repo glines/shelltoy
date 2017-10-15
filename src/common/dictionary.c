@@ -27,32 +27,32 @@
 
 #include "dictionary.h"
 
-typedef struct st_Dictionary_KeyValuePair_ {
+typedef struct ttoy_Dictionary_KeyValuePair_ {
   const char *key;
   void *value;
-} st_Dictionary_KeyValuePair;
+} ttoy_Dictionary_KeyValuePair;
 
-struct st_Dictionary_Internal_ {
-  st_Dictionary_KeyValuePair *pairs;
+struct ttoy_Dictionary_Internal_ {
+  ttoy_Dictionary_KeyValuePair *pairs;
   size_t sizePairs, numPairs;
 };
 
 #define INIT_DICTIONARY_SIZE 8
 
-void st_Dictionary_init(
-    st_Dictionary *self)
+void ttoy_Dictionary_init(
+    ttoy_Dictionary *self)
 {
   /* Allocate memory for internal data structures */
-  self->internal = (st_Dictionary_Internal *)malloc(
-      sizeof(st_Dictionary_Internal));
-  self->internal->pairs = (st_Dictionary_KeyValuePair *)malloc(
-      sizeof(st_Dictionary_KeyValuePair) * INIT_DICTIONARY_SIZE);
+  self->internal = (ttoy_Dictionary_Internal *)malloc(
+      sizeof(ttoy_Dictionary_Internal));
+  self->internal->pairs = (ttoy_Dictionary_KeyValuePair *)malloc(
+      sizeof(ttoy_Dictionary_KeyValuePair) * INIT_DICTIONARY_SIZE);
   self->internal->sizePairs = INIT_DICTIONARY_SIZE;
   self->internal->numPairs = 0;
 }
 
-void st_Dictionary_destroy(
-    st_Dictionary *self)
+void ttoy_Dictionary_destroy(
+    ttoy_Dictionary *self)
 {
   /* Free all key strings (we have allocated that memory ourselves) */
   for (size_t i = 0; i < self->internal->numPairs; ++i) {
@@ -64,34 +64,34 @@ void st_Dictionary_destroy(
 }
 
 int comp_keyValuePair(
-    const st_Dictionary_KeyValuePair *a,
-    const st_Dictionary_KeyValuePair *b)
+    const ttoy_Dictionary_KeyValuePair *a,
+    const ttoy_Dictionary_KeyValuePair *b)
 {
   return strcmp(a->key, b->key);
 }
 
-void st_Dictionary_insert(
-    st_Dictionary *self,
+void ttoy_Dictionary_insert(
+    ttoy_Dictionary *self,
     const char *key,
     void *value)
 {
-  st_Dictionary_KeyValuePair *pair;
+  ttoy_Dictionary_KeyValuePair *pair;
 
   /* Check for an existing pair with the given key */
-  if (st_Dictionary_getValue(self, key) != NULL) {
+  if (ttoy_Dictionary_getValue(self, key) != NULL) {
     /* TODO: Maybe we should return an error code here? */
     return;
   }
 
   /* Ensure we have enough memory allocated to insert this pair */
   if (self->internal->numPairs + 1 > self->internal->sizePairs) {
-    st_Dictionary_KeyValuePair *newPairs;
-    newPairs = (st_Dictionary_KeyValuePair *)malloc(
-        sizeof(st_Dictionary_KeyValuePair) * self->internal->sizePairs * 2);
+    ttoy_Dictionary_KeyValuePair *newPairs;
+    newPairs = (ttoy_Dictionary_KeyValuePair *)malloc(
+        sizeof(ttoy_Dictionary_KeyValuePair) * self->internal->sizePairs * 2);
     memcpy(
         newPairs,
         self->internal->pairs, 
-        sizeof(st_Dictionary_KeyValuePair) * self->internal->numPairs);
+        sizeof(ttoy_Dictionary_KeyValuePair) * self->internal->numPairs);
     free(self->internal->pairs);
     self->internal->pairs = newPairs;
     self->internal->sizePairs *= 2;
@@ -109,13 +109,13 @@ void st_Dictionary_insert(
   qsort(
       self->internal->pairs,  /* ptr */
       self->internal->numPairs,  /* count */
-      sizeof(st_Dictionary_KeyValuePair),  /* size */
+      sizeof(ttoy_Dictionary_KeyValuePair),  /* size */
       (int (*)(const void *, const void *))comp_keyValuePair  /* comp */
       );
 }
 
-void *st_Dictionary_getValue(
-    st_Dictionary *self,
+void *ttoy_Dictionary_getValue(
+    ttoy_Dictionary *self,
     const char *key)
 {
   int a, b, i;
@@ -149,14 +149,14 @@ void *st_Dictionary_getValue(
   return NULL;
 }
 
-size_t st_Dictionary_size(
-    st_Dictionary *self)
+size_t ttoy_Dictionary_size(
+    ttoy_Dictionary *self)
 {
   return self->internal->numPairs;
 }
 
-void *st_Dictionary_getValueAtIndex(
-    st_Dictionary *self,
+void *ttoy_Dictionary_getValueAtIndex(
+    ttoy_Dictionary *self,
     size_t index)
 {
   assert(index < self->internal->numPairs);

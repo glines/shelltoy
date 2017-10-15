@@ -21,18 +21,56 @@
  * IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#ifndef TTOY_PLUGIN_H_
+#define TTOY_PLUGIN_H_
 
-#include <ttoy/plugin.h>
+#include <inttypes.h>
+#include <jansson.h>
 
-struct ttoy_Plugin_Internal_ {
-  const ttoy_Plugin_Dispatch *dispatch;
-  const ttoy_BackgroundToy_Attributes *backgroundToyAttributes;
-  const ttoy_BackgroundToy_Dispatch *backgroundToyDispatch;
-  const ttoy_TextToy_Attributes *textToyAttributes;
-  const ttoy_TextToy_Dispatch *textToyDispatch;
-};
+#include <ttoy/backgroundToy.h>
+#include <ttoy/error.h>
+#include <ttoy/textToy.h>
+#include <ttoy/version.h>
+
+typedef enum {
+  TTOY_TOY_TYPE_BACKGROUND = 0x01,
+  TTOY_TOY_TYPE_TEXT = 0x02,
+} ttoy_ToyTypeMask;
+
+typedef enum {
+  TTOY_GRAPHICS_API_OPENGL = 0x01,
+  TTOY_GRAPHICS_API_VULKAN = 0x02,
+  TTOY_GRAPHICS_API_DX11 = 0x04,
+  TTOY_GRAPHICS_API_DX12 = 0x08,
+} ttoy_GraphicsApiMask;
+
+typedef struct ttoy_Plugin_Attributes_ {
+  size_t size;
+  ttoy_ToyTypeMask toyTypes;
+  ttoy_GraphicsApiMask graphicsApis;
+} ttoy_Plugin_Attributes;
+
+struct ttoy_Plugin_Internal_;
+typedef struct ttoy_Plugin_Internal_ ttoy_Plugin_Internal;
+
+typedef struct ttoy_Plugin_ {
+  const char *name;
+
+  ttoy_Plugin_Internal *internal;
+} ttoy_Plugin;
+
+typedef void (*ttoy_Plugin_Init)(
+    ttoy_Plugin *,  /* self */
+    const char *  /* name */
+    );
+typedef void (*ttoy_Plugin_Destroy)(
+    ttoy_Plugin *  /* self */
+    );
+
+typedef struct ttoy_Plugin_Dispatch_ {
+  ttoy_Plugin_Init init;
+  ttoy_Plugin_Destroy destroy;
+} ttoy_Plugin_Dispatch;
 
 void
 ttoy_Plugin_init(
@@ -42,56 +80,42 @@ ttoy_Plugin_init(
     const ttoy_BackgroundToy_Attributes *backgroundToyAttributes,
     const ttoy_BackgroundToy_Dispatch *backgroundToyDispatch,
     const ttoy_TextToy_Attributes *textToyAttributes,
-    const ttoy_TextToy_Dispatch *textToyDispatch)
-{
-  /* Allocate memory for internal structures */
-  self->internal = (ttoy_Plugin_Internal *)malloc(
-      sizeof(ttoy_Plugin_Internal));
-  /* Copy the name string */
-  self->name = (const char *)malloc(strlen(name) + 1);
-  strcpy((char *)self->name, name);
-  /* Store pointers to the dispatch tables */
-  self->internal->dispatch = dispatch;
-  self->internal->backgroundToyDispatch = backgroundToyDispatch;
-  self->internal->textToyDispatch = textToyDispatch;
-  /* Store pointer to the toy attributes */
-  self->internal->backgroundToyAttributes = backgroundToyAttributes;
-  self->internal->textToyAttributes = textToyAttributes;
-}
+    const ttoy_TextToy_Dispatch *textToyDispatch);
 
 void
 ttoy_Plugin_destroy(
-    ttoy_Plugin *self)
-{
-  /* Free memory from internal structures */
-  free(self->internal);
-  free((char *)self->name);
-}
+    ttoy_Plugin *self);
 
 const ttoy_BackgroundToy_Attributes *
 ttoy_Plugin_getBackgroundToyAttributes(
-    ttoy_Plugin *self)
-{
-  return self->internal->backgroundToyAttributes;
-}
-
+    ttoy_Plugin *self);
 const ttoy_BackgroundToy_Dispatch *
 ttoy_Plugin_getBackgroundToyDispatch(
-    ttoy_Plugin *self)
-{
-  return self->internal->backgroundToyDispatch;
-}
+    ttoy_Plugin *self);
 
 const ttoy_TextToy_Attributes *
 ttoy_Plugin_getTextToyAttributes(
-    ttoy_Plugin *self)
-{
-  return self->internal->textToyAttributes;
-}
-
+    ttoy_Plugin *self);
 const ttoy_TextToy_Dispatch *
 ttoy_Plugin_getTextToyDispatch(
-    ttoy_Plugin *self)
-{
-  return self->internal->textToyDispatch;
-}
+    ttoy_Plugin *self);
+
+#define TTOY_PLUGIN_DISPATCH( \
+    PLUGIN_STRUCT, \
+    GRAPHICS_APIS, \
+    TOY_TYPES, \
+    INIT_CB, \
+    DESTROY_CB \
+    ) \
+  const uint32_t ttoy_version = TTOY_VERSION; \
+  const ttoy_Plugin_Attributes TTOY_PLUGIN_ATTRIBUTES = { \
+    .size = sizeof(PLUGIN_STRUCT), \
+    .graphicsApis = GRAPHICS_APIS, \
+    .toyTypes = TOY_TYPES, \
+  }; \
+  const ttoy_Plugin_Dispatch TTOY_PLUGIN_DISPATCH = { \
+    .init = INIT_CB, \
+    .destroy = DESTROY_CB, \
+  };
+
+#endif

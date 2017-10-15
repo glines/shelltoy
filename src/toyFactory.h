@@ -21,57 +21,57 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_TOY_FACTORY_H_
-#define SHELLTOY_TOY_FACTORY_H_
+#ifndef TTOY_TOY_FACTORY_H_
+#define TTOY_TOY_FACTORY_H_
 
 #include <jansson.h>
 
-#include <shelltoy/backgroundToy.h>
-#include <shelltoy/error.h>
-#include <shelltoy/textToy.h>
+#include <ttoy/backgroundToy.h>
+#include <ttoy/error.h>
+#include <ttoy/textToy.h>
 
 #include "pluginDictionary.h"
 
-struct st_ToyFactory_Internal;
+struct ttoy_ToyFactory_Internal;
 
-typedef struct st_ToyFactory_ {
-  struct st_ToyFactory_Internal *internal;
-} st_ToyFactory;
+typedef struct ttoy_ToyFactory_ {
+  struct ttoy_ToyFactory_Internal *internal;
+} ttoy_ToyFactory;
 
-void st_ToyFactory_init(
-    st_ToyFactory *self,
+void ttoy_ToyFactory_init(
+    ttoy_ToyFactory *self,
     const char *pluginPath);
-void st_ToyFactory_destroy(
-    st_ToyFactory *self);
+void ttoy_ToyFactory_destroy(
+    ttoy_ToyFactory *self);
 
-void st_ToyFactory_setPluginPath(
-    st_ToyFactory *self,
+void ttoy_ToyFactory_setPluginPath(
+    ttoy_ToyFactory *self,
     const char *path);
 
-st_ErrorCode
-st_ToyFactory_registerPlugin(
-    st_ToyFactory *self,
+ttoy_ErrorCode
+ttoy_ToyFactory_registerPlugin(
+    ttoy_ToyFactory *self,
     const char *name,
     const char *dlPath);
 
-st_PluginDictionary *
-st_ToyFactory_getPlugins(
-    st_ToyFactory *self);
+ttoy_PluginDictionary *
+ttoy_ToyFactory_getPlugins(
+    ttoy_ToyFactory *self);
 
-st_ErrorCode
-st_ToyFactory_buildBackgroundToy(
-    st_ToyFactory *self,
+ttoy_ErrorCode
+ttoy_ToyFactory_buildBackgroundToy(
+    ttoy_ToyFactory *self,
     const char *pluginName,
     const char *toyName,
     json_t *config,
-    st_BackgroundToy **toy);
+    ttoy_BackgroundToy **toy);
 
-st_ErrorCode
-st_ToyFactory_buildTextToy(
-    st_ToyFactory *self,
+ttoy_ErrorCode
+ttoy_ToyFactory_buildTextToy(
+    ttoy_ToyFactory *self,
     const char *pluginName,
     const char *toyName,
     json_t *config,
-    st_TextToy **toy);
+    ttoy_TextToy **toy);
 
 #endif

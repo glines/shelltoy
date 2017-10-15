@@ -21,12 +21,12 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef SHELLTOY_FONT_REF_H_
-#define SHELLTOY_FONT_REF_H_
+#ifndef TTOY_FONT_REF_H_
+#define TTOY_FONT_REF_H_
 
 #include "./common/reference.h"
 #include "font.h"
 
-ST_DECLARE_REFERENCE(st_Font)
+TTOY_DECLARE_REFERENCE(ttoy_Font)
 
 #endif

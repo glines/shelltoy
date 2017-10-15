@@ -38,26 +38,26 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-typedef enum st_Terminal_SelectionState_ {
-  ST_TERMINAL_NO_SELECTION,
-  ST_TERMINAL_SELECTION_BETWEEN_CELLS,
-  ST_TERMINAL_SELECTION_STARTED,
-} st_Terminal_SelectionState;
+typedef enum ttoy_Terminal_SelectionState_ {
+  TTOY_TERMINAL_NO_SELECTION,
+  TTOY_TERMINAL_SELECTION_BETWEEN_CELLS,
+  TTOY_TERMINAL_SELECTION_STARTED,
+} ttoy_Terminal_SelectionState;
 
 /* Internal data structure */
-struct st_Terminal_Internal {
-  st_TextRenderer textRenderer;
-  st_BackgroundRenderer backgroundRenderer;
-  st_GlyphRendererRef *glyphRenderer;
-  st_Profile *profile;
+struct ttoy_Terminal_Internal {
+  ttoy_TextRenderer textRenderer;
+  ttoy_BackgroundRenderer backgroundRenderer;
+  ttoy_GlyphRendererRef *glyphRenderer;
+  ttoy_Profile *profile;
   int beginSelection[2];
   int selectionTargetCell[2];
-  st_Terminal_SelectionState selectionState;
+  ttoy_Terminal_SelectionState selectionState;
 };
 
 /* Private methods */
-void st_Terminal_tsmLogCallback(
-    st_Terminal *self,
+void ttoy_Terminal_tsmLogCallback(
+    ttoy_Terminal *self,
     const char *file,
     int line,
     const char *func,
@@ -65,31 +65,31 @@ void st_Terminal_tsmLogCallback(
     unsigned int sev,
     const char *format,
     va_list args);
-void st_Terminal_tsmWriteCallback(
+void ttoy_Terminal_tsmWriteCallback(
     struct tsm_vte *vte,
     const char *u8,
     size_t len,
-    st_Terminal *self);
-void st_Terminal_initWindow(st_Terminal *self);
-void st_Terminal_initTSM(st_Terminal *self);
-void st_Terminal_updateScreenSize(st_Terminal *self);
-void st_Terminal_calculateScreenSize(
-    st_Terminal *self,
+    ttoy_Terminal *self);
+void ttoy_Terminal_initWindow(ttoy_Terminal *self);
+void ttoy_Terminal_initTSM(ttoy_Terminal *self);
+void ttoy_Terminal_updateScreenSize(ttoy_Terminal *self);
+void ttoy_Terminal_calculateScreenSize(
+    ttoy_Terminal *self,
     int *columns,
     int *rows);
-void st_Terminal_calculateWindowSize(
-    st_Terminal *self,
+void ttoy_Terminal_calculateWindowSize(
+    ttoy_Terminal *self,
     int *width,
     int *height);
-void st_Terminal_calculateCell(
-    const st_Terminal *self,
+void ttoy_Terminal_calculateCell(
+    const ttoy_Terminal *self,
     int x,
     int y,
     int *cellColumn,
     int *cellRow);
 
-void st_Terminal_tsmLogCallback(
-    st_Terminal *self,
+void ttoy_Terminal_tsmLogCallback(
+    ttoy_Terminal *self,
     const char *file,
     int line,
     const char *func,
@@ -99,21 +99,21 @@ void st_Terminal_tsmLogCallback(
     va_list args)
 {
   /* TODO: Do something with this data */
-  fprintf(stderr, "st_Terminal_tsmLogCallback() called\n");
+  fprintf(stderr, "ttoy_Terminal_tsmLogCallback() called\n");
 }
 
-void st_Terminal_tsmWriteCallback(
+void ttoy_Terminal_tsmWriteCallback(
     struct tsm_vte *vte,
     const char *u8,
     size_t len,
-    st_Terminal *self)
+    ttoy_Terminal *self)
 {
   /* Write to the pseudo terminal */
-  st_PTY_write(&self->pty, u8, len);
+  ttoy_PTY_write(&self->pty, u8, len);
 }
 
-void st_Terminal_ptyReadCallback(
-    st_Terminal *self,
+void ttoy_Terminal_ptyReadCallback(
+    ttoy_Terminal *self,
     const char *u8,
     size_t len)
 {
@@ -124,18 +124,18 @@ void st_Terminal_ptyReadCallback(
       len  /* len */
       );
   /* Update the terminal screen display */
-  st_Terminal_updateScreen(self);
+  ttoy_Terminal_updateScreen(self);
 }
 
-void st_Terminal_initWindow(st_Terminal *self) {
+void ttoy_Terminal_initWindow(ttoy_Terminal *self) {
   /* Calculate the window size based on the desired screen size */
-  st_Terminal_calculateWindowSize(self,
+  ttoy_Terminal_calculateWindowSize(self,
       &self->width,  /* columns */
       &self->height  /* rows */
       );
   /* Create the SDL window */
   self->window = SDL_CreateWindow(
-      "Shelltoy",  /* title */
+      "TToY Graphical Terminal Emulator",  /* title */
       SDL_WINDOWPOS_UNDEFINED,  /* x */
       SDL_WINDOWPOS_UNDEFINED,  /* y */
       self->width,  /* w */
@@ -181,8 +181,8 @@ void st_Terminal_initWindow(st_Terminal *self) {
   while (glGetError() != GL_NO_ERROR);
 
   /* Configure the GL */
-  st_Color *bgColor =
-    &self->internal->profile->colorScheme.colors[ST_COLOR_BACKGROUND];
+  ttoy_Color *bgColor =
+    &self->internal->profile->colorScheme.colors[TTOY_COLOR_BACKGROUND];
   glClearColor(
       (float)bgColor->rgb[0] / 255.0f,
       (float)bgColor->rgb[1] / 255.0f,
@@ -206,20 +206,20 @@ void st_Terminal_initWindow(st_Terminal *self) {
   SDL_GL_SwapWindow(self->window);
 }
 
-void st_Terminal_initTSM(st_Terminal *self) {
+void ttoy_Terminal_initTSM(ttoy_Terminal *self) {
   int result;
   /* Initialize the screen and state machine provided by libtsm */
   tsm_screen_new(
       &self->screen,  /* out */
-      (tsm_log_t)st_Terminal_tsmLogCallback,  /* log */
+      (tsm_log_t)ttoy_Terminal_tsmLogCallback,  /* log */
       self  /* log_data */
       );
   tsm_vte_new(
       &self->vte,  /* out */
       self->screen,  /* con */
-      (tsm_vte_write_cb)st_Terminal_tsmWriteCallback,  /* write_cb */
+      (tsm_vte_write_cb)ttoy_Terminal_tsmWriteCallback,  /* write_cb */
       self,  /* data */
-      (tsm_log_t)st_Terminal_tsmLogCallback,  /* log */
+      (tsm_log_t)ttoy_Terminal_tsmLogCallback,  /* log */
       self  /* log_data */
       );
   /* Set the screen size */
@@ -235,8 +235,8 @@ void st_Terminal_initTSM(st_Terminal *self) {
   }
 }
 
-void st_Terminal_calculateScreenSize(
-    st_Terminal *self,
+void ttoy_Terminal_calculateScreenSize(
+    ttoy_Terminal *self,
     int *columns,
     int *rows)
 {
@@ -249,8 +249,8 @@ void st_Terminal_calculateScreenSize(
   *rows = MAX(*rows, 1);
 }
 
-void st_Terminal_calculateWindowSize(
-    st_Terminal *self,
+void ttoy_Terminal_calculateWindowSize(
+    ttoy_Terminal *self,
     int *width,
     int *height)
 {
@@ -259,8 +259,8 @@ void st_Terminal_calculateWindowSize(
   *height = self->rows * self->cellHeight;
 }
 
-void st_Terminal_calculateCell(
-    const st_Terminal *self,
+void ttoy_Terminal_calculateCell(
+    const ttoy_Terminal *self,
     int x,
     int y,
     int *cellColumn,
@@ -271,79 +271,79 @@ void st_Terminal_calculateCell(
   *cellRow = y / self->cellHeight;
 }
 
-void st_Terminal_init(
-    st_Terminal *self,
-    st_Profile *profile,
+void ttoy_Terminal_init(
+    ttoy_Terminal *self,
+    ttoy_Profile *profile,
     int argc,
     char **argv)
 {
   /* Allocate memory for internal data structures */
-  self->internal = (struct st_Terminal_Internal *)malloc(
-      sizeof(struct st_Terminal_Internal));
-  self->internal->selectionState = ST_TERMINAL_NO_SELECTION;
+  self->internal = (struct ttoy_Terminal_Internal *)malloc(
+      sizeof(struct ttoy_Terminal_Internal));
+  self->internal->selectionState = TTOY_TERMINAL_NO_SELECTION;
   self->internal->profile = profile;
   /* TODO: The default columns and rows should be configurable */
   self->columns = 80;
   self->rows = 25;
   /* Initialize the glyph renderer */
-  st_GlyphRendererRef_init(&self->internal->glyphRenderer);
-  st_GlyphRenderer_init(
-      st_GlyphRendererRef_get(self->internal->glyphRenderer),
+  ttoy_GlyphRendererRef_init(&self->internal->glyphRenderer);
+  ttoy_GlyphRenderer_init(
+      ttoy_GlyphRendererRef_get(self->internal->glyphRenderer),
       profile  /* profile */
       );
   /* Store the cell size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(
-      st_GlyphRendererRef_get(self->internal->glyphRenderer),
+  ttoy_GlyphRenderer_getCellSize(
+      ttoy_GlyphRendererRef_get(self->internal->glyphRenderer),
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
   /* Initialize the SDL window */
-  st_Terminal_initWindow(self);
+  ttoy_Terminal_initWindow(self);
   /* Initialize the text renderer */
-  st_TextRenderer_init(&self->internal->textRenderer,
+  ttoy_TextRenderer_init(&self->internal->textRenderer,
       self->internal->glyphRenderer,  /* glyphRenderer */
       profile  /* profile */
       );
   /* Initialize the background renderer */
-  st_BackgroundRenderer_init(
+  ttoy_BackgroundRenderer_init(
       &self->internal->backgroundRenderer,
       profile  /* profile */
       );
   /* Initialize the terminal state machine */
-  st_Terminal_initTSM(self);
+  ttoy_Terminal_initTSM(self);
   /* Initialize the pseudo terminal and corresponding child process */
-  st_PTY_init(&self->pty,
+  ttoy_PTY_init(&self->pty,
       self->columns,  /* width */
       self->rows  /* height */
       );
-  /* TODO: Construct a st_MonospaceFont object that combines multiple font
+  /* TODO: Construct a ttoy_MonospaceFont object that combines multiple font
    * faces into one font that supports normal, bold, and wide glyphs */
   /* TODO: Calculate terminal width and height */
-  st_PTY_startChild(&self->pty,
+  ttoy_PTY_startChild(&self->pty,
       argv[0],  /* path */
       argv,  /* argv */
-      (st_PTY_readCallback_t)st_Terminal_ptyReadCallback,  /* callback */
+      (ttoy_PTY_readCallback_t)ttoy_Terminal_ptyReadCallback,  /* callback */
       self  /* callback_data */
       );
   /* TODO: Start sending input from the child process to tsm_vte_input()? */
   /* TODO: Start sending keyboard input to tsm_vte_handle_keyboard()? */
 }
 
-void st_Terminal_destroy(st_Terminal *self) {
+void ttoy_Terminal_destroy(ttoy_Terminal *self) {
   /* Destroy all of the objects that we initialized */
-  st_BackgroundRenderer_destroy(&self->internal->backgroundRenderer);
-  st_TextRenderer_destroy(&self->internal->textRenderer);
-  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  ttoy_BackgroundRenderer_destroy(&self->internal->backgroundRenderer);
+  ttoy_TextRenderer_destroy(&self->internal->textRenderer);
+  ttoy_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   /* FIXME: Destroy the libtsm state machine */
   /* FIXME: Destroy the libtsm screen */
-  st_PTY_destroy(&self->pty);
+  ttoy_PTY_destroy(&self->pty);
   /* Release memory for internal data structures */
   free(self->internal);
   /* FIXME: Close the SDL window */
 }
 
-void st_Terminal_windowSizeChanged(
-    st_Terminal *self,
+void ttoy_Terminal_windowSizeChanged(
+    ttoy_Terminal *self,
     int width,
     int height)
 {
@@ -351,17 +351,17 @@ void st_Terminal_windowSizeChanged(
   self->width = width;
   self->height = height;
   /* Update the screen size based on the new width and height */
-  st_Terminal_updateScreenSize(self);
+  ttoy_Terminal_updateScreenSize(self);
   /* Update the GL viewport size */
   glViewport(0, 0, width, height);
   FORCE_ASSERT_GL_ERROR();
 }
 
-void st_Terminal_updateScreenSize(st_Terminal *self) {
+void ttoy_Terminal_updateScreenSize(ttoy_Terminal *self) {
   int newColumns, newRows;
   int result;
   /* Calculate new pseudo terminal size */
-  st_Terminal_calculateScreenSize(self,
+  ttoy_Terminal_calculateScreenSize(self,
       &newColumns,  /* columns */
       &newRows  /* rows */
       );
@@ -382,12 +382,12 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
        * screen */
       assert(0);
     }
-    st_PTY_resize(&self->pty,
+    ttoy_PTY_resize(&self->pty,
         self->columns,  /* width */
         self->rows  /* height */
         );
     /* Update the screen */
-    st_TextRenderer_updateScreen(&self->internal->textRenderer,
+    ttoy_TextRenderer_updateScreen(&self->internal->textRenderer,
         self->screen,  /* screen */
         self->cellWidth,  /* cellWidth */
         self->cellHeight  /* cellHeight */
@@ -395,27 +395,27 @@ void st_Terminal_updateScreenSize(st_Terminal *self) {
   }
 }
 
-void st_Terminal_updateScreen(st_Terminal *self) {
-  st_TextRenderer_updateScreen(&self->internal->textRenderer,
+void ttoy_Terminal_updateScreen(ttoy_Terminal *self) {
+  ttoy_TextRenderer_updateScreen(&self->internal->textRenderer,
       self->screen,  /* screen */
       self->cellWidth,  /* cellWidth */
       self->cellHeight  /* cellHeight */
       );
 }
 
-void st_Terminal_draw(st_Terminal *self) {
+void ttoy_Terminal_draw(ttoy_Terminal *self) {
   /* Clear the screen */
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   FORCE_ASSERT_GL_ERROR();
 
   /* Draw the background */
-  st_BackgroundRenderer_draw(&self->internal->backgroundRenderer,
+  ttoy_BackgroundRenderer_draw(&self->internal->backgroundRenderer,
       self->width,  /* viewportWidth */
       self->height  /* viewportHeight */
       );
 
   /* Draw the glyphs on the screen */
-  st_TextRenderer_draw(&self->internal->textRenderer,
+  ttoy_TextRenderer_draw(&self->internal->textRenderer,
       self->cellWidth,  /* cellWidth */
       self->cellHeight,  /* cellHeight */
       self->width,  /* viewportWidth */
@@ -425,8 +425,8 @@ void st_Terminal_draw(st_Terminal *self) {
   SDL_GL_SwapWindow(self->window);
 }
 
-void st_Terminal_textInput(
-    st_Terminal *self,
+void ttoy_Terminal_textInput(
+    ttoy_Terminal *self,
     const char *text)
 {
   uint32_t character;
@@ -455,8 +455,8 @@ void st_Terminal_textInput(
   }
 }
 
-void st_Terminal_keyInput(
-    st_Terminal *self,
+void ttoy_Terminal_keyInput(
+    ttoy_Terminal *self,
     SDL_Keycode keycode,
     uint16_t modifiers)
 {
@@ -525,14 +525,14 @@ void st_Terminal_keyInput(
         /* FIXME: Somehow this code does not swallow the = sign as we would
          * like, i.e. = is still sent to the pty. */
         /* TODO: Allow for increase font size shortcut to be configured */
-        st_Terminal_increaseFontSize(self);
+        ttoy_Terminal_increaseFontSize(self);
         return;
       case SDLK_MINUS:
         /* Shortcut for decreasing the font size */
         /* FIXME: Somehow this code does not swallow the - sign as we would
          * like, i.e. - is still sent to the pty. */
         /* TODO: Allow for decrease font size shortcut to be configured */
-        st_Terminal_decreaseFontSize(self);
+        ttoy_Terminal_decreaseFontSize(self);
         return;
     }
   } else {
@@ -608,8 +608,8 @@ void st_Terminal_keyInput(
   }
 }
 
-void st_Terminal_mouseButton(
-    st_Terminal *self,
+void ttoy_Terminal_mouseButton(
+    ttoy_Terminal *self,
     const SDL_MouseButtonEvent *event)
 {
   switch (event->button) {
@@ -619,7 +619,7 @@ void st_Terminal_mouseButton(
           /* Clear the old selection */
           tsm_screen_selection_reset(self->screen);
           /* Update the screen */
-          st_TextRenderer_updateScreen(&self->internal->textRenderer,
+          ttoy_TextRenderer_updateScreen(&self->internal->textRenderer,
               self->screen,  /* screen */
               self->cellWidth,  /* cellWidth */
               self->cellHeight  /* cellHeight */
@@ -627,7 +627,7 @@ void st_Terminal_mouseButton(
           /* Begin the selection (no cells are selected until dragging starts) */
           self->internal->beginSelection[0] = event->x;
           self->internal->beginSelection[1] = event->y;
-          self->internal->selectionState = ST_TERMINAL_SELECTION_BETWEEN_CELLS;
+          self->internal->selectionState = TTOY_TERMINAL_SELECTION_BETWEEN_CELLS;
         } else if (event->clicks == 2) {
           /* TODO: Select the word under the cursor */
           /* TODO: Begin word selection mode */
@@ -636,7 +636,7 @@ void st_Terminal_mouseButton(
           /* TODO: Begin line selection mode */
         }
       } else {
-        if (self->internal->selectionState == ST_TERMINAL_SELECTION_STARTED) {
+        if (self->internal->selectionState == TTOY_TERMINAL_SELECTION_STARTED) {
           char *selection;
           int len;
           assert(event->state == SDL_RELEASED);
@@ -678,11 +678,11 @@ void st_Terminal_mouseButton(
          * using the primary selection with X11. */
         clipboardText = SDL_GetClipboardText();
         if (clipboardText == NULL) {
-          ST_LOG_ERROR_CODE(ST_ERROR_OUT_OF_MEMORY);
+          TTOY_LOG_ERROR_CODE(TTOY_ERROR_OUT_OF_MEMORY);
           break;
         }
         /* Paste the clipboard text to the terminal */
-        st_Terminal_textInput(self,
+        ttoy_Terminal_textInput(self,
             clipboardText  /* text */
             );
         SDL_free(clipboardText);
@@ -691,8 +691,8 @@ void st_Terminal_mouseButton(
   }
 }
 
-void st_Terminal_mouseMotion(
-    st_Terminal *self,
+void ttoy_Terminal_mouseMotion(
+    ttoy_Terminal *self,
     const SDL_MouseMotionEvent *event)
 {
   if (event->state & SDL_BUTTON_LMASK) {
@@ -705,13 +705,13 @@ void st_Terminal_mouseMotion(
     endSelection[0] = event->x;
     endSelection[1] = event->y;
     /* Determine the cells in which the selection begins and ends */
-    st_Terminal_calculateCell(self,
+    ttoy_Terminal_calculateCell(self,
         beginSelection[0],  /* x */
         beginSelection[1],  /* y */
         &beginCell[0],  /* cellColumn */
         &beginCell[1]  /* cellRow */
         );
-    st_Terminal_calculateCell(self,
+    ttoy_Terminal_calculateCell(self,
         endSelection[0],  /* x */
         endSelection[1],  /* y */
         &endCell[0],  /* cellColumn */
@@ -724,8 +724,8 @@ void st_Terminal_mouseMotion(
     beginPos = (beginCell[0] << 1) + beginCellHalf;
     endPos = (endCell[0] << 1) + endCellHalf;
     switch (self->internal->selectionState) {
-      case ST_TERMINAL_NO_SELECTION:
-      case ST_TERMINAL_SELECTION_BETWEEN_CELLS:
+      case TTOY_TERMINAL_NO_SELECTION:
+      case TTOY_TERMINAL_SELECTION_BETWEEN_CELLS:
         if (beginCell[1] == endCell[1]) {
 #define ROUND_CELL(a) (((a) >> 1) + ((a) & 1))
           /* The selection is within a single row */
@@ -770,8 +770,8 @@ void st_Terminal_mouseMotion(
                 beginCell[1] - 1 : beginCell[1]  /* posy */
               );
         }
-        self->internal->selectionState = ST_TERMINAL_SELECTION_STARTED;
-      case ST_TERMINAL_SELECTION_STARTED:
+        self->internal->selectionState = TTOY_TERMINAL_SELECTION_STARTED;
+      case TTOY_TERMINAL_SELECTION_STARTED:
         {
           int newSelectionTarget[2];
           /* Calculate the new selection target */
@@ -786,13 +786,13 @@ void st_Terminal_mouseMotion(
               /* The selection is between cells; nothing is selected */
               tsm_screen_selection_reset(self->screen);
               /* Update the screen */
-              st_TextRenderer_updateScreen(&self->internal->textRenderer,
+              ttoy_TextRenderer_updateScreen(&self->internal->textRenderer,
                   self->screen,  /* screen */
                   self->cellWidth,  /* cellWidth */
                   self->cellHeight  /* cellHeight */
                   );
               self->internal->selectionState =
-                ST_TERMINAL_SELECTION_BETWEEN_CELLS;
+                TTOY_TERMINAL_SELECTION_BETWEEN_CELLS;
               break;
             }
             if (beginPos < endPos) {
@@ -836,7 +836,7 @@ void st_Terminal_mouseMotion(
             self->internal->selectionTargetCell[0] = newSelectionTarget[0];
             self->internal->selectionTargetCell[1] = newSelectionTarget[1];
             /* Update the screen */
-            st_TextRenderer_updateScreen(&self->internal->textRenderer,
+            ttoy_TextRenderer_updateScreen(&self->internal->textRenderer,
                 self->screen,  /* screen */
                 self->cellWidth,  /* cellWidth */
                 self->cellHeight  /* cellHeight */
@@ -850,36 +850,36 @@ void st_Terminal_mouseMotion(
   }
 }
 
-st_ErrorCode
-st_Terminal_increaseFontSize(
-    st_Terminal *self)
+ttoy_ErrorCode
+ttoy_Terminal_increaseFontSize(
+    ttoy_Terminal *self)
 {
 #define MAX_INCREASE_FONT_SIZE_ATTEMPTS 32
   float fontSize;  /* Font size in pixels */
-  st_GlyphRendererRef *newGlyphRenderer;
-  st_ErrorCode error;
+  ttoy_GlyphRendererRef *newGlyphRenderer;
+  ttoy_ErrorCode error;
 
   /* Look for the next largest available font */
-  fontSize = st_Profile_getFontSize(self->internal->profile);
+  fontSize = ttoy_Profile_getFontSize(self->internal->profile);
   fontSize = ceil(fontSize) + 1.0f;
   for (int i = 0; i < MAX_INCREASE_FONT_SIZE_ATTEMPTS; ++i) {
-    error = st_Profile_setFontSize(self->internal->profile,
+    error = ttoy_Profile_setFontSize(self->internal->profile,
         fontSize);
-    if (error == ST_NO_ERROR)
+    if (error == TTOY_NO_ERROR)
       break;
 
     fontSize += 1.0f;
   }
 
-  if (error != ST_NO_ERROR) {
+  if (error != TTOY_NO_ERROR) {
     /* We were unable to find the font in a larger size */
     return error;
   }
 
   /* Construct a new glyph renderer */
-  st_GlyphRendererRef_init(&newGlyphRenderer);
-  st_GlyphRenderer_init(
-      st_GlyphRendererRef_get(newGlyphRenderer),
+  ttoy_GlyphRendererRef_init(&newGlyphRenderer);
+  ttoy_GlyphRenderer_init(
+      ttoy_GlyphRendererRef_get(newGlyphRenderer),
       self->internal->profile  /* profile */
       );
 
@@ -887,60 +887,60 @@ st_Terminal_increaseFontSize(
   /* NOTE: This will prompt the text renderer to start re-building its glyph
    * atlas. Because the text renderer will need to continue to use the old
    * glyph renderer for a number of frames, it is important that the glyph
-   * renderer actually exist as an st_GlyphRendererRef */
-  st_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
+   * renderer actually exist as an ttoy_GlyphRendererRef */
+  ttoy_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
       newGlyphRenderer  /* glyphRenderer */
       );
 
   /* Disown our old glyph renderer */
-  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  ttoy_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   self->internal->glyphRenderer = newGlyphRenderer;
 
   /* Update the cell size to the new size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(
-      st_GlyphRendererRef_get(self->internal->glyphRenderer),
+  ttoy_GlyphRenderer_getCellSize(
+      ttoy_GlyphRendererRef_get(self->internal->glyphRenderer),
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
 
   /* Update the screen size based on the new cell size */
-  st_Terminal_updateScreenSize(self);
+  ttoy_Terminal_updateScreenSize(self);
 
   /* TODO: Do we need an error code for not being able to increase the font
    * size? */
   return error;
 }
 
-st_ErrorCode
-st_Terminal_decreaseFontSize(
-    st_Terminal *self)
+ttoy_ErrorCode
+ttoy_Terminal_decreaseFontSize(
+    ttoy_Terminal *self)
 {
 #define MAX_DECREASE_FONT_SIZE_ATTEMPTS 32
   float fontSize;  /* Font size in pixels */
-  st_GlyphRendererRef *newGlyphRenderer;
-  st_ErrorCode error;
+  ttoy_GlyphRendererRef *newGlyphRenderer;
+  ttoy_ErrorCode error;
 
   /* Look for the next largest available font */
-  fontSize = st_Profile_getFontSize(self->internal->profile);
+  fontSize = ttoy_Profile_getFontSize(self->internal->profile);
   fontSize = floor(fontSize) - 1.0f;
   for (int i = 0; i < MAX_DECREASE_FONT_SIZE_ATTEMPTS; ++i) {
-    error = st_Profile_setFontSize(self->internal->profile,
+    error = ttoy_Profile_setFontSize(self->internal->profile,
         fontSize);
-    if (error == ST_NO_ERROR)
+    if (error == TTOY_NO_ERROR)
       break;
 
     fontSize -= 1.0f;
   }
 
-  if (error != ST_NO_ERROR) {
+  if (error != TTOY_NO_ERROR) {
     /* We were unable to find the font in a larger size */
     return error;
   }
 
   /* Construct a new glyph renderer */
-  st_GlyphRendererRef_init(&newGlyphRenderer);
-  st_GlyphRenderer_init(
-      st_GlyphRendererRef_get(newGlyphRenderer),
+  ttoy_GlyphRendererRef_init(&newGlyphRenderer);
+  ttoy_GlyphRenderer_init(
+      ttoy_GlyphRendererRef_get(newGlyphRenderer),
       self->internal->profile  /* profile */
       );
 
@@ -948,36 +948,36 @@ st_Terminal_decreaseFontSize(
   /* NOTE: This will prompt the text renderer to start re-building its glyph
    * atlas. Because the text renderer will need to continue to use the old
    * glyph renderer for a number of frames, it is important that the glyph
-   * renderer actually exist as an st_GlyphRendererRef */
-  st_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
+   * renderer actually exist as an ttoy_GlyphRendererRef */
+  ttoy_TextRenderer_setGlyphRenderer(&self->internal->textRenderer,
       newGlyphRenderer  /* glyphRenderer */
       );
 
   /* Disown our old glyph renderer */
-  st_GlyphRendererRef_decrement(self->internal->glyphRenderer);
+  ttoy_GlyphRendererRef_decrement(self->internal->glyphRenderer);
   self->internal->glyphRenderer = newGlyphRenderer;
 
   /* Update the cell size to the new size as calculated by the glyph renderer */
-  st_GlyphRenderer_getCellSize(
-      st_GlyphRendererRef_get(self->internal->glyphRenderer),
+  ttoy_GlyphRenderer_getCellSize(
+      ttoy_GlyphRendererRef_get(self->internal->glyphRenderer),
       &self->cellWidth,  /* width */
       &self->cellHeight  /* height */
       );
 
   /* Update the screen size based on the new cell size */
-  st_Terminal_updateScreenSize(self);
+  ttoy_Terminal_updateScreenSize(self);
 
   /* TODO: Do we need an error code for not being able to increase the font
    * size? */
   return error;
 }
 
-st_ErrorCode
-st_Terminal_setSelectionClipboard(
-    st_Terminal *self,
+ttoy_ErrorCode
+ttoy_Terminal_setSelectionClipboard(
+    ttoy_Terminal *self,
     const char *selection)
 {
-  /* TODO: The st_Terminal_setSelectionClipboard() routine is written in an
+  /* TODO: The ttoy_Terminal_setSelectionClipboard() routine is written in an
    * attempt to support setting the X11 primary selection without setting the
    * clipboard selection. This might not actually be possible to achieve with
    * SDL, since SDL is ultimately responsible for responding to the window
@@ -992,7 +992,7 @@ st_Terminal_setSelectionClipboard(
   sdlResult = SDL_GetWindowWMInfo(self->window, &windowInfo);
   if (sdlResult != SDL_TRUE) {
     /* TODO: Get the SDL-specific error message */
-    return ST_ERROR_SDL_ERROR;
+    return TTOY_ERROR_SDL_ERROR;
   }
   window = windowInfo.info.x11.window;
   display = windowInfo.info.x11.display;
@@ -1003,5 +1003,5 @@ st_Terminal_setSelectionClipboard(
   if (XGetSelectionOwner(display, primarySelection) != window) {
     XSetSelectionOwner(display, primarySelection, window, CurrentTime);
   }
-  return ST_NO_ERROR;
+  return TTOY_NO_ERROR;
 }
