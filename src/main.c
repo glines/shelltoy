@@ -68,28 +68,39 @@ void st_dispatchEvents() {
         }
         break;
       case SDL_TEXTINPUT:
-        /* FIXME: Handle control characters separately from text input */
+        /* NOTE: Control keys are handled separately from text input */
         st_Terminal_textInput(&shelltoy.terminal,
             event.text.text  /* text */
             );
         break;
       case SDL_KEYDOWN:
-        if (event.key.repeat)
+        if (event.key.repeat) {
+          /* FIXME: For some reason, SDL key repeat events are
+           * completely useless. Ordinary, non-repeat events are
+           * actually repeated, while the "repeat" events result in
+           * duplicate key events. */
+          /* FIXME: The key repeat rate for certain keys, backspace in
+           * particular, does not appear to match the repeat rate
+           * configured on the system. */
+          /* FIXME: Because SDL key repeat events do not work, it is
+           * difficult to check for key events that originate outside of
+           * the window. This is problematic for alt+tab events. */
           break;
+        }
+        /* Stop receiving text input events while certain modifier
+         * keys are pressed */
         {
-          int modifier = 0;
-          /* Stop receiving text input events while certain modifier keys are
-           * pressed */
+          int skip = 0;
           switch (event.key.keysym.sym) {
             case SDLK_LALT:
             case SDLK_LCTRL:
             case SDLK_RALT:
             case SDLK_RCTRL:
+              skip = 1;
               SDL_StopTextInput();
-              modifier = 1;
               break;
           }
-          if (modifier)
+          if (skip)
             break;
         }
         st_Terminal_keyInput(&shelltoy.terminal,

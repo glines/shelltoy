@@ -454,6 +454,7 @@ void st_Terminal_textInput(
     }
   }
 }
+
 void st_Terminal_keyInput(
     st_Terminal *self,
     SDL_Keycode keycode,
@@ -463,7 +464,12 @@ void st_Terminal_keyInput(
   uint32_t key_xkb;
   int result;
 
-  /* TODO: Convert the SDL modifier flags to libtsm modifier flags */
+  /* Don't act on alt+tab events */
+  if ((modifiers & KMOD_ALT)
+      && (keycode == SDLK_TAB))
+    return;
+
+  /* Convert the SDL modifier flags to libtsm modifier flags */
   modifiers_tsm = 0;
   if (modifiers & KMOD_CAPS)
     modifiers_tsm |= TSM_LOCK_MASK;
