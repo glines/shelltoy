@@ -1,12 +1,12 @@
-Next thing to do: Have shelltoy close on shell exit.
+Next thing to do: Have ttoy close on shell exit.
 Add shortcuts to increase and decrease the font size.
 
 I got this assertion at exit once:
-shelltoy: /home/auntieneo/code/shelltoy/src/pty.c:67: st_PTY_pushEvent: Assertion `0' failed.
+ttoy: /home/auntieneo/code/ttoy/src/pty.c:67: ttoy_PTY_pushEvent: Assertion `0' failed.
 Aborted (core dumped)
 
 This is a known issue with fontconfig. Fixing it seems to be a catch 22
 situation, since the fontconfig documentation is not very clear on how to use
 it properly:
-shelltoy: fccache.c:548: FcCacheFini: Assertion `fcCacheChains[i] == NULL' failed.
-[1]    308 abort (core dumped)  ./result/bin/shelltoy
+ttoy: fccache.c:548: FcCacheFini: Assertion `fcCacheChains[i] == NULL' failed.
+[1]    308 abort (core dumped)  ./result/bin/ttoy
