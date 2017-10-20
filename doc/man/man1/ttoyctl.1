@@ -1,0 +1,36 @@
+.TH TTOYCTL 1
+.SH NAME
+ttoyctl \- control ttoy terminal emulator windows
+.SH SYNOPSIS
+.B ttoyctl
+<command> [<args>]
+.SH DESCRIPTION
+.B ttoyctl
+is a command-line utility for controlling the \fBttoy\fR(1) terminal emulator.
+When invoked within the shell of a running \fBttoy\fR window, \fBttoyctl\fR
+can change the various options of \fBttoy\fR on-the-fly, without needing to
+restart the terminal.
+
+The \fBttoyctl\fR command is provided in lieu of a point-and-click GUI for
+\fBttoy\fR. This is done to avoid depending on any particular GUI framework,
+and allows for scriptable control of \fBttoy\fR from the active shell.
+
+Functionality of \fBttoyctl\fR is organized into several commands, listed
+below. Each of these commands has its own set of options.
+
+.SH COMMANDS
+.TP
+\fBhelp\fR [<command>]
+Show help text for the given \fBttoyctl\fR command. If no command is given, a
+list of all \fBttoyctl\fR commands is displayed.
+
+.TP
+\fBtitle\fR <string>
+Set the window title of the \fBttoy\fR window in which this command is
+invoked. The window title is set using the same escape sequence that
+\fBxterm\fR(1) uses, so this command likely works with many terminal emulators
+besides \fBttoy\fR.
+
+Notice that <string> represents a single command line argument. In many common
+shells, such as \fBbash\fR(1), the <string> argument must be surrounded by
+quotes if it is to contain spaces.
