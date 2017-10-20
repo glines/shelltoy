@@ -1,0 +1,27 @@
+.TH TTOY 1
+.SH NAME
+ttoy \- graphically embellished terminal emulator
+.SH SYNOPSIS
+.B ttoy
+[\fB\-\-config\fR <file>]
+[\fB\-\-profile\fR <name>]
+[ \-\- <shell> [<shell_args>]]
+.SH DESCRIPTION
+.B ttoy
+is a terminal emulator providing an environment for graphical experimentation.
+\fBttoy\fR is inspired by online tools such as Shadertoy and GLSL Sandbox.
+
+The \fBttoyctl\fR(1) command is provided in lieu of a point-and-click GUI for
+\fBttoy\fR. By invoking \fBttoyctl\fR from within the shell of a running
+\fBttoy\fR window, various options of \fBttoy\fR can be changed on-the-fly
+without needing to restart the terminal.
+
+Text and background rendering of \fBttoy\fR is controlled by customizable
+plugins called \fItoys\fR. Most \fBttoy\fR toys are akin to graphical skins or
+screensavers, but in general they are intended as a tool for creative
+expression within the terminal environment. A number of toys are distributed
+with \fBttoy\fR by default, including a GLSL toy resembling Shadertoy.  See
+\fBlibttoy\fR(3) for a description of the plugin API which can be used to
+develop custom toys for use with \fBttoy\fR.
+
+.SH OPTIONS

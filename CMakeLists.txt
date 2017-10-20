@@ -66,6 +66,12 @@ install(DIRECTORY "${CMAKE_BINARY_DIR}/include/"
     DESTINATION "include"
     FILES_MATCHING PATTERN "*.h")
 
+# Install the ttoy man pages
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/man/man1"
+    DESTINATION "man")
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/man/man3"
+    DESTINATION "man")
+
 add_subdirectory("./src")
 
 find_package(Check)
