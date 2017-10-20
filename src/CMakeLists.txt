@@ -35,11 +35,11 @@ set_target_properties(ttoy
     )
 target_link_libraries(ttoy
     common
+    tsm
     ${FONTCONFIG_LIBRARIES}
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARY}
     ${JANSSON_LIBRARIES}
-    ${LIBTSM_LIBRARY}
     ${SDL2_LIBRARY}
     ${X11_LIBRARIES}
     )

@@ -1,0 +1,3 @@
+[submodule "extern/libtsm"]
+	path = extern/libtsm
+	url = git://people.freedesktop.org/~dvdhrm/libtsm
