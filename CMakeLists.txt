@@ -30,7 +30,6 @@ endif()
 find_package(Freetype REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
-find_package(libtsm REQUIRED)
 find_package(Jansson REQUIRED)
 find_package(X11 REQUIRED)
 # FIXME: I might need to use the ${FONTCONFIG_DEFINITIONS} variable somewhere
@@ -38,11 +37,17 @@ find_package(Fontconfig REQUIRED)
 
 add_subdirectory("./extern")
 
+add_library(tsm INTERFACE IMPORTED)
+add_dependencies(tsm tsm_build)
+set_target_properties(tsm PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${TSM_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES "${TSM_LIBRARY}"
+    )
+
 include_directories(SYSTEM
     ${FONTCONFIG_INCLUDE_DIR}
     ${GLEW_INCLUDE_DIR}
     ${JANSSON_INCLUDE_DIRS}
-    ${LIBTSM_INCLUDE_DIR}
     ${SDL2_INCLUDE_DIR}
     ${X11_INCLUDE_DIR}
     )
