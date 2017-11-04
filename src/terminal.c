@@ -70,6 +70,9 @@ void ttoy_Terminal_tsmWriteCallback(
     const char *u8,
     size_t len,
     ttoy_Terminal *self);
+void ttoy_Terminal_oscCallback(
+    char *osc_str,
+    ttoy_Terminal *self);
 void ttoy_Terminal_initWindow(ttoy_Terminal *self);
 void ttoy_Terminal_initTSM(ttoy_Terminal *self);
 void ttoy_Terminal_updateScreenSize(ttoy_Terminal *self);
@@ -110,6 +113,31 @@ void ttoy_Terminal_tsmWriteCallback(
 {
   /* Write to the pseudo terminal */
   ttoy_PTY_write(&self->pty, u8, len);
+}
+
+enum osc_codes {
+  OSC_TITLE = 2,
+};
+
+void ttoy_Terminal_oscCallback(
+    char *osc_str,
+    ttoy_Terminal *self)
+{
+  /* Parse the OSC string */
+  int i = 0;
+  while (osc_str[i] && (osc_str[i] != ';'))
+    i += 1;
+  if (osc_str[i] == '\0')
+    return;  /* Ignore strings with missing semicolon */
+  osc_str[i] = '\0';
+  int code = atoi(osc_str);
+  char *arg = osc_str + i + 1;
+
+  switch (code) {
+    case OSC_TITLE:
+      SDL_SetWindowTitle(self->window, arg);
+      break;
+  }
 }
 
 void ttoy_Terminal_ptyReadCallback(
@@ -221,6 +249,11 @@ void ttoy_Terminal_initTSM(ttoy_Terminal *self) {
       self,  /* data */
       (tsm_log_t)ttoy_Terminal_tsmLogCallback,  /* log */
       self  /* log_data */
+      );
+  tsm_vte_set_osc_callback(
+      self->vte,  /* vte */
+      (tsm_vte_osc_cb)ttoy_Terminal_oscCallback,  /* cb */
+      self  /* data */
       );
   /* Set the screen size */
   result = tsm_screen_resize(
