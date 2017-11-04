@@ -50,3 +50,4 @@ install(TARGETS ttoy
 
 add_subdirectory("./common")
 add_subdirectory("./plugins")
+add_subdirectory("./ttoyctl")
