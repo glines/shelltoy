@@ -92,13 +92,13 @@ void ttoy_Fonts_initFontconfig() {
   ttoy_Fonts *self = ttoy_Fonts_instance();
 
   self->fcConfig = FcInitLoadConfig();
-  /* TODO: We might want to re-enable Fontconfig's cache in the future, but for
-   * now disabling it avoids an assert in FcFini() */
   FcConfigBuildFonts(self->fcConfig);
 }
 
 void ttoy_Fonts_destroyFontconfig() {
-  /* Finalize fontconfig library */
+  ttoy_Fonts *self = ttoy_Fonts_instance();
+
+  FcConfigDestroy(self->fcConfig);
   FcFini();
 }
 
