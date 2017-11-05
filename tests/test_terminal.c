@@ -22,48 +22,58 @@
  */
 
 #include <check.h>
-#include <stdlib.h>
 
-#include "../src/boundingBox.h"
+#include "../src/config.h"
+#include "../src/fonts.h"
+#include "../src/terminal.h"
 
-START_TEST(test_BoundingBox_checkIntersection)
+START_TEST(ttoy_test_Terminal_init)
 {
-  ttoy_BoundingBox a, b;
+  ttoy_Config config;
+  ttoy_Profile *defaultProfile;
+  ttoy_Terminal terminal;
+  char *shell_argv[3];
 
-  a.x = a.y = b.x = b.y = 0;
-  a.w = a.h = b.w = b.h = 10;
+  ttoy_Fonts_init();
+  mark_point();
 
-  ck_assert(ttoy_BoundingBox_checkIntersection(&a, &b));
+  ttoy_Config_init(&config);
+  mark_point();
 
-  for (int y = 0; y < 10; ++y) {
-    b.y = y;
-    for (int x = 0; x < 10; ++x) {
-      b.x = x;
-      ck_assert(ttoy_BoundingBox_checkIntersection(&a, &b));
-    }
-    b.x = 10;
-    ck_assert(!ttoy_BoundingBox_checkIntersection(&a, &b));
-  }
-  b.y = 10;
-  ck_assert(!ttoy_BoundingBox_checkIntersection(&a, &b));
-  a.x += 1;
-  ck_assert(!ttoy_BoundingBox_checkIntersection(&a, &b));
-  a.y += 1;
-  ck_assert(ttoy_BoundingBox_checkIntersection(&a, &b));
+  ttoy_Config_getDefaultProfile(&config,
+      &defaultProfile);
+  ck_assert(defaultProfile != NULL);
+
+  shell_argv[0] = "/usr/bin/env";
+  shell_argv[1] = "true";
+  shell_argv[2] = NULL;
+  ttoy_Terminal_init(&terminal,
+      defaultProfile,  /* profile */
+      3,  /* argc */
+      shell_argv  /* argv */
+      );
+  mark_point();
+
+  ttoy_Terminal_destroy(&terminal);
+  mark_point();
+
+  ttoy_Config_destroy(&config);
+  mark_point();
+
+  ttoy_Fonts_destroy();
 }
 END_TEST
 
-Suite *bbox_suite() {
+Suite *terminal_test_suite() {
   Suite *s;
-  TCase *tc_core;
+  TCase *tc_init;
 
-  s = suite_create("BoundingBox");
+  s = suite_create("ttoy_Terminal");
 
-  /* Core test case */
-  tc_core = tcase_create("Core");
+  tc_init = tcase_create("init");
 
-  tcase_add_test(tc_core, test_BoundingBox_checkIntersection);
-  suite_add_tcase(s, tc_core);
+  tcase_add_test(tc_init, ttoy_test_Terminal_init);
+  suite_add_tcase(s, tc_init);
 
   return s;
 }
@@ -73,7 +83,7 @@ int main(int argc, char **argv) {
   Suite *s;
   SRunner *sr;
 
-  s = bbox_suite();
+  s = terminal_test_suite();
   sr = srunner_create(s);
 
   srunner_run_all(sr, CK_NORMAL);
