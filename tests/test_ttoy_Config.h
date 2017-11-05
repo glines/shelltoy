@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Jonathan Glines
+ * Copyright (c) 2016-2017 Jonathan Glines
  * Jonathan Glines <jonathan@glines.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,52 +21,11 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef TTOY_TEST_TTOY_CONFIG_H_
+#define TTOY_TEST_TTOY_CONFIG_H_
+
 #include <check.h>
-#include <stdlib.h>
 
-#include "../src/config.h"
+Suite *ttoy_Config_test_suite();
 
-START_TEST(test_Config_checkDefaultProfile)
-{
-  ttoy_Config config;
-  ttoy_Profile *defaultProfile;
-
-  ttoy_Config_init(&config);
-  mark_point();
-  ttoy_Config_getDefaultProfile(&config,
-      &defaultProfile);
-
-  ck_assert(defaultProfile != NULL);
-
-  ttoy_Config_destroy(&config);
-}
-END_TEST
-
-Suite *config_test_suite() {
-  Suite *s;
-  TCase *tc_profiles;
-
-  s = suite_create("Config");
-
-  /* Profiles test case */
-  tc_profiles = tcase_create("Profiles");
-
-  tcase_add_test(tc_profiles, test_Config_checkDefaultProfile);
-  suite_add_tcase(s, tc_profiles);
-
-  return s;
-}
-
-int main(int argc, char **argv) {
-  int number_failed;
-  Suite *s;
-  SRunner *sr;
-
-  s = config_test_suite();
-  sr = srunner_create(s);
-
-  srunner_run_all(sr, CK_NORMAL);
-  number_failed = srunner_ntests_failed(sr);
-  srunner_free(sr);
-  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-}
+#endif
